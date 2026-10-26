@@ -1,0 +1,73 @@
+
+[
+  {
+    "student_id": "S001",
+    "name": "王林",
+    "chinese": 85,
+    "math": 92,
+    "english": 78
+  },
+  {
+    "student_id": "S002",
+    "name": "李慕婉",
+    "chinese": 92,
+    "math": 88,
+    "english": 95
+  },
+  {
+    "student_id": "S003",
+    "name": "十三",
+    "chinese": 78,
+    "math": 85,
+    "english": 82
+  },
+  {
+    "student_id": "S004",
+    "name": "曾牛",
+    "chinese": 88,
+    "math": 79,
+    "english": 91
+  },
+  {
+    "student_id": "S005",
+    "name": "周铁",
+    "chinese": 95,
+    "math": 96,
+    "english": 89
+  },
+  {
+    "student_id": "S006",
+    "name": "王卓",
+    "chinese": 76,
+    "math": 82,
+    "english": 77
+  },
+  {
+    "student_id": "S007",
+    "name": "红蝶",
+    "chinese": 89,
+    "math": 91,
+    "english": 94
+  },
+  {
+    "student_id": "S008",
+    "name": "徐立国",
+    "chinese": 75,
+    "math": 69,
+    "english": 82
+  },
+  {
+    "student_id": "S009",
+    "name": "许木",
+    "chinese": 86,
+    "math": 89,
+    "english": 98
+  },
+  {
+    "student_id": "S010",
+    "name": "谭天",
+    "chinese": 66,
+    "math": 59,
+    "english": 72
+  }
+]
