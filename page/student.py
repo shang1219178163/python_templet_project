@@ -1,7 +1,6 @@
 import json
 import sys
 from pathlib import Path
-from typing import Any
 
 # 本文件在 page/ 下，上一级才是项目根目录
 project_root = Path(__file__).resolve().parent.parent
@@ -43,22 +42,22 @@ DLog.d(f"englishScores: {englishScores}")
 mathScores = [(e.name, e.math) for e in models]
 DLog.d(f"mathScores: {mathScores}")
 
+# 打印最低分和最高分对应的姓名与成绩
+def log_student(m: list[StudentModel], k: str) -> None:
+    """按字段 k 从小到大排序，打印最低分和最高分对应的姓名与成绩。"""
+    sorted_models = sorted(m, key=lambda e: e.to_dict()[k])
+    lowest = sorted_models[0]
+    highest = sorted_models[-1]
+    print(
+        f"{k}: min=({lowest.name}, {lowest.to_dict()[k]}), "
+        f"max=({highest.name}, {highest.to_dict()[k]})"
+    )
 
-chineseSorted = sorted(models, key=lambda e: e.chinese)
-englishSorted = sorted(models, key=lambda e: e.english)
-mathSorted = sorted(models, key=lambda e: e.math)
-# print(f'{chineseScores}')
-# print(f'{englishScores}')
-# print(f'{mathScores}')
+log_student(models, "chinese")
+log_student(models, "english")
+log_student(models, "math")
 
-def log_student(m: StudentModel, k: str) -> tuple[str, Any]:
-    return m.name, m.to_dict()[k]
-
-print(f"chineseSorted: {log_student(chineseSorted[0], "chinese")}, {log_student(chineseSorted[-1], "chinese")}")
-print(f"englishSorted: {log_student(englishSorted[0], "english")}, {log_student(englishSorted[-1], "english")}")
-print(f"mathSorted: {log_student(mathSorted[0], "math")}, {log_student(mathSorted[-1], "math")}")
-
-
-
-
-
+# 优秀学生
+excellence_students = list(filter(lambda e: e.average_score >= 90, models))
+excellence_student_names = list(map(lambda e: e.name, excellence_students))
+DLog.d(f"excellence_student_names: {excellence_student_names}")
