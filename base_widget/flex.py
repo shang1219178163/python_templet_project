@@ -11,6 +11,7 @@ from typing import Literal
 import streamlit as st
 
 from base_widget._layout import css_px, gap_token, streamlit_cross_align, streamlit_main_align
+from base_widget._style import inject_css
 from base_widget.axis import Axis
 
 
@@ -97,7 +98,9 @@ class Flex:
         if width is None:
             width = "stretch" if fill or not horizontal else "content"
         height = self.height
-        if height is None:
+        if isinstance(height, int):
+            height = "content"
+        elif height is None:
             height = "stretch" if fill and not horizontal else "content"
         flex_key = self.key or f"flutter_flex_{id(self)}"
         self._inject_css(flex_key)
@@ -132,7 +135,12 @@ class Flex:
         align_items = _ALIGN_ITEMS.get(self.cross_axis_alignment, "center")
         direction = "row" if self.direction == Axis.horizontal else "column"
         if isinstance(self.height, int):
-            size_rule = f"height: {self.height}px !important;"
+            size_rule = (
+                f"height: {self.height}px !important; "
+                f"min-height: {self.height}px !important; "
+                "flex: none !important; "
+                "overflow: visible !important;"
+            )
         elif self.main_axis_size == MainAxisSize.max:
             size_rule = (
                 "width: 100% !important;"
@@ -147,9 +155,8 @@ class Flex:
             )
         else:
             size_rule = "height: fit-content !important;"
-        st.markdown(
+        inject_css(
             f"""
-<style>
 div.st-key-{flex_key} {{
   display: flex !important;
   flex-direction: {direction} !important;
@@ -159,9 +166,7 @@ div.st-key-{flex_key} {{
   gap: {spacing} !important;
   {size_rule}
 }}
-</style>
-""",
-            unsafe_allow_html=True,
+"""
         )
 
 
