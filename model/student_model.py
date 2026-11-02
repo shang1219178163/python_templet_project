@@ -45,3 +45,16 @@ class StudentModel:
         """模型转字典"""
         data = asdict(self)
         return data
+
+    def __str__(self) -> str:
+        return f"StudentModel(student_id={self.student_id}, name={self.name}, "
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StudentModel):
+            return NotImplemented
+        return self.student_id == other.student_id
+
+    def __lt__(self, other: object) -> bool:
+        if not isinstance(other, StudentModel):
+            return NotImplemented
+        return self.student_id < other.student_id
