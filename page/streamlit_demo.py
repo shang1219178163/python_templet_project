@@ -1,6 +1,7 @@
 import streamlit as st
 
-from base_widget import Column, CrossAxisAlignment, MainAxisAlignment, MainAxisSize, Row, Wrap
+from base_widget import (Column, CrossAxisAlignment, MainAxisAlignment,
+                         MainAxisSize, Row, Wrap)
 
 MAIN_ALIGNS = (
     ("start", MainAxisAlignment.start),
@@ -29,11 +30,11 @@ st.subheader("流水按钮")
 with Wrap(spacing=8, run_spacing=8):
     for index in range(9):
         if st.button(f"按钮{index + 1}", key=f"flow_btn_{index}"):
-            print(f"button {index}")
+            print(f"按钮{index}")
             st.session_state["clicked_button"] = index
 
 if "clicked_button" in st.session_state:
-    st.write(f"button {st.session_state['clicked_button']}")
+    st.write(f"按钮 {st.session_state['clicked_button']}")
 
 st.header("Flex 对齐")
 
@@ -48,8 +49,13 @@ for name, value in MAIN_ALIGNS:
 st.subheader("Row · CrossAxisAlignment")
 for name, value in CROSS_ALIGNS:
     st.caption(f"cross_axis_alignment = {name}")
-    with st.container(border=True, height=140):
-        with Row(cross_axis_alignment=value, spacing=8, key=f"row_cross_{name}"):
+    with st.container(border=True):
+        with Row(
+            cross_axis_alignment=value,
+            spacing=8,
+            height=140,
+            key=f"row_cross_{name}",
+        ):
             with st.container(border=True):
                 st.button("A", key=f"row_cross_{name}_0")
             with st.container(border=True):
@@ -81,10 +87,11 @@ for group in (CROSS_ALIGNS[:3], CROSS_ALIGNS[3:]):
     for col, (name, value) in zip(cols, group):
         with col:
             st.caption(f"{name}")
-            with st.container(border=True, height=180):
+            with st.container(border=True):
                 with Column(
                     cross_axis_alignment=value,
                     spacing=8,
+                    height=180,
                     key=f"col_cross_{name}",
                 ):
                     for index, label in enumerate(("A", "B", "C")):

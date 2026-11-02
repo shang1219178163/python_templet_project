@@ -10,6 +10,7 @@ from types import TracebackType
 import streamlit as st
 
 from base_widget._layout import css_px, gap_token, streamlit_cross_align, streamlit_main_align
+from base_widget._style import inject_css
 from base_widget.axis import Axis
 
 
@@ -113,9 +114,8 @@ class Wrap:
             WrapCrossAlignment.center: "center",
         }.get(self.cross_axis_alignment, "flex-start")
         direction = "row" if self.direction == Axis.horizontal else "column"
-        st.markdown(
+        inject_css(
             f"""
-<style>
 div.st-key-{wrap_key} {{
   display: flex !important;
   flex-direction: {direction} !important;
@@ -126,7 +126,5 @@ div.st-key-{wrap_key} {{
   column-gap: {spacing} !important;
   row-gap: {run_spacing} !important;
 }}
-</style>
-""",
-            unsafe_allow_html=True,
+"""
         )
