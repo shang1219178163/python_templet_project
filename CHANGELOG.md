@@ -1,5 +1,86 @@
 # CHANGELOG
 
+## 2026-11-04 08:58
+
+### 调整
+- `model/student_model.py`、`model/book_model.py`、`model/book_library_model.py`：由 `@dataclass` 迁移为 Pydantic `BaseModel`。
+  - `StudentModel`：`library_password` 使用 `Field(repr=False)` 隐藏；`member_level` 按枚举值自动校验（`"normal"` / `"vip"`）。
+  - `StudentModel.to_dict()` 改为 `model_dump(mode="json")`，枚举自动序列化为原始值。
+  - `BookModel.from_dict()` 改为 `model_validate()`，JSON 中多余的 `industry` 字段自动忽略。
+  - `BookLibraryModel`：`books` 改为带默认工厂的 Pydantic 字段，原有方法保持不变。
+- `page/student.py`：解码改用 `StudentModel.model_validate()`。
+- `page/book_managment_system/book_managment_system.py`：修正 `book_out()` 中不存在的字段 `isLetOut`，改为 `is_borrow`（Pydantic 不允许给未声明字段赋值）。
+- `pyproject.toml`：新增直接依赖 `pydantic>=2.13.0`（原为 pydantic-ai 的间接依赖）。
+
+### 验证
+- `python page/student.py` 正常输出成绩统计。
+- 图书加载 100 本、按 ISBN 查询、借书状态变更均正常。
+- 学生模型枚举解码、`to_dict()` 序列化、repr 隐藏密码、`==` / `<` 比较均验证通过。
+- `ruff check model/` 无告警。
+
+## 2026-11-03 21:12
+
+### 新增
+- `assets/json/books.json`：新增 100 本大学图书数据，覆盖信息技术、机械制造、电子信息、土木建筑、医学健康、经济管理、法学、教育学、文学人文、环境能源 10 个主流行业，每个行业 10 本；ISBN 为带合法校验位的示例数据。
+- `model/book_library_model.py`：新增 `BOOKS_JSON_PATH` 默认数据路径和 `load_books()` 方法，解析 JSON 后载入 `books` 并返回 `list[BookModel]`。
+
+### 验证
+- `load_books()` 解析出 100 本图书，首尾记录正确；`find_book_by_isbn()` 可按 ISBN 命中；`ruff check` 无告警。
+
+## 2026-11-03 21:05
+
+### 调整
+- `model/book_model.py`：`BookModel` 改为 `@dataclass` 实现，保留 `title`、`author`、`isbn` 字段。
+  - 新增 `from_dict` / `to_dict`，支持字典与模型互转。
+  - 新增 `__str__`；`__eq__` / `__lt__` 以 ISBN 作为唯一标识，便于比较和排序。
+
+### 验证
+- 构造、编解码往返、同 ISBN 相等性、排序均验证通过；`ruff check` 无告警。
+
+## 2026-11-03 20:48
+
+### 新增
+- `enums/member_level_enum.py`：新增 `MemberLevelEnum` 会员等级枚举，包含 `NORMAL`（普通）、`VIP`。
+- `model/student_model.py`：`StudentModel` 新增属性：
+  - `member_level`：图书馆会员等级，默认 `MemberLevelEnum.NORMAL`。
+  - `borrowed_books`：已借图书列表，默认空列表。
+  - `library_password`：图书馆密码，默认空字符串，并在 `repr` 中隐藏。
+
+### 调整
+- `StudentModel.from_dict`：支持新字段解码，旧成绩 JSON 缺少字段时使用默认值。
+- `StudentModel.to_dict`：会员等级输出为原始值（`normal` / `vip`），便于 JSON 序列化。
+
+### 验证
+- `python3 page/student.py` 正常运行。
+- 新字段编码/解码往返验证通过；`ruff check` 无告警。
+
+## 2026-11-03 20:43
+
+### 删除
+- `model/student.py`：移除旧的 `Student` / `CodableModel` 模型文件。
+
+### 调整
+- `enum/` 目录重命名为 `enums/`：避免与 Python 标准库 `enum` 同名，否则 `from enum.weekday_enum import WeekdayEnum` 会报 `ModuleNotFoundError: No module named 'enum.weekday_enum'; 'enum' is not a package`。
+- `page/codable.py`：`CodableModel`、`Student` 类迁移到本文件内，枚举改用 `enums/weekday_enum.py` 中的 `WeekdayEnum`。
+- 已验证：`python3 page/codable.py` 编码/解码输出正常（`weekday: 1` ↔ `星期一`）。
+
+## 2026-11-02 16:31
+
+### 修复
+- `docs/pycharm-streamlit-external-tool.md`：修正 External Tool 配置——工作目录改为项目根目录 `$ProjectFileDir$`，并增加环境变量 `PYTHONPATH=$ProjectFileDir$`，解决 `ModuleNotFoundError: No module named 'base_widget'`。
+- 已实测：从项目根目录带 `PYTHONPATH=.` 启动 `page/streamlit_demo.py`，健康检查返回 200。
+
+## 2026-11-02 16:29
+
+### 修复
+- `docs/pycharm-streamlit-external-tool.md`：补充“工作目录末尾多空格导致无法启动进程”的排错说明。
+
+## 2026-11-02 16:23
+
+### 文档
+- 新增 `docs/pycharm-streamlit-external-tool.md`：PyCharm 右键通过 `uv` 启动 Streamlit 的 External Tools 配置说明与排错指南。
+- 无代码改动；由用户在 PyCharm 中按文档手动配置。
+
 ## 2026-11-02 12:52
 
 ### 调整
