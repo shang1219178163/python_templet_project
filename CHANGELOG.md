@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2026-11-08 16:01
+
+### 安全修复
+- 使用 `git filter-repo` 重写全部历史，从所有提交中彻底移除 `.env`。
+  - 命令：`git filter-repo --path .env --invert-paths --force`
+  - 重写后所有提交哈希发生变化，`main` / `develop` 已同步至新历史。
+  - 重写前已备份至 `/Users/shang/GitHub/python_templet_project-backup-20261108.bundle`。
+- filter-repo 清理了未跟踪文件，已从备份 bundle 恢复本地 `.env`（仅存在于工作区，不再被追踪）。
+
+### 验证
+- `git log --all -- .env` 输出为空；`git rev-list --all --objects | grep .env` 无结果。
+- 本地 `.env` 文件保留（648 字节），忽略规则仍生效。
+
 ## 2026-11-08 15:56
 
 ### 安全修复
