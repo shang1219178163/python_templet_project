@@ -5,10 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "anthropic>=0.95.0",
-    "openai>=2.31.0",
+    "anthropic==2.4.0",
+    "fastapi>=0.162.0",
+    "openai==3.44.0",
     "openpyxl>=3.1.5",
-    "pydantic-ai>=1.82.0",
+    "pydantic==2.14.2",
+    "pydantic-ai==2.65.0",
     "pypdf>=6.21.4",
     "python-docx>=1.2.0",
     "python-pptx>=1.0.2",

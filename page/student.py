@@ -19,7 +19,7 @@ def load_students(path: Path) -> list[StudentModel]:
     """读取成绩 JSON，并解码为学生模型列表。"""
     data = json.loads(path.read_text(encoding="utf-8"))
     # print(f"data: {type(data)}")
-    return [StudentModel.from_dict(item) for item in data]
+    return [StudentModel.model_validate(item) for item in data]
 
 
 models = load_students(SCORE_PATH)
@@ -61,3 +61,5 @@ log_student(models, "math")
 excellence_students = list(filter(lambda e: e.average_score >= 90, models))
 excellence_student_names = list(map(lambda e: e.name, excellence_students))
 DLog.d(f"excellence_student_names: {excellence_student_names}")
+
+
