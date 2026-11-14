@@ -1,5 +1,59 @@
 # CHANGELOG
 
+## 2026-11-14 11:16
+
+### 性能修复：`page/test1.py` 右键运行慢（约 5s）
+
+- 根因：PyCharm 每次运行都会把 `helpers/pycharm_plotly_backend` 等 4 个目录注入 `PYTHONPATH`，其中 `sitecustomize.py` 会 `import datalore.display`，连带导入 pandas/altair，解释器启动阶段耗时 2~5s。与脚本代码、`uv`、`.venv` 无关（`uv run` 包装仅约 0.1s）。
+  - 实测：原样复制 IDE 的 `PYTHONPATH` 在终端运行 5.04s；去掉 4 个 helper 目录 0.05s。
+  - `-X importtime` 显示 `sitecustomize` 2.12s，其中 `pandas` 1.80s（`datalore.display` 引入）。
+- 修复：项目根目录新增 `sitecustomize.py`（空文件，仅注释）。项目根位于 `PYTHONPATH` 最前，Python 优先导入它，覆盖 PyCharm 的绘图后端 sitecustomize。
+- 效果：同一 IDE 运行路径由 4~5s 降至 **0.14s**（`idea.log` 收到请求 11:16:09.255 → 脚本首行 11:16:09.399）。
+- 代价：PyCharm Plots 工具窗口不再渲染 plotly/matplotlib 图表；需要看图时删除 `sitecustomize.py` 即可恢复。
+- 文档：`README.md` 增加 PyCharm 右键运行说明，解释 `sitecustomize.py` 的作用与删除影响。
+
+## 2026-11-14 10:51
+
+### 性能排查：`page/test1.py` 运行耗时约 6s
+
+- 结论：耗时与 Python 代码、`uv`、`.venv` 无关，全部来自 IDE 与系统资源争抢。
+  - 实测：`.venv/bin/python page/test1.py` 0.05s；`uv run`（cwd=page）0.09s；`uv` 自身启动 0.016s。
+- 根因：一个失控的 Dart 语言服务器 `PID 11317 dart language-server --protocol lsp`，98% CPU 空转近 2 小时、占用 3.75GB。
+  - 来源：08:54 在 `~`（家目录）启动的 Claude Code 会话（PID 11268）拉起的 dart MCP server，把整个家目录当作工作区索引。
+  - 叠加因素：系统 load 5–7、PyCharm 堆上限仅 `-Xmx2048m` 而 RSS 达 3.75GB、GitHub Copilot 插件 32 次网络失败重试。
+- 处理：结束 `11286`（dart mcp-server）与 `11317`（language-server）两个进程。
+- 效果：PyCharm 内部单次 Run 处理耗时由 **6.26s → 0.005s**（取自 `idea.log` 时间戳），系统 load 由 5.0 降至 3.8。
+
+### 遗留建议
+- 重启 PyCharm：清除进程内残留的旧 `VIRTUAL_ENV`（当前每次运行仍打印 uv 警告，耗时约 0.04s）。
+- 建议将 PyCharm `-Xmx2048m` 提升至 4096m；不使用 Copilot 可禁用该插件。
+- 后续在项目目录启动 Claude Code，避免 dart MCP server 以家目录为 root 索引。
+
+## 2026-11-14 10:38
+
+### 环境修复
+- 根治 uv 警告 `VIRTUAL_ENV ... does not match the project environment path`：与 10:31 那次不同，本次问题不在 `.venv` 内部，而在 shell 会话继承的**脏环境变量**。
+  - 原因：启动 Claude Code 的终端曾在旧目录 `~/GitHub/python_projects/python_templet_project` 执行过 `activate`，项目迁移后该目录已不存在，但 `VIRTUAL_ENV` 与 `PATH` 首项仍指向它。`.venv` 本身健康（shebang、`activate`、`pyvenv.cfg` 全部正确，旧路径残留为 0）。
+  - 副作用：`PATH` 首位是无效目录，导致裸 `python` 落到系统 `/usr/local/bin/python3` 而非项目 venv。
+- `~/.zshrc` 末尾新增 `[venv-guard]` 段：`VIRTUAL_ENV` 指向不存在的目录时自动 `unset`，并从 `PATH` 剔除已失效的 `*/.venv/bin` 条目；正常 `activate` 不受影响。修改前已备份至 `~/.zshrc.bak.20261114-103841`。
+
+### 验证
+- 脏值场景：新 shell 中 `VIRTUAL_ENV` 为空、旧 `PATH` 条目为 0，`uv run python` 无警告且指向 `~/GitHub/python_templet_project/.venv/bin/python`。
+- 合法场景：`VIRTUAL_ENV` 指向存在的 `.venv` 时被保留，未被误清理。
+
+## 2026-11-14 10:31
+
+### 环境修复
+- 重建 `.venv`，消除 uv 警告：`VIRTUAL_ENV ... does not match the project environment path`。
+  - 原因：venv 创建于旧目录 `~/GitHub/python_projects/python_templet_project/.venv`，项目迁移后 `activate` 及 18 个脚本仍写死旧路径，旧目录已不存在。
+  - 操作：`mv .venv .venv.old` → `uv sync` → 验证后 `rm -rf .venv.old`。
+  - `pyproject.toml` / `uv.lock` 未改动，118 个包与重建前完全一致。
+
+### 验证
+- 新 `.venv/bin` 中旧路径残留为 0，`activate` 中 `VIRTUAL_ENV` 指向 `~/GitHub/python_templet_project/.venv`。
+- `uv sync --check` 输出 `Would make no changes`。
+- `streamlit` / `pydantic_ai` / `anthropic` / `openai` / `fastapi` 导入正常。
+
 ## 2026-11-08 16:01
 
 ### 安全修复
