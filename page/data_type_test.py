@@ -30,5 +30,12 @@ results = [(i, e) for i, e in enumerate(books) if e.isbn == isbn]
 print(f"查找所有符合条件的模型 results: {results}, {type(results)}")
 
 
+# 快速初始化数组
+squares = (n ** 2 for n in range(5))
 
+print(next(squares))  # 0
+print(next(squares))  # 1
+print(list(squares))  # [4, 9, 16]
 
+array = [n + 1 for n in range(5)]
+print(array)  # [0, 1, 2, 3, 4]
