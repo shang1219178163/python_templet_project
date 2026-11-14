@@ -7,6 +7,10 @@
 .venv/bin/python main.py
 ```
 
+PyCharm 右键运行说明：
+
+项目根目录的 `sitecustomize.py` 用于抵消 PyCharm 每次运行注入的绘图后端开销（其 `sitecustomize` 会连带导入 pandas，使解释器启动多花 2~5 秒）。该文件对普通 Python 进程不做任何事。若删除它，PyCharm 的 Plots 工具窗口会恢复接管 plotly/matplotlib 渲染，但右键运行会重新变慢。
+
 运行 Streamlit 演示页：
 
 ```bash
