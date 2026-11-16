@@ -17,10 +17,10 @@ class WeekdayEnum(Enum):
         obj.desc = desc
         return obj
 
-    @classmethod
-    def valueOf(cls, value: int):
-        """根据值获取枚举"""
-        for member in cls:
-            if member.value == value:
-                return member
-        raise ValueError(f"无效的值: {value}")
+    # @classmethod
+    # def valueOf(cls, value: int):
+    #     """根据值获取枚举"""
+    #     for member in cls:
+    #         if member.value == value:
+    #             return member
+    #     raise ValueError(f"无效的值: {value}")
