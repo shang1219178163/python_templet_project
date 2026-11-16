@@ -24,6 +24,14 @@ class DLog:
     _ansi_yellow = "\x1b[33m"
     _ansi_blue = "\x1b[34m"
 
+    def __init__(self, *args: object, sep: str = " ", end: str = "\n") -> None:
+        """像 ``print`` 一样调用：按 DEBUG 级别输出，附带调用位置。
+
+        ``from util.dlog import DLog as print`` 后可直接 ``print(a, b)``。
+        """
+        text = sep.join(str(arg) for arg in args)
+        DLog._print_log("DEBUG", text, DLog._ansi_blue, end=end)
+
     @staticmethod
     def d(message: object) -> str:
         """打印调试日志。"""
@@ -73,8 +81,8 @@ class DLog:
     def _caller_info() -> tuple[str, int]:
         frame = DLog._caller_frame()
         if frame is None:
-            return ("unknown", 0)
-        return (DLog._caller_name(frame), frame.f_lineno)
+            return "unknown", 0
+        return DLog._caller_name(frame), frame.f_lineno
 
     @staticmethod
     def _caller_name(frame) -> str:
@@ -97,7 +105,7 @@ class DLog:
         return "unknown"
 
     @staticmethod
-    def _print_log(level: str, message: object, ansi_color: str) -> str:
+    def _print_log(level: str, message: object, ansi_color: str, end: str = "\n") -> str:
         """输出一条日志，并返回实际打印的字符串。关闭日志或 ``python -O`` 时返回空串。"""
         if not DLog.enable_log or not __debug__:
             return ""
@@ -108,5 +116,5 @@ class DLog:
         )
         if DLog.enable_color:
             log_message = f"{ansi_color}{log_message}{DLog._ansi_reset}"
-        print(log_message)
+        print(log_message, end=end)
         return log_message
