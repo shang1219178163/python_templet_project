@@ -9,6 +9,17 @@
 
 from datetime import datetime, timezone
 
+def now_str_ms() -> str:
+    """带 3 位毫秒的当前时间：YYYY-MM-DD HH:MM:SS.mmm"""
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+
+
+def now_ts_ms() -> int:
+    """当前毫秒级时间戳（整数）"""
+    import time
+    return int(time.time() * 1000)
+
+
 fmt = "%Y-%m-%d %H:%M:%S"
 date_str = "2026-11-16 10:57:00"
 

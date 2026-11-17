@@ -138,7 +138,7 @@ def goods_total_amount(coupon: int=0, point: int=0, express: float=0.0):
 # ============================================================================
 
 
-def filter_data(*args:int, **kwargs: dict[str, str | int | bool]) -> list[int]:       # args -- 元组 ;  kwargs -- 字典    # print(f"args: {type(args)}, kwargs: {type(kwargs)}")
+def filter_data(*args:int, **kwargs: Any) -> list[int]:       # args -- 元组 ;  kwargs -- 字典    # print(f"args: {type(args)}, kwargs: {type(kwargs)}")
 
     threshold: int = kwargs.get("threshold", 1)
     top_n: int = kwargs.get("top_n", -1)
@@ -198,7 +198,7 @@ filter_data(3, 5, 1, 8, 6, top_n=3)
 #       → {'count': 6, 'max_score': 70, 'min_score': 38, 'avg_score': 54.8, 'pass_rate': '33.3%'}
 # ============================================================================
 def analyze_scores(*args: float, **kwargs: Any) -> dict[str, int | float | str]:
-    # print(f"args: {type(args)}, kwargs: {type(kwargs)}")
+    print(f"analyze_scores args: {type(args)}, kwargs: {type(kwargs)}")
     if len(args) == 0:
         return {
             "count": 0,
