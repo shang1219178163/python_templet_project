@@ -34,12 +34,10 @@ if __name__ == "__main__":
 
 from abc import ABC, abstractmethod
 
-from charset_normalizer.md import SuperWeirdWordPlugin
-
 
 class Employee(ABC):
 
-    def __init__(self, /, emp_id:str, name: str, base_salary: float):
+    def __init__(self, /, emp_id: str, name: str, base_salary: float):
         self.emp_id = emp_id
         self.name = name
         self.base_salary = base_salary
@@ -55,7 +53,10 @@ class Employee(ABC):
 
     def show_info(self):
         """展示员工信息"""
-        desc = f"工号：{self.emp_id} | 姓名：{self.name} | 基本工资：{self.base_salary} | 奖金：{self.calculate_bonus()} | 总工资：{self.total_salary()}"
+        desc = (
+            f"工号：{self.emp_id} | 姓名：{self.name} | 基本工资：{self.base_salary}"
+            f" | 奖金：{self.calculate_bonus()} | 总工资：{self.total_salary()}"
+        )
         print(desc)
 
 
@@ -68,9 +69,9 @@ class Seller(Employee):
         super().__init__(emp_id, name, base_salary)
         self.sales_amount = sales_amount
 
-
     def calculate_bonus(self) -> float:
         return self.sales_amount * 0.05
+
 
 # Manager（经理）：奖金固定为 3000
 class Manager(Employee):
@@ -78,12 +79,13 @@ class Manager(Employee):
     def calculate_bonus(self) -> float:
         return 3000
 
+
 # Programmer（程序员）：奖金 = 完成项目数 × 500  -----> 扩充属性: 完成项目数 projects_completed
 class Programmer(Employee):
     projects_completed: int
     """完成项目数 """
-    
-    def __init__(self, /, emp_id:str, name: str, base_salary: float, projects_completed: int):
+
+    def __init__(self, /, emp_id: str, name: str, base_salary: float, projects_completed: int):
         super().__init__(emp_id, name, base_salary)
         self.projects_completed = projects_completed
 
@@ -93,9 +95,9 @@ class Programmer(Employee):
 
 if __name__ == "__main__":
     employees = [
-        Seller(emp_id ="S001", name="张三", base_salary= 5000, sales_amount= 5000),
-        Manager(emp_id ="M001", name= "李四", base_salary= 5000),
-        Programmer(emp_id ="P001", name= "王五", base_salary= 5000, projects_completed = 3)
+        Seller(emp_id="S001", name="张三", base_salary=5000, sales_amount=5000),
+        Manager(emp_id="M001", name="李四", base_salary=5000),
+        Programmer(emp_id="P001", name="王五", base_salary=5000, projects_completed=3)
     ]
 
     print("=" * 70)
