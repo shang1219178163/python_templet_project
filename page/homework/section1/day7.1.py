@@ -16,28 +16,35 @@
 """
 
 from pathlib import Path
+
 from util.file_manager import FileManager
 
-path = Path("contacts.txt")
+file_contacts = FileManager(path=Path("contacts.txt"))
 
-def add_contact(**kwargs):
+
+def add_contact(**kwargs) -> None:
     """添加联系人"""
     print("\n【添加联系人】")
     name = kwargs.get("name") or input("请输入姓名：").strip()
     email = kwargs.get("email") or input("请输入邮箱：").strip()
     phone = kwargs.get("phone") or input("请输入11位手机号：").strip()
 
+    def insert_line() -> bool:
+        new_line = "|".join([name, phone, email]) + "\n"
+        success = file_contacts.write(new_line=new_line)
+        return success
+
     # 验证手机号是否为11位数字 -> isdigit() 可判定是否为数字
     # 以追加模式(模式不要用 "w", 用 "a")写入 contacts.txt，格式：姓名|电话|邮箱
-    if phone.isdigit() is False or len(phone) != 11:
+    if not phone.isdigit() or len(phone) != 11:
         while True:
-            phone = input("请输入11位手机号：").strip()               
+            phone = input("请输入11位手机号：").strip()
             print(f"{phone} 长度 {len(phone)}")
             if phone.isdigit() and len(phone) == 11:
-                new_line = "|".join([name, phone, email]) + "\n"
-                success = FileManager.write(path=path, new_line=new_line)
-                print(f"{"添加成功！" if success else "添加失败！"}")
+                insert_line()
                 break
+    else:
+        insert_line()
 
 
 def show_all_contacts():
@@ -47,15 +54,18 @@ def show_all_contacts():
     # 读取 contacts.txt 文件
     # 格式化展示：姓名、电话、邮箱
     # 如果文件不存在或为空，提示"暂无联系人"
-    items = FileManager.read(path=path)
-    print(items)
+    items = file_contacts.read()
+    res = [(e, items.count(e)) for e in set(items)]
+    res_sort = sorted(res, key=lambda x: x[1])
+    print(res_sort)
 
-def search_contact():
+
+def search_contact(**kwargs) -> None:
     """搜索联系人"""
     print("\n【搜索联系人】")
-    keyword = input("请输入要搜索的姓名：").strip()
+    keyword = kwargs.get("name") or input("请输入要搜索的姓名：").strip()
 
-    items = FileManager.search(path=path, key= keyword, cb = match_name)
+    items = file_contacts.search(key=keyword, cb=match_name)
     print(items)
 
 
@@ -64,9 +74,10 @@ def del_contact():
     print("\n【删除联系人】")
     keyword = input("请输入要删除的姓名：").strip()
 
-    # FileManager.delete(path=path, keyword = keyword, cb=match_name)
-    success = FileManager.delete(path=path, key = keyword, cb=lambda k, items: [e for e in items if k in e])
+    # file_contacts.delete(key = keyword, cb=match_name)
+    success = file_contacts.delete(key=keyword, cb=lambda k, items: [e for e in items if k in e])
     print(f"del_contact {"成功！" if success else "失败！"}")
+
 
 def update_contact():
     print("\n【更新】")
@@ -74,19 +85,20 @@ def update_contact():
     email = input("请输入修改邮箱：").strip()
     phone = input("请输入修改(11位)手机号：").strip()
 
-    def update_match(key: str, targets: list[str])-> list[str]:
+    def update_match(key: str, targets: list[str]) -> list[str]:
         new_line = "|".join([key, phone, email]) + "\n"
-        return [ new_line ]
+        return [new_line]
 
-    success = FileManager.update(path=path, key=keyword, search_cb=match_name, update_cb=update_match)
+    success = file_contacts.update(key=keyword, search_cb=match_name, update_cb=update_match)
     print(f"update_contact {"成功！" if success else "失败！"}")
 
 
 # 匹配姓名
-def match_name(keyword:str, items: list[str]) -> list[str]:
+def match_name(keyword: str, items: list[str]) -> list[str]:
     """匹配姓名"""
     res = [e for e in items if keyword in e.split("|")[0]]
     return res
+
 
 def run():
     while True:
@@ -122,5 +134,5 @@ def run():
 
 if __name__ == "__main__":
     run()
-#
-
+    # add_contact(name="北辰", email="beichen@qq.com", phone="11111111111")
+    # show_all_contacts()
