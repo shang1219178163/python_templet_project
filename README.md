@@ -31,6 +31,20 @@ PYTHONPATH=. .venv/bin/streamlit run lib/page/ai_robot/app.py --server.port 8502
 
 默认打开 http://localhost:8501 ；指定端口时改为对应端口。
 
+启动 FastAPI 图书查询服务：
+
+```bash
+PYTHONPATH=. .venv/bin/uvicorn lib.api.book:app --host 127.0.0.1 --port 8001 --reload
+```
+
+接口文档 http://127.0.0.1:8001/docs ；接口：`GET /`（欢迎信息）、`GET /books`（图书列表）、`GET /books/count`（图书总数）。端口被占用时可改用 `--port` 指定其他端口。
+
+停止 FastAPI 服务：前台运行时按 `Ctrl+C`；后台运行时按端口结束进程：
+
+```bash
+lsof -ti :8001 | xargs kill
+```
+
 AI 机器人使用 DeepSeek 风格暗色界面，支持流式回答、SQLite 会话历史、会话置顶/删除，以及图片和 PDF/Word/Excel/PPT/文本上传。
 
 依赖：`streamlit`、`anthropic`、`python-dotenv`、`pypdf`、`python-docx`、`openpyxl`、`python-pptx`（Pillow 随 Streamlit 安装）。
