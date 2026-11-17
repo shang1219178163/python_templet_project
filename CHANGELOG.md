@@ -1,5 +1,113 @@
 # CHANGELOG
 
+## 2026-11-17 18:00
+
+### 按功能拆分提交：本轮改动整理为 6 个提交
+
+- `docs(学习笔记)`：`python-del-usage.md` 扩充对比表、新增 `python-callable-code-attr.md`。
+- `docs(学习笔记)`：新增 `orm-default-values.md`。
+- `refactor(日志工具)`：`hook.py` 引入 `ParamSpec` / `TypeVar` 保留被装饰函数签名，旧实现注释留档到 `hook_old.py`。
+- `feat(通讯录)`：新增 `util/file_manager.py`，`day7.1.py` 改为调用该类，姓名匹配抽为 `match_name`。
+- `refactor(作业)`：`day7.py` 中 `Salesman` 重命名为 `Seller`。
+- `feat(练习)`：新增 `tuple_demo.py` / `args_kwargs_demo.py`，`date_demo.py` 增加毫秒时间函数，`day5` / `day6` / `day8` 补充练习。
+- `page/homework/section1/contacts.txt` 为通讯录运行产生的测试数据，未纳入本次提交。
+
+## 2026-11-17 17:05
+
+### 修复：`day8.py` 中 `avg(list(e[-3:]))` 把变量当函数调用
+
+- 报错：`TypeError: 'float' object is not callable`。
+- 根因：`handle()` 循环里 `avg = total / 3` 把 `avg` 绑定成了 **float 变量**，后面再写 `avg(...)` 等于给浮点数加括号调用；而且原来的 `avg` 从头到尾都不是函数。
+- 修复：新增模块级辅助函数 `avg_score(scores)`（`sum(scores) / len(scores)`），列表推导改为 `avg_score(e[-3:])`；循环里的局部变量改名为 `average`，避免遮蔽（shadow）同名函数。
+- 顺带：去掉多余的 `list(...)`——`e[-3:]` 在元组上切片本就返回元组，`sum()` 可直接处理；保留转换只是多建一个对象。
+- 验证：运行输出 `better_list` 为李慕婉、周轶、红蝶、许木 4 人，与手算一致。
+
+## 2026-11-17 16:29
+
+### 修复：`day7.1.py` 中 `add_contact_new()` 报 TypeError
+
+- 报错：`add_contact_new() missing 3 required positional arguments: 'name', 'phone', and 'email'`。
+- 根因：函数签名 `def add_contact_new(name: str | None, phone: str | None, email: str | None)` 只有类型注解、没有默认值，三个参数都是**必填位置参数**；`str | None` 只是"允许传 None"，并不会让你省略实参。因此无参调用必然报 TypeError。
+- 修复：三个参数补上默认值 `= None`，与函数体内 `name or input(...)` 的兜底写法对齐。
+- 验证：`printf` 管道喂入三个值跑脚本，输出 `王五,13800138003,wangwu@example.com`，无异常。
+
+## 2026-11-17 16:06
+
+### 调整：`day7.1.py` 的 `del_contact` 改用 `with` 上下文管理器
+
+- 按作业要求（「使用 with 上下文管理器操作文件」）重写：读用 `with path.open("r", encoding="utf-8")`，写用 `with path.open("w", encoding="utf-8")`，两次 with 各管一段。
+- 语义不变：全量读到内存 → 内存删第一条匹配 → `"w"` 模式整体覆盖写回。
+- 异常分支拆开：`FileNotFoundError` 提示「暂无联系人」，其余 `OSError` 提示删除失败，读失败后直接 return，不再往下走。
+- 验证：mock `input` 跑三行测试数据，删除 `SD的` 后文件为 `'张三|...\n李四|...\n'`；未命中关键字打印「未找到包含「不存在」的联系人」。
+- 遗留：`exceptiongroup.catch`、`streamlit.user_info`、`typing.Any` 三个导入未使用（`ruff` F401 ×3），未擅自删除。
+
+## 2026-11-17 15:55
+
+### 修复：`day7.1.py` 删除联系人「提示成功但数据还在」
+
+- 根因：`open("r+")` 下 `readlines()` 读完后指针停在文件末尾，`writelines(lines)` 从末尾开始写等于**追加**；文件只有一行时 `lines` 删完为空，`writelines([])` 什么都不写，文件原封不动。随后 `readlines()` 从末尾读自然得到 `[]`，造成"删除成功"的假象。多行场景下问题更严重——剩余行会被追加到文件末尾，内容翻倍（`r+` 覆盖写需要 `seek(0)` + 写 + `truncate()` 三步）。
+- 修复：`del_contact` 改为「`read_text` 全量读 → 内存删 → `write_text` 整体重写」；`splitlines(keepends=True)` 保留换行，写回 `"".join(...)`；先判断 `targets` 为空，避免 `IndexError`；`FileNotFoundError` 单独提示"暂无联系人"。
+- 顺带：`search_contact` 的 `open("a")` 改为 `open("r")`（原写法 `readlines()` 会抛 `not readable`）；`show_all_contacts` 的 `r+` 改为 `r`。
+- 验证：mock `input` 跑 `del_contact`，测试数据三行含 `SD的`，删除后文件为 `'张三|...\n李四|...\n'`，`SD的` 行确实消失。
+
+## 2026-11-17 12:07
+
+### 扩充：`docs/python-del-usage.md` 增加第八节「`del` 与各类容器的移除方法对照」
+
+- 总览表覆盖 `list` / `dict` / `set` / `frozenset` / `str` / `tuple` / `deque` / `array.array`：按位置删、按值删、弹栈取回、清空、删名字五种操作各自能否用 `del` 或哪种方法。
+- 记录三条硬性限制的实测报错：`'set' object doesn't support item deletion`、str、tuple 同理——只有有序可变序列支持 `del 容器[i]`。
+- 分类型给出用法：dict 的 `del` / `pop` / `pop(k, 默认)` / `popitem()`（3.7+ LIFO）分工；set 的 `remove`（KeyError）vs `discard`（静默）vs `pop`（随机）；str/tuple 用切片重建且 `del s` 只删名字；deque 的 `popleft` O(1) 对比 `list.pop(0)` O(n)；array 语法同 list。
+- 新增「容易混的几点」表：同名不同异常（list.remove → ValueError / set.remove → KeyError）、`dict.pop()` 空参报 TypeError、`clear()` 与 `del x[:]` / `del x` 的区别、只有 `del` 支持切片步长。
+- 新增复杂度对照表（尾部 pop O(1)、`del lst[i]` O(n-i)、deque 两端 O(1)、dict/set 平均 O(1)）。
+- 全部结论均用 Python 3.13.2 实测核对。
+
+## 2026-11-17 12:05
+
+### 扩充：`docs/python-del-usage.md` 增加「`del` 与 `remove` 的完整对比」
+
+- 新增对比表：定位方式、语句 vs 方法、返回值、找不到时的异常（`IndexError` / `ValueError`）、重复元素只删第一个、切片批量、时间复杂度、负数索引、是否原地修改。
+- 记录三个坑：`remove` 用 `==` 比较导致 `float("nan")` 删不掉（CPython 有身份捷径，同一对象才能命中）；`remove` 只删第一个，删全部应用推导式；遍历中 `del`/`remove` 都会因下标前移而漏删。
+- 补充「怎么选」对照表与「都是原地修改」示例（`a is b` 仍为 `True`，区别于推导式重建）。
+- 第六节「不能在遍历中删除」的列表示例与新增坑 3 重复，改为指向上文；文末速查表补「按值删列表元素」一行。
+
+## 2026-11-17 11:49
+
+### 优化：`util/hook.py` 用 `ParamSpec` / `TypeVar` 保留被装饰函数的签名与返回类型
+
+- `hook` 返回类型由 `Callable[..., Callable[..., Any]]` 改为 `Callable[[Callable[P, R]], Callable[P, R]]`；`decorator` 改为接收 `Callable[P, R]`、返回 `Callable[P, R]`；`wrapper` 改为 `(*args: P.args, **kwargs: P.kwargs) -> R`。
+- 拿 `__code__` 处改为 `cast(FunctionType, func).__code__`：`Callable` 不保证有 `__code__`，收窄后才能通过类型检查。
+- 新增 `HookCallback = Callable[..., None]` 别名，三个回调参数共用。
+- `filename` 改用 `Path(code.co_filename).stem`，替代 `split("/")[-1]` + `split(".")[0]`，Windows 路径与带点文件名都正确。
+- `extra` 显式注解 `list[str]`；`except Exception as e` 改为 `except Exception`（原 `e` 未使用）。
+- 验证：`python3 util/hook.py` 输出正常（`hook.add ... Line:68`）；`ruff check` 通过；`uvx mypy util/hook.py` 无问题；mypy `reveal_type(add)` 为 `def (a: int, b: int) -> int`，`add("1", 2)` 正确报 `arg-type`；PyCharm 文件检查无任何问题。
+
+## 2026-11-17 11:02
+
+### 新增：`docs/python-callable-code-attr.md`，整理 `Callable` 上找不到 `__code__` 的来龙去脉
+
+- 记录报错现象、根因（`Callable` 只承诺 `__call__`，`__code__` 是 `types.FunctionType` 专有属性）。
+- 列出对比表：`def` 函数 / `lambda` / `functools.partial` / 可调用实例 / 类 / 内置函数，各自是否 `Callable`、是否有 `__code__`。
+- 两种修法：注解收窄为 `types.FunctionType`（推荐）、保留 `Callable` 用 `cast`（附 `getattr` 兜底写法）。
+- 补充「装饰器取函数信息」的 inspect 对照表（`getsourcefile`、`signature`、`stack` 等）及各自失效场景。
+
+## 2026-11-17 10:53
+
+### 修复：`util/hook.py` 中 `func.__code__` 报「在 (...) -> Any 中找不到引用 `__code__`」
+
+- 现象：`decorator(func: Callable[..., Any])` 内部访问 `func.__code__`，PyCharm/类型检查器报属性不存在。
+- 根因：`Callable[..., Any]` 只声明「可调用」，仅保证 `__call__`，不保证具有 `__code__`；`__code__` 是普通函数（`types.FunctionType`）专有属性，类、`functools.partial`、可调用实例都没有。
+- 修复：`decorator` 的参数注解由 `Callable[..., Any]` 改为 `types.FunctionType`，返回类型仍为 `Callable[..., Any]`；装饰器本就只支持真正的函数，语义更准确。
+- 验证：`python3 util/hook.py` 输出 `[before add ...]` / `[after add ...]: 3` / `3` 不变；PyCharm 检查该报错消失，仅剩 4 条「局部变量未使用」弱警告（`filename`、`lineno`、`func_name`、`e`）。
+
+## 2026-11-16 20:18
+
+### 新增：`docs/orm-default-values.md`，整理各 ORM 字段默认值写法
+
+- 按框架给出 `default=` 示例：SQLAlchemy 2.0（`mapped_column`）、SQLModel/Pydantic（`Field`）、Django、Peewee，并补充普通类参数默认值与 dataclass `field(default_factory=...)` 的对照。
+- 梳理 `default`、`default_factory`、`server_default`、`db_default` 的区别与适用场景。
+- 记录两个坑：默认值生效时机因框架而异（SQLAlchemy 普通映射在 flush 时才补值）；可变默认值不能直接写 `[]`/`{}`，要用 `list` 或 `default_factory`。
+- 补充普通类改造成 ORM 模型时的迁移要点。
+
 ## 2026-11-16 16:13
 
 ### 修复：`filter_data` 把 `**kwargs` 注解成 `dict[str, Any]` 导致的类型警告
