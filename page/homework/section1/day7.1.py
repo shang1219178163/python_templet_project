@@ -35,7 +35,8 @@ def add_contact(**kwargs):
             print(f"{phone} 长度 {len(phone)}")
             if phone.isdigit() and len(phone) == 11:
                 new_line = "|".join([name, phone, email]) + "\n"
-                FileManager.write(path=path, new_line=new_line)
+                success = FileManager.write(path=path, new_line=new_line)
+                print(f"{"添加成功！" if success else "添加失败！"}")
                 break
 
 
@@ -46,15 +47,16 @@ def show_all_contacts():
     # 读取 contacts.txt 文件
     # 格式化展示：姓名、电话、邮箱
     # 如果文件不存在或为空，提示"暂无联系人"
-    FileManager.show_all(path=path)
-
+    items = FileManager.read(path=path)
+    print(items)
 
 def search_contact():
     """搜索联系人"""
     print("\n【搜索联系人】")
     keyword = input("请输入要搜索的姓名：").strip()
 
-    FileManager.search(path=path, key= keyword, cb = match_name)
+    items = FileManager.search(path=path, key= keyword, cb = match_name)
+    print(items)
 
 
 def del_contact():
@@ -63,7 +65,22 @@ def del_contact():
     keyword = input("请输入要删除的姓名：").strip()
 
     # FileManager.delete(path=path, keyword = keyword, cb=match_name)
-    FileManager.delete(path=path, key = keyword, cb=lambda k, items: [e for e in items if k in e])
+    success = FileManager.delete(path=path, key = keyword, cb=lambda k, items: [e for e in items if k in e])
+    print(f"del_contact {"成功！" if success else "失败！"}")
+
+def update_contact():
+    print("\n【更新】")
+    keyword = input("请输入更新的姓名：").strip()
+    email = input("请输入修改邮箱：").strip()
+    phone = input("请输入修改(11位)手机号：").strip()
+
+    def update_match(key: str, targets: list[str])-> list[str]:
+        new_line = "|".join([key, phone, email]) + "\n"
+        return [ new_line ]
+
+    success = FileManager.update(path=path, key=keyword, search_cb=match_name, update_cb=update_match)
+    print(f"update_contact {"成功！" if success else "失败！"}")
+
 
 # 匹配姓名
 def match_name(keyword:str, items: list[str]) -> list[str]:
@@ -78,12 +95,13 @@ def run():
             "1.添加",
             "2.查看",
             "3.搜索",
-            "4.删除",
-            "5.退出"
+            "4.更新",
+            "5.删除",
+            "6.退出"
         ]
         print("\t".join(tips))
 
-        choice = input("请选择操作(1-5): ").strip()
+        choice = input("请选择操作(1-6): ").strip()
         match choice:
             case "1":
                 add_contact()
@@ -92,8 +110,10 @@ def run():
             case "3":
                 search_contact()
             case "4":
-                del_contact()
+                update_contact()
             case "5":
+                del_contact()
+            case "6":
                 print("再见！")
                 break
             case _:
