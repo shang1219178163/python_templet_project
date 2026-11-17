@@ -1,11 +1,13 @@
-from pathlib import Path
-from util.dlog import DLog
 import json
+from pathlib import Path
 
 import streamlit as st
 
-project_root = Path(__file__).resolve().parents[2]
-target_path = f"{project_root}/assets/txt/kuan_rong.txt"
+from lib.util.dlog import DLog
+
+# 本文件在 lib/page/io/ 下，往上三级是 lib 目录，assets 位于 lib/assets
+resource_root = Path(__file__).resolve().parents[2]
+target_path = f"{resource_root}/assets/txt/kuan_rong.txt"
 DLog.d(target_path)
 # target_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -55,5 +57,5 @@ user = {
     }
 }
 
-with open(f"{project_root}/assets/json/user.json", "w", encoding="utf-8") as f:
+with open(f"{resource_root}/assets/json/user.json", "w", encoding="utf-8") as f:
     json.dump(user, f, ensure_ascii=False, indent=4)

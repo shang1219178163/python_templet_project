@@ -14,19 +14,19 @@ PyCharm 右键运行说明：
 运行 Streamlit 演示页：
 
 ```bash
-PYTHONPATH=. .venv/bin/streamlit run page/streamlit_demo.py
+PYTHONPATH=. .venv/bin/streamlit run lib/page/streamlit_demo.py
 ```
 
 运行 AI 机器人聊天页：
 
 ```bash
-PYTHONPATH=. .venv/bin/streamlit run page/ai_robot/app.py
+PYTHONPATH=. .venv/bin/streamlit run lib/page/ai_robot/app.py
 ```
 
 若 8501 端口已被占用，可指定其他端口：
 
 ```bash
-PYTHONPATH=. .venv/bin/streamlit run page/ai_robot/app.py --server.port 8502
+PYTHONPATH=. .venv/bin/streamlit run lib/page/ai_robot/app.py --server.port 8502
 ```
 
 默认打开 http://localhost:8501 ；指定端口时改为对应端口。

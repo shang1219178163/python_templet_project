@@ -2,10 +2,10 @@ import random
 from functools import reduce
 from os.path import join
 
-from page.cheng_fa_biao import cheng_fa_biao, cheng_fa_biao_new
-from page.homework.section1.day1 import log_poetry
+from lib.page.cheng_fa_biao import cheng_fa_biao, cheng_fa_biao_new
+from lib.page.homework.section1.day1 import log_poetry
 
-# from util.dlog import DLog as print
+# from lib.util.dlog import DLog as print
 
 print(f"Hello, World!")
 

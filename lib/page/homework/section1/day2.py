@@ -1,6 +1,6 @@
 from functools import reduce
 
-from page.homework.section1.day1 import log_poetry
+from lib.page.homework.section1.day1 import log_poetry
 
 # 1
 a = int(input("请输入数字:"))

@@ -10,9 +10,9 @@ from typing import Literal
 
 import streamlit as st
 
-from base_widget._layout import css_px, gap_token, streamlit_cross_align, streamlit_main_align
-from base_widget._style import inject_css
-from base_widget.axis import Axis
+from lib.base_widget._layout import css_px, gap_token, streamlit_cross_align, streamlit_main_align
+from lib.base_widget._style import inject_css
+from lib.base_widget.axis import Axis
 
 
 class MainAxisAlignment:

@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, AliasChoices
 
-from enums.member_level_enum import MemberLevelEnum
+from lib.enums.member_level_enum import MemberLevelEnum
 
 
 class StudentModel(BaseModel):

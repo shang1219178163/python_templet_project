@@ -2,14 +2,14 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# 本文件在 page/ 下，上一级才是项目根目录
-project_root = Path(__file__).resolve().parent.parent
+# 本文件在 lib/page/ 下，往上三级才是项目根目录
+project_root = Path(__file__).resolve().parents[2]
 project_root_path = str(project_root)
 if project_root_path not in sys.path:
     sys.path.insert(0, project_root_path)
 
-from enums.weekday_enum import WeekdayEnum
-from util.dlog import DLog
+from lib.enums.weekday_enum import WeekdayEnum
+from lib.util.dlog import DLog
 
 
 class CodableModel:

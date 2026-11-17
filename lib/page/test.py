@@ -1,4 +1,4 @@
-from util.dlog import DLog
+from lib.util.dlog import DLog
 
 # print("hello world")
 #

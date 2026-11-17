@@ -4,12 +4,12 @@ import sys
 from pathlib import Path
 from typing import cast
 
-# 本文件在 page/ 下，导入 enums 包需要先把项目根目录加入 sys.path
-project_root = str(Path(__file__).resolve().parent.parent)
+# 本文件在 lib/page/ 下，导入 lib 包需要先把项目根目录加入 sys.path
+project_root = str(Path(__file__).resolve().parents[2])
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from enums.weekday_enum import WeekdayEnum
+from lib.enums.weekday_enum import WeekdayEnum
 
 
 def run_demo() -> None:

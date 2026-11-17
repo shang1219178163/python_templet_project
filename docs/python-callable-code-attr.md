@@ -9,7 +9,7 @@
 Cannot access attribute "__code__" for class "Callable[..., Any]"
 ```
 
-出错代码（`util/hook.py`）：
+出错代码（`lib/util/hook.py`）：
 
 ```python
 from typing import Any, Callable
@@ -83,14 +83,14 @@ if code is None:
 
 ## 与 `dlog.py` 的对比
 
-`util/dlog.py:72` 直接写 `DLog._print_log.__code__.co_filename`，没有报错——因为那里访问的是一个**具体函数对象**，类型是确定的 `FunctionType`，不是宽泛的 `Callable`。
+`lib/util/dlog.py:72` 直接写 `DLog._print_log.__code__.co_filename`，没有报错——因为那里访问的是一个**具体函数对象**，类型是确定的 `FunctionType`，不是宽泛的 `Callable`。
 
 同类问题只出现在「参数被注解成 `Callable` 之后又要访问函数专有属性」的场景。
 
 ## 验证
 
 ```bash
-python3 util/hook.py
+python3 lib/util/hook.py
 ```
 
 输出不变：

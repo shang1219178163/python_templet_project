@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from model.book import Book
+from lib.model.book import Book
 
 # 默认图书数据路径
 BOOKS_JSON_PATH = Path(__file__).resolve().parent.parent / "assets" / "json" / "books.json"

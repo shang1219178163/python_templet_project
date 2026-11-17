@@ -1,8 +1,8 @@
 """基础布局组件。"""
 
-from base_widget.axis import Axis
-from base_widget.flex import Column, CrossAxisAlignment, Flex, MainAxisAlignment, MainAxisSize, Row
-from base_widget.wrap import Wrap, WrapAlignment, WrapCrossAlignment
+from lib.base_widget.axis import Axis
+from lib.base_widget.flex import Column, CrossAxisAlignment, Flex, MainAxisAlignment, MainAxisSize, Row
+from lib.base_widget.wrap import Wrap, WrapAlignment, WrapCrossAlignment
 
 __all__ = [
     "Axis",

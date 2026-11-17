@@ -1,5 +1,5 @@
 
-from model import book_library_model
+from lib.model import book_library_model
 
 library = book_library_model.BookLibraryModel()
 

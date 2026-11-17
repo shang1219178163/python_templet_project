@@ -17,7 +17,7 @@
 
 from pathlib import Path
 
-from util.file_manager import FileManager
+from lib.util.file_manager import FileManager
 
 file_contacts = FileManager(path=Path("contacts.txt"))
 

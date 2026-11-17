@@ -27,7 +27,7 @@ class DLog:
     def __init__(self, *args: object, sep: str = " ", end: str = "\n") -> None:
         """像 ``print`` 一样调用：按 DEBUG 级别输出，附带调用位置。
 
-        ``from util.dlog import DLog as print`` 后可直接 ``print(a, b)``。
+        ``from lib.util.dlog import DLog as print`` 后可直接 ``print(a, b)``。
         """
         text = sep.join(str(arg) for arg in args)
         DLog._print_log("DEBUG", text, DLog._ansi_blue, end=end)

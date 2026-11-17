@@ -2,17 +2,17 @@ import json
 import sys
 from pathlib import Path
 
-# 本文件在 page/ 下，上一级才是项目根目录
-project_root = Path(__file__).resolve().parent.parent
+# 本文件在 lib/page/ 下，往上三级才是项目根目录
+project_root = Path(__file__).resolve().parents[2]
 project_root_path = str(project_root)
 if project_root_path not in sys.path:
     sys.path.insert(0, project_root_path)
 
-from model.student_model import StudentModel
-from util.dlog import DLog
+from lib.model.student_model import StudentModel
+from lib.util.dlog import DLog
 
 # 分数json文件路径
-SCORE_PATH = project_root / "assets" / "json" / "student_score.json"
+SCORE_PATH = project_root / "lib" / "assets" / "json" / "student_score.json"
 
 
 def load_students(path: Path) -> list[StudentModel]:

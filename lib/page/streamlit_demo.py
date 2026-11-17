@@ -1,6 +1,6 @@
 import streamlit as st
 
-from base_widget import (Column, CrossAxisAlignment, MainAxisAlignment,
+from lib.base_widget import (Column, CrossAxisAlignment, MainAxisAlignment,
                          MainAxisSize, Row, Wrap)
 
 MAIN_ALIGNS = (

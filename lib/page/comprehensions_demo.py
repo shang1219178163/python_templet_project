@@ -1,4 +1,4 @@
-from util.dlog import DLog
+from lib.util.dlog import DLog
 
 arr = list(range(10))
 DLog.d(f"arr: {type(arr)} {arr}")
