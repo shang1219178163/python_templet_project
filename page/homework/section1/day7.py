@@ -60,7 +60,7 @@ class Employee(ABC):
 
 
 # Salesman（销售员）：奖金 = 销售额 × 提成比例（5%） ---> 扩充属性: 销售金额 sales_amount
-class Salesman(Employee):
+class Seller(Employee):
     sales_amount: float
     """销售金额"""
 
@@ -93,7 +93,7 @@ class Programmer(Employee):
 
 if __name__ == "__main__":
     employees = [
-        Salesman(emp_id ="S001", name= "张三", base_salary= 5000, sales_amount= 5000),
+        Seller(emp_id ="S001", name="张三", base_salary= 5000, sales_amount= 5000),
         Manager(emp_id ="M001", name= "李四", base_salary= 5000),
         Programmer(emp_id ="P001", name= "王五", base_salary= 5000, projects_completed = 3)
     ]
