@@ -1939,6 +1939,7 @@ dependencies = [
     { name = "python-docx" },
     { name = "python-pptx" },
     { name = "streamlit" },
+    { name = "uvicorn" },
     { name = "watchdog" },
 ]
 
@@ -1955,6 +1956,7 @@ requires-dist = [
     { name = "python-docx", specifier = ">=1.2.0" },
     { name = "python-pptx", specifier = ">=1.0.2" },
     { name = "streamlit", specifier = ">=1.66.1" },
+    { name = "uvicorn", specifier = ">=0.44.0" },
     { name = "watchdog", specifier = ">=6.0.0" },
 ]
 
