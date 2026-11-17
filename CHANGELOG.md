@@ -1,5 +1,54 @@
 # CHANGELOG
 
+## 2026-11-17 20:49
+
+### 变更：`Book` 彻底取代 `BookModel`
+
+- `model/book.py` 的 `Book` 合并 `BookModel` 全部字段：`id / title / author / isbn / price / stock / is_borrow`；原来的 `name` 更名为 `title`，与 `books.json` 及页面里的 `book.title` 对齐。
+- 默认值：`id=0`、`price=0.0`、`stock=0`、`is_borrow=False`。`books.json` 只有 `title/author/isbn/industry`，缺省字段自动取默认值，`load_books()` 不再报 `ValidationError`。
+- 唯一标识回到 `isbn`：`__eq__` / `__lt__` 按 `isbn` 比较，`list.index()` 和 `remove_book()` 可直接用 ISBN 定位；`id` 降级为辅助字段。
+- `model/book_library_model.py` 中 7 处 `BookModel` 替换为 `Book`，导入改为 `from model.book import Book`。
+- 删除 `model/book_model.py`（已无任何引用）。
+- 验证：载入 10 本书、首本默认值正确、借书/还书、同 ISBN 相等、按 ISBN 排序、`index()` 定位均正常；`ruff check` 通过；`PYTHONPATH=. python page/data_type_test.py` 输出正常。
+- 遗留：`borrow_book()` 不判断 `is_borrow`，已借出的书再次借仍返回 `True`（页面在调用前已自行判断），本次未改动。
+
+## 2026-11-17 20:47
+
+### 变更：`BookModel` 的属性方法合并到 `Book`
+
+- `model/book.py` 的 `Book` 增加四个方法：`from_dict`（`model_validate` 的封装）、`__str__`、`__eq__`、`__lt__`。
+- 唯一标识从 `BookModel.isbn` 换成 `Book.id`：`__eq__` / `__lt__` 均按 `id` 比较，排序可直接 `sorted(books)`。
+- `__str__` 改为输出 `id / name / author / price / stock`，与 `Book` 字段对齐。
+- 未合并字段：`BookModel` 的 `isbn`、`is_borrow` 在 `Book` 中没有对应字段，`book_library_model.py` 仍依赖它们，故保留 `book_model.py` 不动。
+- 验证：`from_dict` 字符串价格 `"59.9"` 自动转 `float`、同 id 相等、不同 id 排序正确、非法价格抛 `ValidationError`；`ruff check` 通过。
+
+## 2026-11-17 20:22
+
+### 修复：`FileManager.write` 的重复检测失效（文件里有记录却查不到）
+
+- 现象：`contacts.txt` 中已有 `北辰|11111111111|beichen@qq.com`，`row in lines` 仍判定为不存在，同一联系人可被重复写入。
+- 根因：`open("a+")` 的**读指针初始在文件末尾**（追加模式的语义），此时 `f.readlines()` 返回 `[]`，`row in lines` 永远是 `False`，去重检查形同虚设。
+- 修复：`open("a+")` 之后先 `f.seek(0)` 再 `readlines()`；写操作不受影响，`a+` 的写入仍固定追加到末尾。
+- 验证：临时文件先写一条，重复写返回 `False`、新联系人返回 `True`，文件内容与预期一致。
+- 遗留：`print(["write", row, lines])` 调试输出仍在 `write()` 中，未擅自删除。
+
+## 2026-11-17 20:09
+
+### 修复：`day7.1.py` 里 `@hook()` 报「`'module' object is not callable`」
+
+- 根因：`from util import hook` 导入的是 **`util/hook.py` 模块**，不是模块里的 `hook` 装饰器函数；对模块加括号 `hook()` 自然不可调用。
+- 修复：改为 `from util.hook import hook`，从模块内部导入函数。
+- 验证：`py_compile` 通过；`@hook()` 装饰的函数可正常调用并返回结果。
+
+## 2026-11-17 19:45
+
+### 新增：保存时自动格式化（Ruff），对齐 Android Studio 的 ⌘S 行为
+
+- `pyproject.toml` 增加 `[tool.ruff]`：`line-length = 120`、`target-version = "py313"`；`[tool.ruff.lint]` 选 `E` / `F` / `I`。
+- 格式化器定为 Ruff（`~/.local/bin/ruff` 0.15.10），不用 Black（当前未安装）。
+- 存量文件**不做**批量重排，只对之后保存的文件生效，避免大面积 diff。
+- PyCharm 侧的两个勾选（Actions on Save → Reformat code、Python → Formatter → Ruff）需在 GUI 里点选，运行中的 IDE 会覆盖对配置文件的直接修改，故未代改。
+
 ## 2026-11-17 18:18
 
 ### 新增全局 skill：`python-indent`（修改 Python 代码保持正确缩进）
