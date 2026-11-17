@@ -1,5 +1,69 @@
 # CHANGELOG
 
+## 2026-11-17 21:28
+
+### 提交：按功能拆分本次改动为 5 个提交
+
+- `chore(依赖)`：删除 requirements.txt，补充 python-dotenv。
+- `refactor(结构)`：六个目录迁入 `lib/` 并统一 `lib` 包导入（59 个文件）。
+- `feat(图书API)`：新增 `lib/api/book.py` 与 README 启动说明。
+- `chore(作业)`：新增 day9–day11 空白占位文件。
+- `docs(变更日志)`：更新 CHANGELOG。
+
+## 2026-11-17 21:27
+
+### 重命名：`lib/api/book_api.py` → `lib/api/book.py`
+
+- 文件在提交前直接以 `lib/api/book.py` 入库，仓库历史中不出现 `book_api.py`。
+- README 启动命令同步改为 `PYTHONPATH=. .venv/bin/uvicorn lib.api.book:app --host 127.0.0.1 --port 8001 --reload`。
+- 清理 `lib/api/__pycache__` 中残留的 `book_api` 字节码缓存。
+
+## 2026-11-17 21:22
+
+### 文档：README 增加停止 FastAPI 服务的命令
+
+- 前台运行：提示按 `Ctrl+C` 停止。
+- 后台运行：新增 `lsof -ti :8001 | xargs kill`，按端口结束进程。
+
+## 2026-11-17 21:21
+
+### 文档：README 增加 FastAPI 服务的启动命令
+
+- 新增 `PYTHONPATH=. .venv/bin/uvicorn lib.api.book_api:app --host 127.0.0.1 --port 8001 --reload`。
+- 补充接口文档地址 `/docs`、三个接口说明（`/`、`/books`、`/books/count`）以及端口冲突时用 `--port` 换端口的提示。
+
+## 2026-11-17 21:20
+
+### 修复并启动：`lib/api/book_api.py` FastAPI 图书查询服务
+
+- 导入改为 `from lib.model.book import Book`，修复迁移后的 `ModuleNotFoundError: No module named 'model'`。
+- 移除 `authlib.common.encoding.json_dumps`：它本质是 `json.dumps`，无法序列化 Pydantic `Book`，且返回字符串会被 FastAPI 再包一层 JSON（前端拿到转义字符串）。
+- 改为直接返回 `dict` / `list[Book]`，由 FastAPI + Pydantic 完成序列化。
+- `@app.get("book/count")` 补上开头的 `/` 并调整为 `/books/count`，否则 FastAPI 导入时断言失败。
+- 启动命令：`PYTHONPATH=. .venv/bin/uvicorn lib.api.book_api:app --host 127.0.0.1 --port 8001 --reload`（8000 被另一项目 `ecommerce-rag` 占用）。
+- 验证：`/` 返回欢迎语、`/books` 返回 3 本图书、`/books/count` 返回 `{"total":20}`，`/docs` 可访问。
+
+## 2026-11-17 21:05
+
+### 清理：删除已废弃的 `requirements.txt`
+
+- 原内容仅 `requests`、`ipython`、`pytest`、`black` 四项，全项目无任何代码导入，`pyproject.toml` 也未列出。
+- 项目依赖已完全由 uv 管理（`pyproject.toml` + `uv.lock`）：`requests` 由其他库间接引入，`ipython` / `pytest` / `black` 不在锁文件中；`black` 的职责由 Ruff 取代。
+- 无文档、脚本或 CI 引用该文件，删除后不影响运行。
+- 若后续需要 pytest，建议使用 `uv add --dev pytest` 写入 `[dependency-groups]`，而不是恢复 requirements 文件。
+
+## 2026-11-17 21:03
+
+### 重构：把 `assets`、`enums`、`base_widget`、`model`、`page`、`util` 六个目录整体移入 `lib/`
+
+- 目录迁移：`git mv assets|enums|base_widget|model|page|util lib/`，历史记录保持为 rename。
+- 导入统一改为 `lib` 包前缀：`from lib.util.dlog import DLog`、`from lib.model.book import Book`、`from lib.page.homework.section1.day1 import log_poetry` 等，共涉及 `base_widget`、`model`、`util`、`page` 下 15 个文件。
+- 脚本 `sys.path` 引导改为 `parents[2]`（指向项目根目录）；`page/io/file_demo.py` 的资源根变量改名为 `resource_root`（指向 `lib/`）。
+- 资源路径：`model/book_library_model.py` 的 `parent.parent` 自然指向 `lib/`，`books.json` 路径保持有效；`page/student.py` 的 `SCORE_PATH` 改为 `project_root / "lib" / "assets" / ...`。
+- 配置与文档同步：`README.md`、`docs/pycharm-streamlit-external-tool.md`、`docs/python-callable-code-attr.md`、`tools/pycharm-streamlit-runner` 的说明与命令改为 `lib/...`；`.gitignore` 的 AI 机器人运行数据路径改为 `lib/page/ai_robot/data/`。
+- 未改动：`page/ai_robot/app.py` 仍使用同目录扁平导入（Streamlit 会把脚本目录加入 `sys.path`），可正常启动。
+- 验证：`python -m compileall lib` 通过；`lib` 下模块导入正常（`lib.page.test1` 会执行交互输入、`lib.page.codable` 存在既有的 `WeekdayEnum.valueOf` 报错，故不以导入结果为准）；`PYTHONPATH=. python lib/page/student.py`、从其他目录运行 `lib/page/enum_test.py` 均能正确定位模块与资源；Ruff 仅剩迁移前已存在的告警。
+
 ## 2026-11-17 20:49
 
 ### 变更：`Book` 彻底取代 `BookModel`
