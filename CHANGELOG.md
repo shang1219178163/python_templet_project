@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## 2026-11-17 18:18
+
+### 新增全局 skill：`python-indent`（修改 Python 代码保持正确缩进）
+
+- 规则：改 Python 代码时缩进必须正确且沿用文件原有风格，文件编辑、终端 heredoc / `python -c` / REPL 输入、回复中的代码块都适用。
+- 真源：`~/.agents/skills/python-indent/SKILL.md`，含动手前确认基线、层级铁律（同一逻辑块同级）、终端输入要求、改完验证（`py_compile` / `ruff`）四部分。
+- 同步：用 `install-global-skill` 脚本建相对软链，`.claude` / `.cursor` / `.qwen` 等 48 个 agent 目录全部 `LINK`，`status` 返回 0；`~/.claude/skills/python-indent` 已可在本会话识别。
+
+## 2026-11-17 18:14
+
+### 修复：`file_manager.py` 的 `update()` 中 `lines[idx] = search_cb(key, lines)` 的类型警告与逻辑错误
+
+- 警告根因：`search_cb` 类型是 `Callable | None`，在 `if` 之外第二次调用类型检查器无法确认非 None（`None is not callable`）；同时 `search_cb(...)` 返回 `list[str]`，赋给单个元素 `lines[idx]`（`str`）类型不匹配。
+- 逻辑问题：原实现把匹配列表塞进一个元素；`f.writelines()` 却在只读的 `"r"` 模式句柄上调用，运行时会抛 `io.UnsupportedOperation`；`return True` 写在 `except` 之后，失败也返回成功；`update_cb` 参数完全未使用。
+- 修复：读和写拆成两个 `with`；`targets` 复用第一次搜索结果，不再重复调用 `search_cb`；`update_cb(key, targets)` 返回新行列表，用切片赋值 `lines[idx:idx + 1] = new_rows` 替换（一行换多行也支持）；未传回调则原样保留；成功与各失败分支分别 `return`，异常文案改为「更新失败」。
+- 顺带：删除 IDE 自动补的未使用导入 `Any` / `ParamSpec` / `TypeVar` / `cast`。
+- 验证：临时副本测了单行替换、一行换多行、关键字未命中、文件不存在四种情况，结果均符合预期；`ruff check` 全通过，`mypy` 无问题。
+
+## 2026-11-17 18:07
+
+### 修复：`file_manager.py` 的 `update()` 里调用 `search()` 报错
+
+- 两处根因：
+  1. `from re import search` 是 IDE 自动补的导入，`search(path=..., key=..., cb=...)` 实际调用的是 `re.search`，会抛 `TypeError: unexpected keyword argument 'path'`；即使删掉该导入，直接写 `search(...)` 也会 `NameError`——静态方法之间调用必须写类名 `FileManager.search(...)`，方法体不查类命名空间。
+  2. 变量名拼写 `targts` → `targets`。
+- 修复：删除 `from re import search` 与无关的 `from enum import Flag`；调用改为 `targets = FileManager.search(path=path, key=key, cb=cb)`。
+- 遗留：`Any` / `ParamSpec` / `TypeVar` / `cast` 导入未使用（`ruff` F401），未擅自删除；`update()` 目前只取了搜索结果，写回逻辑尚未补。
+- 验证：对 `contacts.txt` 调用 `FileManager.update(path=..., key="张三")` 无异常；`search` 按关键字返回 2 条匹配行。
+
 ## 2026-11-17 18:00
 
 ### 按功能拆分提交：本轮改动整理为 6 个提交
