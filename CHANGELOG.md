@@ -1,11 +1,128 @@
 # CHANGELOG
 
+## 2026-11-18 15:48
+
+### 调整：`shopping_cart_demo.py` 的 `format_row` / `summarize` 改为独立函数
+
+- 去掉 `ConsoleCRUD(...)` 里的两个 lambda，抽成模块级函数 `format_item` / `summarize_cart`，
+  与 `students_crud_demo.py` 的 `format_student` / `summarize_students` 写法一致。
+- 验证：查询输出 3 条商品与合计 14894 正常；`py_compile`、`ruff check` 通过。
+
+## 2026-11-18 15:46
+
+### 调整：两个 DEMO 启动前用 `batch_import` 预置 3 条数据
+
+- `lib/page/curd/shopping_cart_demo.py`：`run()` 前导入 Meta80 × 2、鼠标 × 3、键盘 × 1。
+- `lib/page/curd/students_crud_demo.py`：`run()` 前导入张三 / 李四 / 王五的三科成绩。
+- 导入代码放在 `if __name__ == "__main__":` 里，模块被 import 时不产生副作用。
+- 验证：以管道输入跑「查询 → 退出」，3 条数据、合计金额、人数与平均分输出正常；`py_compile`、`ruff check` 通过。
+
+## 2026-11-18 15:44
+
+### 功能：`ConsoleCRUD` 新增批量导入 `batch_import`
+
+- `import_many(rows, *, overwrite=False, validate=True) -> int`：一次写入多条记录，返回实际写入条数。
+    - `rows` 支持 `{名称: 字段字典}` 或 `[(名称, 字段字典), ...]` 两种形式。
+    - `overwrite=True` 时覆盖同名记录，默认跳过。
+    - `validate=True`（默认）时校验字段与 `fields` 声明一致，缺字段的记录打印原因后跳过；
+      字段声明为空时不校验。
+    - 结束后打印一行汇总：成功 / 跳过 / 字段不符 条数。
+- 验证：字典与列表导入、同名跳过、`overwrite` 覆盖、缺字段拦截、`validate=False` 放行，均实测通过；
+  `py_compile`、`ruff check` 通过。
+
+## 2026-11-18 15:26
+
+### 功能：`lib/page/curd/students_crud_demo.py` 用 `ConsoleCRUD` 实现学生管理系统
+
+- 沿用文件头的案例说明，声明 `ConsoleCRUD` 实例：三科成绩字段 `chinese` / `math` / `english`，均用 `read_float` 录入。
+- `format_student`：单条展示姓名、各科成绩与总分（`{:g}` 去掉多余小数）。
+- `summarize_students`：查询末尾追加人数与平均总分。
+- 验证：空查询、添加、重复添加、修改、查询、删除不存在、删除、再查、退出全部分支模拟输入实测通过；
+  `py_compile`、`ruff check` 通过。
+
+## 2026-11-18 15:16
+
+### 新增：`lib/page/curd/console_crud_demo.py` 演示 `ConsoleCRUD` 组件
+
+- 用购物车场景演示组件的三个可配置点：`fields`（`Field` 声明字段）、`format_row` / `summarize`（定制展示与合计）、
+  `data`（传入初始商品数据）。
+- 初始数据：Meta80 × 1、鼠标 × 2；金额展示保留两位小数。
+- 验证：查询初始数据（合计 7397.00）、添加键盘后查询（合计 8294.00）、退出分支模拟输入实测通过；
+  `py_compile`、`ruff check` 通过。
+
+## 2026-11-18 15:14
+
+### 重构：抽取控制台增删改查组件 `ConsoleCRUD`
+
+- 新增 `lib/util/console_crud.py`：把「菜单循环 + 嵌套字典增删改查 + 输入校验」收敛为一个可配置类。
+    - `Field`：描述一个待录入字段（提示语 + 读取函数）。
+    - `ConsoleCRUD`：`add` / `update` / `delete` / `show` / `run` 通用流程；`read_str` / `read_float` / `read_int`
+      静态方法提供输入校验；`format_row` / `summarize` / `empty_hint` 由使用方定制展示。
+    - 提示语按 `entity` 拼接（如「商品已存在，请执行修改操作」），菜单按 `title` 渲染。
+- `lib/page/curd/shopping_cart_demo.py`：删掉重复的 `read_float` / `read_int` / 各 CRUD 函数与菜单，改为声明一个
+  `ConsoleCRUD` 实例（字段 `price` / `num`，展示含小计与合计金额）。
+- `lib/page/students_curd_demo.py`：同样改为声明式配置（字段 `chinese` / `math` / `english`），补齐文件头说明。
+- `lib/util/__init__.py`：导出 `ConsoleCRUD`、`Field`。
+- 细微行为变化：学生管理新增/修改/删除后也会打印成功提示；提示语统一为中文逗号。
+- 验证：两个 DEMO 的添加 / 重复添加 / 修改 / 修改不存在 / 删除 / 删除不存在 / 空查询 / 非法编号 / 退出
+  全部分支模拟输入实测通过；`py_compile`、`ruff check` 通过。
+
+## 2026-11-18 15:12
+
+### 调整：`shopping_cart_demo.py` 输入函数改为参数化提示语
+
+- `read_price(tips)` / `read_num(tips)` 参考 `read_float` / `read_int` 的写法，把提示语改为入参，调用方传「商品价格：」「商品数量：」。
+- 保留 `try/except ValueError`：参考写法把 `float()` / `int()` 放在 `try` 外，输入非数字会直接抛异常，这里仍按非法输入重试处理。
+- 验证：非法价格、非法数量重试、添加、查询统计、修改、退出分支实测正常。
+
+## 2026-11-18 15:10
+
+### 调整：`shopping_cart_demo.py` 输入函数对齐 `students_curd_demo.py`
+
+- `read_price` / `read_num` 重命名为 `read_float` / `read_int`，实现与 `students_curd_demo.py` 中的同名函数保持一致：
+  循环内直接 `float()` / `int()` 转换，单个 `if ... and ...` 判断，非法时打印提示后重试。
+- `add_item` / `update_item` 调用处同步改为 `read_float("商品价格：")` / `read_int("商品数量：")`。
+- 验证：`py_compile` 通过。
+
+## 2026-11-18 15:05
+
+### 功能：实现 `lib/page/curd/shopping_cart_demo.py` 购物车管理系统
+
+- 在原有文档字符串与菜单基础上补齐实现：`add_item`、`update_item`、`delete_item`、`show_cart`，主循环用 `match case` 分发。
+- 菜单标题由「学生管理系统」更正为「购物车系统」。
+- `read_price` / `read_num` 用 `try/except ValueError` 包住 `float()` / `int()`：非数字、非正数都提示后重试，不再直接抛异常。
+- 查询按「名称: xxx, 价格: xxx, 数量: xxx」输出，并追加小计与合计金额，覆盖需求中的「统计」。
+- 验证：空购物车查询、添加、重复添加、修改、修改不存在、删除、删除不存在、非法编号、非法价格/数量、退出全部分支实测通过；
+  `compileall` 通过。
+
+## 2026-11-18 11:43
+
+### 修改：`dict_demo.py` 删除 `Goods` TypedDict
+
+- 移除 `class Goods(TypedDict)`，商品值改用字典字面量 `{"price": ..., "num": ...}`。
+- 类型注解改为 `dict[str, dict[str, float | int]]`，比 `Any` 更精确，且不再需要导入 `typing`。
+- 验证：主流程与查询统计输出正常；PyCharm 检查 0 error 0 warning。
+
+## 2026-11-18 11:42
+
+### 功能：实现 `lib/page/dict_demo.py` 购物车管理系统（参考 Downloads/03字典案例.py）
+
+- 用嵌套字典 `shopping_cart: dict[str, Goods]` 存储商品，`Goods` 用 `TypedDict` 描述 price/num。
+- 按功能拆函数：`add_item`、`update_item`、`delete_item`、`show_cart`，主循环用 `match case` 分发。
+- 补齐参考案例缺失的「删除购物车」分支（`pass` → 按 key `del`）。
+- 查询在要求格式后追加小计与总金额，覆盖需求中的「统计」。
+- 输入健壮性：抽出 `parse_price` / `parse_num` 返回 `Optional`，`read_float` / `read_num` 循环重试，非法数字与负数不再抛异常。
+- 验证：添加/重复添加/修改/修改不存在/删除/删除不存在/非法编号/空购物车/非法数字 全部分支实测通过；PyCharm 检查 0 error 0
+  warning。
+
 ## 2026-11-18 11:12
 
 ### 验证：本次改动涉及的 13 个 Python 文件全部运行通过
 
-- 逐个执行并通过（exit=0）：`generic_type_demo.py`、`day8.py`、`lambda_typing.py`、`test.py`、`test1.py`、`tuple_demo.py`、`exec_time.py`、`hook.py`、`hook_old.py`、`log.py`、`args_kwargs_demo.py`（喂入模拟输入）。
-- 修复：`test.py`、`test1.py` 直接运行报 `No module named 'lib'`，补上 `sys.path` 引导（`parents[2]` 指向项目根目录），与 `lambda_typing.py` 一致，不再依赖 `PYTHONPATH=.`。
+- 逐个执行并通过（exit=0）：`generic_type_demo.py`、`day8.py`、`lambda_typing.py`、`test.py`、`test1.py`、`tuple_demo.py`、
+  `exec_time.py`、`hook.py`、`hook_old.py`、`log.py`、`args_kwargs_demo.py`（喂入模拟输入）。
+- 修复：`test.py`、`test1.py` 直接运行报 `No module named 'lib'`，补上 `sys.path` 引导（`parents[2]` 指向项目根目录），与
+  `lambda_typing.py` 一致，不再依赖 `PYTHONPATH=.`。
 - `file_manager.py`、`file_manager_new.py` 为纯库文件，另做冒烟测试：写入、重复写入拦截、读取、搜索、删除、静态方法版均正常。
 - 遗留：`test1.py` PyCharm 仍报两处「未使用 import」，对应代码已被注释，保留以备恢复。
 
@@ -13,12 +130,16 @@
 
 ### 重构：全项目旧写法统一改为 Python 3.13 新语法
 
-- `Callable` 从 `typing` 迁到 `collections.abc`（PEP 585）：`lambda_typing.py`、`file_manager.py`、`file_manager_new.py`、`hook.py`、`hook_old.py`、`log.py`。
-- `log.py` 重写：`ParamSpec` / `TypeVar` 改为 `def log[**P, R](...)`，`extra` 改为元组，抽出 `_now()`，删除未使用的 `HookCallback`。
+- `Callable` 从 `typing` 迁到 `collections.abc`（PEP 585）：`lambda_typing.py`、`file_manager.py`、`file_manager_new.py`、
+  `hook.py`、`hook_old.py`、`log.py`。
+- `log.py` 重写：`ParamSpec` / `TypeVar` 改为 `def log[**P, R](...)`，`extra` 改为元组，抽出 `_now()`，删除未使用的
+  `HookCallback`。
 - `args_kwargs_demo.py` 删除未使用的 `functools.wraps`、`typing.Any/Callable` 导入。
 - `test1.py` 删除未使用的 `from os.path import join`。
-- 复查范围：`lib/` 全部文件 + 根目录 `main.py`、`sitecustomize.py`，已无 `TypeVar(`、`ParamSpec(`、`Generic[`、`Optional[`、`Union[`、`from typing import Callable` 等旧写法。
-- 验证：`python -m compileall lib` 通过；`log.py`、`hook.py` 运行输出正常；8 个改动文件 PyCharm 检查无 error（`test1.py` 仅剩两处因代码被注释而未使用 import 的既有警告）。
+- 复查范围：`lib/` 全部文件 + 根目录 `main.py`、`sitecustomize.py`，已无 `TypeVar(`、`ParamSpec(`、`Generic[`、`Optional[`、
+  `Union[`、`from typing import Callable` 等旧写法。
+- 验证：`python -m compileall lib` 通过；`log.py`、`hook.py` 运行输出正常；8 个改动文件 PyCharm 检查无 error（`test1.py`
+  仅剩两处因代码被注释而未使用 import 的既有警告）。
 
 ## 2026-11-18 11:07
 
@@ -54,7 +175,8 @@
 ### 修复：`Box.__getitem__` 注解触发「前向引用联合体需整体加引号」
 
 - 现象：`-> T | "Box[T]"` 只有一半加引号，PyCharm 报「具有前向引用的联合体类型注解必须完全用引号括起来」。
-- 解法：文件顶部加 `from __future__ import annotations`（与 `lib/base_widget/_layout.py` 一致），注解整体延迟求值，前向引用无需加引号；同时去掉内层冗余引号，改为 `-> T | Box[T]`。
+- 解法：文件顶部加 `from __future__ import annotations`（与 `lib/base_widget/_layout.py`
+  一致），注解整体延迟求值，前向引用无需加引号；同时去掉内层冗余引号，改为 `-> T | Box[T]`。
 - 验证：脚本正常运行；`typing.get_type_hints(Box.__getitem__)` 可解析为 `int | slice` 与 `Union[~T, Box[~T]]`。
 
 ## 2026-11-18 10:45
@@ -70,8 +192,10 @@
 
 ### 修复：`lib/page/generic_type_demo.py` 两处 TypeVar 误用
 
-- 第 13 行 `e["name"]` 对 `TypeVar` 对象取下标，报 `TypeError: 'typing.TypeVar' object is not subscriptable`；改为打印 `(e.__name__, e.__constraints__)`。
-- `class Box([T])` 把列表字面量当基类，报 `TypeError: list expected at most 1 argument, got 3`；改为 `class Box(Generic[T])` 并导入 `Generic`。
+- 第 13 行 `e["name"]` 对 `TypeVar` 对象取下标，报 `TypeError: 'typing.TypeVar' object is not subscriptable`；改为打印
+  `(e.__name__, e.__constraints__)`。
+- `class Box([T])` 把列表字面量当基类，报 `TypeError: list expected at most 1 argument, got 3`；改为
+  `class Box(Generic[T])` 并导入 `Generic`。
 - 修正复制粘贴导致的约束错误：`Float` 用 `float`、`Bool` 用 `bool`、`Dict` 用 `dict`（原先三者都是 `int`）。
 - 补 `print(box.get(), box2.get())` 便于观察实例化结果。
 - 验证：`python lib/page/generic_type_demo.py` 输出约束列表与 `42 hello`。
@@ -105,10 +229,13 @@
 
 ### 修复：`.venv` 从旧工程拷贝导致所有命令行脚本指向错误解释器
 
-- 现象：`uv run fastapi deploy` 报 `To use the fastapi command, please install "fastapi[standard]"`，堆栈指向 `/Users/shang/GitHub/python_templet_project/.venv`。
-- 根因：本项目 `.venv` 是从 GitHub 那份工程整体拷贝的，`.venv/bin` 下 41 个脚本有 33 个 shebang 仍指向旧路径（`uvicorn`、`streamlit`、`fastapi` 均中招）；`.venv/bin/python` 是二进制启动器不受影响，所以此前没暴露。venv 不可搬迁。
+- 现象：`uv run fastapi deploy` 报 `To use the fastapi command, please install "fastapi[standard]"`，堆栈指向
+  `/Users/shang/GitHub/python_templet_project/.venv`。
+- 根因：本项目 `.venv` 是从 GitHub 那份工程整体拷贝的，`.venv/bin` 下 41 个脚本有 33 个 shebang 仍指向旧路径（`uvicorn`、
+  `streamlit`、`fastapi` 均中招）；`.venv/bin/python` 是二进制启动器不受影响，所以此前没暴露。venv 不可搬迁。
 - 修复：`rm -rf .venv && uv sync` 重建，脚本 shebang 全部指向本项目，旧路径残留 0 个。
-- 依赖：`uv add "fastapi[standard]"`，`pyproject.toml` 改为 `fastapi[standard]>=0.162.0`，新增 fastapi-cli、watchfiles、httpx 等 14 个包，从而可用 `fastapi dev` / `fastapi run`。
+- 依赖：`uv add "fastapi[standard]"`，`pyproject.toml` 改为 `fastapi[standard]>=0.162.0`，新增 fastapi-cli、watchfiles、httpx
+  等 14 个包，从而可用 `fastapi dev` / `fastapi run`。
 - 澄清：`fastapi deploy` 是部署到 FastAPI Cloud 的命令，本地开发不用它。
 - README 补充 `fastapi dev` 启动方式，并注明必须带 `PYTHONPATH=.`，否则报 `No module named 'lib'`（已实测）。
 
@@ -149,10 +276,12 @@
 ### 修复并启动：`lib/api/book_api.py` FastAPI 图书查询服务
 
 - 导入改为 `from lib.model.book import Book`，修复迁移后的 `ModuleNotFoundError: No module named 'model'`。
-- 移除 `authlib.common.encoding.json_dumps`：它本质是 `json.dumps`，无法序列化 Pydantic `Book`，且返回字符串会被 FastAPI 再包一层 JSON（前端拿到转义字符串）。
+- 移除 `authlib.common.encoding.json_dumps`：它本质是 `json.dumps`，无法序列化 Pydantic `Book`，且返回字符串会被 FastAPI
+  再包一层 JSON（前端拿到转义字符串）。
 - 改为直接返回 `dict` / `list[Book]`，由 FastAPI + Pydantic 完成序列化。
 - `@app.get("book/count")` 补上开头的 `/` 并调整为 `/books/count`，否则 FastAPI 导入时断言失败。
-- 启动命令：`PYTHONPATH=. .venv/bin/uvicorn lib.api.book_api:app --host 127.0.0.1 --port 8001 --reload`（8000 被另一项目 `ecommerce-rag` 占用）。
+- 启动命令：`PYTHONPATH=. .venv/bin/uvicorn lib.api.book_api:app --host 127.0.0.1 --port 8001 --reload`（8000 被另一项目
+  `ecommerce-rag` 占用）。
 - 验证：`/` 返回欢迎语、`/books` 返回 3 本图书、`/books/count` 返回 `{"total":20}`，`/docs` 可访问。
 
 ## 2026-11-17 21:05
@@ -160,7 +289,8 @@
 ### 清理：删除已废弃的 `requirements.txt`
 
 - 原内容仅 `requests`、`ipython`、`pytest`、`black` 四项，全项目无任何代码导入，`pyproject.toml` 也未列出。
-- 项目依赖已完全由 uv 管理（`pyproject.toml` + `uv.lock`）：`requests` 由其他库间接引入，`ipython` / `pytest` / `black` 不在锁文件中；`black` 的职责由 Ruff 取代。
+- 项目依赖已完全由 uv 管理（`pyproject.toml` + `uv.lock`）：`requests` 由其他库间接引入，`ipython` / `pytest` / `black`
+  不在锁文件中；`black` 的职责由 Ruff 取代。
 - 无文档、脚本或 CI 引用该文件，删除后不影响运行。
 - 若后续需要 pytest，建议使用 `uv add --dev pytest` 写入 `[dependency-groups]`，而不是恢复 requirements 文件。
 
@@ -169,23 +299,34 @@
 ### 重构：把 `assets`、`enums`、`base_widget`、`model`、`page`、`util` 六个目录整体移入 `lib/`
 
 - 目录迁移：`git mv assets|enums|base_widget|model|page|util lib/`，历史记录保持为 rename。
-- 导入统一改为 `lib` 包前缀：`from lib.util.dlog import DLog`、`from lib.model.book import Book`、`from lib.page.homework.section1.day1 import log_poetry` 等，共涉及 `base_widget`、`model`、`util`、`page` 下 15 个文件。
-- 脚本 `sys.path` 引导改为 `parents[2]`（指向项目根目录）；`page/io/file_demo.py` 的资源根变量改名为 `resource_root`（指向 `lib/`）。
-- 资源路径：`model/book_library_model.py` 的 `parent.parent` 自然指向 `lib/`，`books.json` 路径保持有效；`page/student.py` 的 `SCORE_PATH` 改为 `project_root / "lib" / "assets" / ...`。
-- 配置与文档同步：`README.md`、`docs/pycharm-streamlit-external-tool.md`、`docs/python-callable-code-attr.md`、`tools/pycharm-streamlit-runner` 的说明与命令改为 `lib/...`；`.gitignore` 的 AI 机器人运行数据路径改为 `lib/page/ai_robot/data/`。
+- 导入统一改为 `lib` 包前缀：`from lib.util.dlog import DLog`、`from lib.model.book import Book`、
+  `from lib.page.homework.section1.day1 import log_poetry` 等，共涉及 `base_widget`、`model`、`util`、`page` 下 15 个文件。
+- 脚本 `sys.path` 引导改为 `parents[2]`（指向项目根目录）；`page/io/file_demo.py` 的资源根变量改名为 `resource_root`（指向
+  `lib/`）。
+- 资源路径：`model/book_library_model.py` 的 `parent.parent` 自然指向 `lib/`，`books.json` 路径保持有效；`page/student.py`
+  的 `SCORE_PATH` 改为 `project_root / "lib" / "assets" / ...`。
+- 配置与文档同步：`README.md`、`docs/pycharm-streamlit-external-tool.md`、`docs/python-callable-code-attr.md`、
+  `tools/pycharm-streamlit-runner` 的说明与命令改为 `lib/...`；`.gitignore` 的 AI 机器人运行数据路径改为
+  `lib/page/ai_robot/data/`。
 - 未改动：`page/ai_robot/app.py` 仍使用同目录扁平导入（Streamlit 会把脚本目录加入 `sys.path`），可正常启动。
-- 验证：`python -m compileall lib` 通过；`lib` 下模块导入正常（`lib.page.test1` 会执行交互输入、`lib.page.codable` 存在既有的 `WeekdayEnum.valueOf` 报错，故不以导入结果为准）；`PYTHONPATH=. python lib/page/student.py`、从其他目录运行 `lib/page/enum_test.py` 均能正确定位模块与资源；Ruff 仅剩迁移前已存在的告警。
+- 验证：`python -m compileall lib` 通过；`lib` 下模块导入正常（`lib.page.test1` 会执行交互输入、`lib.page.codable` 存在既有的
+  `WeekdayEnum.valueOf` 报错，故不以导入结果为准）；`PYTHONPATH=. python lib/page/student.py`、从其他目录运行
+  `lib/page/enum_test.py` 均能正确定位模块与资源；Ruff 仅剩迁移前已存在的告警。
 
 ## 2026-11-17 20:49
 
 ### 变更：`Book` 彻底取代 `BookModel`
 
-- `model/book.py` 的 `Book` 合并 `BookModel` 全部字段：`id / title / author / isbn / price / stock / is_borrow`；原来的 `name` 更名为 `title`，与 `books.json` 及页面里的 `book.title` 对齐。
-- 默认值：`id=0`、`price=0.0`、`stock=0`、`is_borrow=False`。`books.json` 只有 `title/author/isbn/industry`，缺省字段自动取默认值，`load_books()` 不再报 `ValidationError`。
-- 唯一标识回到 `isbn`：`__eq__` / `__lt__` 按 `isbn` 比较，`list.index()` 和 `remove_book()` 可直接用 ISBN 定位；`id` 降级为辅助字段。
+- `model/book.py` 的 `Book` 合并 `BookModel` 全部字段：`id / title / author / isbn / price / stock / is_borrow`；原来的
+  `name` 更名为 `title`，与 `books.json` 及页面里的 `book.title` 对齐。
+- 默认值：`id=0`、`price=0.0`、`stock=0`、`is_borrow=False`。`books.json` 只有 `title/author/isbn/industry`，缺省字段自动取默认值，
+  `load_books()` 不再报 `ValidationError`。
+- 唯一标识回到 `isbn`：`__eq__` / `__lt__` 按 `isbn` 比较，`list.index()` 和 `remove_book()` 可直接用 ISBN 定位；`id`
+  降级为辅助字段。
 - `model/book_library_model.py` 中 7 处 `BookModel` 替换为 `Book`，导入改为 `from model.book import Book`。
 - 删除 `model/book_model.py`（已无任何引用）。
-- 验证：载入 10 本书、首本默认值正确、借书/还书、同 ISBN 相等、按 ISBN 排序、`index()` 定位均正常；`ruff check` 通过；`PYTHONPATH=. python page/data_type_test.py` 输出正常。
+- 验证：载入 10 本书、首本默认值正确、借书/还书、同 ISBN 相等、按 ISBN 排序、`index()` 定位均正常；`ruff check` 通过；
+  `PYTHONPATH=. python page/data_type_test.py` 输出正常。
 - 遗留：`borrow_book()` 不判断 `is_borrow`，已借出的书再次借仍返回 `True`（页面在调用前已自行判断），本次未改动。
 
 ## 2026-11-17 20:47
@@ -195,15 +336,18 @@
 - `model/book.py` 的 `Book` 增加四个方法：`from_dict`（`model_validate` 的封装）、`__str__`、`__eq__`、`__lt__`。
 - 唯一标识从 `BookModel.isbn` 换成 `Book.id`：`__eq__` / `__lt__` 均按 `id` 比较，排序可直接 `sorted(books)`。
 - `__str__` 改为输出 `id / name / author / price / stock`，与 `Book` 字段对齐。
-- 未合并字段：`BookModel` 的 `isbn`、`is_borrow` 在 `Book` 中没有对应字段，`book_library_model.py` 仍依赖它们，故保留 `book_model.py` 不动。
-- 验证：`from_dict` 字符串价格 `"59.9"` 自动转 `float`、同 id 相等、不同 id 排序正确、非法价格抛 `ValidationError`；`ruff check` 通过。
+- 未合并字段：`BookModel` 的 `isbn`、`is_borrow` 在 `Book` 中没有对应字段，`book_library_model.py` 仍依赖它们，故保留
+  `book_model.py` 不动。
+- 验证：`from_dict` 字符串价格 `"59.9"` 自动转 `float`、同 id 相等、不同 id 排序正确、非法价格抛 `ValidationError`；
+  `ruff check` 通过。
 
 ## 2026-11-17 20:22
 
 ### 修复：`FileManager.write` 的重复检测失效（文件里有记录却查不到）
 
 - 现象：`contacts.txt` 中已有 `北辰|11111111111|beichen@qq.com`，`row in lines` 仍判定为不存在，同一联系人可被重复写入。
-- 根因：`open("a+")` 的**读指针初始在文件末尾**（追加模式的语义），此时 `f.readlines()` 返回 `[]`，`row in lines` 永远是 `False`，去重检查形同虚设。
+- 根因：`open("a+")` 的 **读指针初始在文件末尾**（追加模式的语义），此时 `f.readlines()` 返回 `[]`，`row in lines` 永远是
+  `False`，去重检查形同虚设。
 - 修复：`open("a+")` 之后先 `f.seek(0)` 再 `readlines()`；写操作不受影响，`a+` 的写入仍固定追加到末尾。
 - 验证：临时文件先写一条，重复写返回 `False`、新联系人返回 `True`，文件内容与预期一致。
 - 遗留：`print(["write", row, lines])` 调试输出仍在 `write()` 中，未擅自删除。
@@ -212,7 +356,8 @@
 
 ### 修复：`day7.1.py` 里 `@hook()` 报「`'module' object is not callable`」
 
-- 根因：`from util import hook` 导入的是 **`util/hook.py` 模块**，不是模块里的 `hook` 装饰器函数；对模块加括号 `hook()` 自然不可调用。
+- 根因：`from util import hook` 导入的是 **`util/hook.py` 模块**，不是模块里的 `hook` 装饰器函数；对模块加括号 `hook()`
+  自然不可调用。
 - 修复：改为 `from util.hook import hook`，从模块内部导入函数。
 - 验证：`py_compile` 通过；`@hook()` 装饰的函数可正常调用并返回结果。
 
@@ -220,26 +365,34 @@
 
 ### 新增：保存时自动格式化（Ruff），对齐 Android Studio 的 ⌘S 行为
 
-- `pyproject.toml` 增加 `[tool.ruff]`：`line-length = 120`、`target-version = "py313"`；`[tool.ruff.lint]` 选 `E` / `F` / `I`。
+- `pyproject.toml` 增加 `[tool.ruff]`：`line-length = 120`、`target-version = "py313"`；`[tool.ruff.lint]` 选 `E` / `F` /
+  `I`。
 - 格式化器定为 Ruff（`~/.local/bin/ruff` 0.15.10），不用 Black（当前未安装）。
-- 存量文件**不做**批量重排，只对之后保存的文件生效，避免大面积 diff。
-- PyCharm 侧的两个勾选（Actions on Save → Reformat code、Python → Formatter → Ruff）需在 GUI 里点选，运行中的 IDE 会覆盖对配置文件的直接修改，故未代改。
+- 存量文件 **不做**批量重排，只对之后保存的文件生效，避免大面积 diff。
+- PyCharm 侧的两个勾选（Actions on Save → Reformat code、Python → Formatter → Ruff）需在 GUI 里点选，运行中的 IDE
+  会覆盖对配置文件的直接修改，故未代改。
 
 ## 2026-11-17 18:18
 
 ### 新增全局 skill：`python-indent`（修改 Python 代码保持正确缩进）
 
 - 规则：改 Python 代码时缩进必须正确且沿用文件原有风格，文件编辑、终端 heredoc / `python -c` / REPL 输入、回复中的代码块都适用。
-- 真源：`~/.agents/skills/python-indent/SKILL.md`，含动手前确认基线、层级铁律（同一逻辑块同级）、终端输入要求、改完验证（`py_compile` / `ruff`）四部分。
-- 同步：用 `install-global-skill` 脚本建相对软链，`.claude` / `.cursor` / `.qwen` 等 48 个 agent 目录全部 `LINK`，`status` 返回 0；`~/.claude/skills/python-indent` 已可在本会话识别。
+- 真源：`~/.agents/skills/python-indent/SKILL.md`，含动手前确认基线、层级铁律（同一逻辑块同级）、终端输入要求、改完验证（
+  `py_compile` / `ruff`）四部分。
+- 同步：用 `install-global-skill` 脚本建相对软链，`.claude` / `.cursor` / `.qwen` 等 48 个 agent 目录全部 `LINK`，`status`
+  返回 0；`~/.claude/skills/python-indent` 已可在本会话识别。
 
 ## 2026-11-17 18:14
 
 ### 修复：`file_manager.py` 的 `update()` 中 `lines[idx] = search_cb(key, lines)` 的类型警告与逻辑错误
 
-- 警告根因：`search_cb` 类型是 `Callable | None`，在 `if` 之外第二次调用类型检查器无法确认非 None（`None is not callable`）；同时 `search_cb(...)` 返回 `list[str]`，赋给单个元素 `lines[idx]`（`str`）类型不匹配。
-- 逻辑问题：原实现把匹配列表塞进一个元素；`f.writelines()` 却在只读的 `"r"` 模式句柄上调用，运行时会抛 `io.UnsupportedOperation`；`return True` 写在 `except` 之后，失败也返回成功；`update_cb` 参数完全未使用。
-- 修复：读和写拆成两个 `with`；`targets` 复用第一次搜索结果，不再重复调用 `search_cb`；`update_cb(key, targets)` 返回新行列表，用切片赋值 `lines[idx:idx + 1] = new_rows` 替换（一行换多行也支持）；未传回调则原样保留；成功与各失败分支分别 `return`，异常文案改为「更新失败」。
+- 警告根因：`search_cb` 类型是 `Callable | None`，在 `if` 之外第二次调用类型检查器无法确认非 None（`None is not callable`
+  ）；同时 `search_cb(...)` 返回 `list[str]`，赋给单个元素 `lines[idx]`（`str`）类型不匹配。
+- 逻辑问题：原实现把匹配列表塞进一个元素；`f.writelines()` 却在只读的 `"r"` 模式句柄上调用，运行时会抛
+  `io.UnsupportedOperation`；`return True` 写在 `except` 之后，失败也返回成功；`update_cb` 参数完全未使用。
+- 修复：读和写拆成两个 `with`；`targets` 复用第一次搜索结果，不再重复调用 `search_cb`；`update_cb(key, targets)`
+  返回新行列表，用切片赋值 `lines[idx:idx + 1] = new_rows` 替换（一行换多行也支持）；未传回调则原样保留；成功与各失败分支分别
+  `return`，异常文案改为「更新失败」。
 - 顺带：删除 IDE 自动补的未使用导入 `Any` / `ParamSpec` / `TypeVar` / `cast`。
 - 验证：临时副本测了单行替换、一行换多行、关键字未命中、文件不存在四种情况，结果均符合预期；`ruff check` 全通过，`mypy` 无问题。
 
@@ -248,9 +401,12 @@
 ### 修复：`file_manager.py` 的 `update()` 里调用 `search()` 报错
 
 - 两处根因：
-  1. `from re import search` 是 IDE 自动补的导入，`search(path=..., key=..., cb=...)` 实际调用的是 `re.search`，会抛 `TypeError: unexpected keyword argument 'path'`；即使删掉该导入，直接写 `search(...)` 也会 `NameError`——静态方法之间调用必须写类名 `FileManager.search(...)`，方法体不查类命名空间。
-  2. 变量名拼写 `targts` → `targets`。
-- 修复：删除 `from re import search` 与无关的 `from enum import Flag`；调用改为 `targets = FileManager.search(path=path, key=key, cb=cb)`。
+    1. `from re import search` 是 IDE 自动补的导入，`search(path=..., key=..., cb=...)` 实际调用的是 `re.search`，会抛
+       `TypeError: unexpected keyword argument 'path'`；即使删掉该导入，直接写 `search(...)` 也会 `NameError`
+       ——静态方法之间调用必须写类名 `FileManager.search(...)`，方法体不查类命名空间。
+    2. 变量名拼写 `targts` → `targets`。
+- 修复：删除 `from re import search` 与无关的 `from enum import Flag`；调用改为
+  `targets = FileManager.search(path=path, key=key, cb=cb)`。
 - 遗留：`Any` / `ParamSpec` / `TypeVar` / `cast` 导入未使用（`ruff` F401），未擅自删除；`update()` 目前只取了搜索结果，写回逻辑尚未补。
 - 验证：对 `contacts.txt` 调用 `FileManager.update(path=..., key="张三")` 无异常；`search` 按关键字返回 2 条匹配行。
 
@@ -263,7 +419,8 @@
 - `refactor(日志工具)`：`hook.py` 引入 `ParamSpec` / `TypeVar` 保留被装饰函数签名，旧实现注释留档到 `hook_old.py`。
 - `feat(通讯录)`：新增 `util/file_manager.py`，`day7.1.py` 改为调用该类，姓名匹配抽为 `match_name`。
 - `refactor(作业)`：`day7.py` 中 `Salesman` 重命名为 `Seller`。
-- `feat(练习)`：新增 `tuple_demo.py` / `args_kwargs_demo.py`，`date_demo.py` 增加毫秒时间函数，`day5` / `day6` / `day8` 补充练习。
+- `feat(练习)`：新增 `tuple_demo.py` / `args_kwargs_demo.py`，`date_demo.py` 增加毫秒时间函数，`day5` / `day6` / `day8`
+  补充练习。
 - `page/homework/section1/contacts.txt` 为通讯录运行产生的测试数据，未纳入本次提交。
 
 ## 2026-11-17 17:05
@@ -271,8 +428,10 @@
 ### 修复：`day8.py` 中 `avg(list(e[-3:]))` 把变量当函数调用
 
 - 报错：`TypeError: 'float' object is not callable`。
-- 根因：`handle()` 循环里 `avg = total / 3` 把 `avg` 绑定成了 **float 变量**，后面再写 `avg(...)` 等于给浮点数加括号调用；而且原来的 `avg` 从头到尾都不是函数。
-- 修复：新增模块级辅助函数 `avg_score(scores)`（`sum(scores) / len(scores)`），列表推导改为 `avg_score(e[-3:])`；循环里的局部变量改名为 `average`，避免遮蔽（shadow）同名函数。
+- 根因：`handle()` 循环里 `avg = total / 3` 把 `avg` 绑定成了 **float 变量**，后面再写 `avg(...)` 等于给浮点数加括号调用；而且原来的
+  `avg` 从头到尾都不是函数。
+- 修复：新增模块级辅助函数 `avg_score(scores)`（`sum(scores) / len(scores)`），列表推导改为 `avg_score(e[-3:])`；循环里的局部变量改名为
+  `average`，避免遮蔽（shadow）同名函数。
 - 顺带：去掉多余的 `list(...)`——`e[-3:]` 在元组上切片本就返回元组，`sum()` 可直接处理；保留转换只是多建一个对象。
 - 验证：运行输出 `better_list` 为李慕婉、周轶、红蝶、许木 4 人，与手算一致。
 
@@ -281,7 +440,8 @@
 ### 修复：`day7.1.py` 中 `add_contact_new()` 报 TypeError
 
 - 报错：`add_contact_new() missing 3 required positional arguments: 'name', 'phone', and 'email'`。
-- 根因：函数签名 `def add_contact_new(name: str | None, phone: str | None, email: str | None)` 只有类型注解、没有默认值，三个参数都是**必填位置参数**；`str | None` 只是"允许传 None"，并不会让你省略实参。因此无参调用必然报 TypeError。
+- 根因：函数签名 `def add_contact_new(name: str | None, phone: str | None, email: str | None)` 只有类型注解、没有默认值，三个参数都是
+  **必填位置参数**；`str | None` 只是"允许传 None"，并不会让你省略实参。因此无参调用必然报 TypeError。
 - 修复：三个参数补上默认值 `= None`，与函数体内 `name or input(...)` 的兜底写法对齐。
 - 验证：`printf` 管道喂入三个值跑脚本，输出 `王五,13800138003,wangwu@example.com`，无异常。
 
@@ -289,7 +449,8 @@
 
 ### 调整：`day7.1.py` 的 `del_contact` 改用 `with` 上下文管理器
 
-- 按作业要求（「使用 with 上下文管理器操作文件」）重写：读用 `with path.open("r", encoding="utf-8")`，写用 `with path.open("w", encoding="utf-8")`，两次 with 各管一段。
+- 按作业要求（「使用 with 上下文管理器操作文件」）重写：读用 `with path.open("r", encoding="utf-8")`，写用
+  `with path.open("w", encoding="utf-8")`，两次 with 各管一段。
 - 语义不变：全量读到内存 → 内存删第一条匹配 → `"w"` 模式整体覆盖写回。
 - 异常分支拆开：`FileNotFoundError` 提示「暂无联系人」，其余 `OSError` 提示删除失败，读失败后直接 return，不再往下走。
 - 验证：mock `input` 跑三行测试数据，删除 `SD的` 后文件为 `'张三|...\n李四|...\n'`；未命中关键字打印「未找到包含「不存在」的联系人」。
@@ -299,20 +460,30 @@
 
 ### 修复：`day7.1.py` 删除联系人「提示成功但数据还在」
 
-- 根因：`open("r+")` 下 `readlines()` 读完后指针停在文件末尾，`writelines(lines)` 从末尾开始写等于**追加**；文件只有一行时 `lines` 删完为空，`writelines([])` 什么都不写，文件原封不动。随后 `readlines()` 从末尾读自然得到 `[]`，造成"删除成功"的假象。多行场景下问题更严重——剩余行会被追加到文件末尾，内容翻倍（`r+` 覆盖写需要 `seek(0)` + 写 + `truncate()` 三步）。
-- 修复：`del_contact` 改为「`read_text` 全量读 → 内存删 → `write_text` 整体重写」；`splitlines(keepends=True)` 保留换行，写回 `"".join(...)`；先判断 `targets` 为空，避免 `IndexError`；`FileNotFoundError` 单独提示"暂无联系人"。
-- 顺带：`search_contact` 的 `open("a")` 改为 `open("r")`（原写法 `readlines()` 会抛 `not readable`）；`show_all_contacts` 的 `r+` 改为 `r`。
+- 根因：`open("r+")` 下 `readlines()` 读完后指针停在文件末尾，`writelines(lines)` 从末尾开始写等于 **追加**；文件只有一行时
+  `lines` 删完为空，`writelines([])` 什么都不写，文件原封不动。随后 `readlines()` 从末尾读自然得到 `[]`
+  ，造成"删除成功"的假象。多行场景下问题更严重——剩余行会被追加到文件末尾，内容翻倍（`r+` 覆盖写需要 `seek(0)` + 写 +
+  `truncate()` 三步）。
+- 修复：`del_contact` 改为「`read_text` 全量读 → 内存删 → `write_text` 整体重写」；`splitlines(keepends=True)` 保留换行，写回
+  `"".join(...)`；先判断 `targets` 为空，避免 `IndexError`；`FileNotFoundError` 单独提示"暂无联系人"。
+- 顺带：`search_contact` 的 `open("a")` 改为 `open("r")`（原写法 `readlines()` 会抛 `not readable`）；`show_all_contacts` 的
+  `r+` 改为 `r`。
 - 验证：mock `input` 跑 `del_contact`，测试数据三行含 `SD的`，删除后文件为 `'张三|...\n李四|...\n'`，`SD的` 行确实消失。
 
 ## 2026-11-17 12:07
 
 ### 扩充：`docs/python-del-usage.md` 增加第八节「`del` 与各类容器的移除方法对照」
 
-- 总览表覆盖 `list` / `dict` / `set` / `frozenset` / `str` / `tuple` / `deque` / `array.array`：按位置删、按值删、弹栈取回、清空、删名字五种操作各自能否用 `del` 或哪种方法。
-- 记录三条硬性限制的实测报错：`'set' object doesn't support item deletion`、str、tuple 同理——只有有序可变序列支持 `del 容器[i]`。
-- 分类型给出用法：dict 的 `del` / `pop` / `pop(k, 默认)` / `popitem()`（3.7+ LIFO）分工；set 的 `remove`（KeyError）vs `discard`（静默）vs `pop`（随机）；str/tuple 用切片重建且 `del s` 只删名字；deque 的 `popleft` O(1) 对比 `list.pop(0)` O(n)；array 语法同 list。
-- 新增「容易混的几点」表：同名不同异常（list.remove → ValueError / set.remove → KeyError）、`dict.pop()` 空参报 TypeError、`clear()` 与 `del x[:]` / `del x` 的区别、只有 `del` 支持切片步长。
-- 新增复杂度对照表（尾部 pop O(1)、`del lst[i]` O(n-i)、deque 两端 O(1)、dict/set 平均 O(1)）。
+- 总览表覆盖 `list` / `dict` / `set` / `frozenset` / `str` / `tuple` / `deque` / `array.array`
+  ：按位置删、按值删、弹栈取回、清空、删名字五种操作各自能否用 `del` 或哪种方法。
+- 记录三条硬性限制的实测报错：`'set' object doesn't support item deletion`、str、tuple 同理——只有有序可变序列支持
+  `del 容器[i]`。
+- 分类型给出用法：dict 的 `del` / `pop` / `pop(k, 默认)` / `popitem()`（3.7+ LIFO）分工；set 的 `remove`（KeyError）vs
+  `discard`（静默）vs `pop`（随机）；str/tuple 用切片重建且 `del s` 只删名字；deque 的 `popleft` O (1) 对比 `list.pop(0)` O
+  (n)；array 语法同 list。
+- 新增「容易混的几点」表：同名不同异常（list.remove → ValueError / set.remove → KeyError）、`dict.pop()` 空参报 TypeError、
+  `clear()` 与 `del x[:]` / `del x` 的区别、只有 `del` 支持切片步长。
+- 新增复杂度对照表（尾部 pop O (1)、`del lst[i]` O (n-i)、deque 两端 O (1)、dict/set 平均 O (1)）。
 - 全部结论均用 Python 3.13.2 实测核对。
 
 ## 2026-11-17 12:05
@@ -320,7 +491,8 @@
 ### 扩充：`docs/python-del-usage.md` 增加「`del` 与 `remove` 的完整对比」
 
 - 新增对比表：定位方式、语句 vs 方法、返回值、找不到时的异常（`IndexError` / `ValueError`）、重复元素只删第一个、切片批量、时间复杂度、负数索引、是否原地修改。
-- 记录三个坑：`remove` 用 `==` 比较导致 `float("nan")` 删不掉（CPython 有身份捷径，同一对象才能命中）；`remove` 只删第一个，删全部应用推导式；遍历中 `del`/`remove` 都会因下标前移而漏删。
+- 记录三个坑：`remove` 用 `==` 比较导致 `float("nan")` 删不掉（CPython 有身份捷径，同一对象才能命中）；`remove`
+  只删第一个，删全部应用推导式；遍历中 `del`/`remove` 都会因下标前移而漏删。
 - 补充「怎么选」对照表与「都是原地修改」示例（`a is b` 仍为 `True`，区别于推导式重建）。
 - 第六节「不能在遍历中删除」的列表示例与新增坑 3 重复，改为指向上文；文末速查表补「按值删列表元素」一行。
 
@@ -328,19 +500,22 @@
 
 ### 优化：`util/hook.py` 用 `ParamSpec` / `TypeVar` 保留被装饰函数的签名与返回类型
 
-- `hook` 返回类型由 `Callable[..., Callable[..., Any]]` 改为 `Callable[[Callable[P, R]], Callable[P, R]]`；`decorator` 改为接收 `Callable[P, R]`、返回 `Callable[P, R]`；`wrapper` 改为 `(*args: P.args, **kwargs: P.kwargs) -> R`。
+- `hook` 返回类型由 `Callable[..., Callable[..., Any]]` 改为 `Callable[[Callable[P, R]], Callable[P, R]]`；`decorator`
+  改为接收 `Callable[P, R]`、返回 `Callable[P, R]`；`wrapper` 改为 `(*args: P.args, **kwargs: P.kwargs) -> R`。
 - 拿 `__code__` 处改为 `cast(FunctionType, func).__code__`：`Callable` 不保证有 `__code__`，收窄后才能通过类型检查。
 - 新增 `HookCallback = Callable[..., None]` 别名，三个回调参数共用。
 - `filename` 改用 `Path(code.co_filename).stem`，替代 `split("/")[-1]` + `split(".")[0]`，Windows 路径与带点文件名都正确。
 - `extra` 显式注解 `list[str]`；`except Exception as e` 改为 `except Exception`（原 `e` 未使用）。
-- 验证：`python3 util/hook.py` 输出正常（`hook.add ... Line:68`）；`ruff check` 通过；`uvx mypy util/hook.py` 无问题；mypy `reveal_type(add)` 为 `def (a: int, b: int) -> int`，`add("1", 2)` 正确报 `arg-type`；PyCharm 文件检查无任何问题。
+- 验证：`python3 util/hook.py` 输出正常（`hook.add ... Line:68`）；`ruff check` 通过；`uvx mypy util/hook.py` 无问题；mypy
+  `reveal_type(add)` 为 `def (a: int, b: int) -> int`，`add("1", 2)` 正确报 `arg-type`；PyCharm 文件检查无任何问题。
 
 ## 2026-11-17 11:02
 
 ### 新增：`docs/python-callable-code-attr.md`，整理 `Callable` 上找不到 `__code__` 的来龙去脉
 
 - 记录报错现象、根因（`Callable` 只承诺 `__call__`，`__code__` 是 `types.FunctionType` 专有属性）。
-- 列出对比表：`def` 函数 / `lambda` / `functools.partial` / 可调用实例 / 类 / 内置函数，各自是否 `Callable`、是否有 `__code__`。
+- 列出对比表：`def` 函数 / `lambda` / `functools.partial` / 可调用实例 / 类 / 内置函数，各自是否 `Callable`、是否有
+  `__code__`。
 - 两种修法：注解收窄为 `types.FunctionType`（推荐）、保留 `Callable` 用 `cast`（附 `getattr` 兜底写法）。
 - 补充「装饰器取函数信息」的 inspect 对照表（`getsourcefile`、`signature`、`stack` 等）及各自失效场景。
 
@@ -349,42 +524,52 @@
 ### 修复：`util/hook.py` 中 `func.__code__` 报「在 (...) -> Any 中找不到引用 `__code__`」
 
 - 现象：`decorator(func: Callable[..., Any])` 内部访问 `func.__code__`，PyCharm/类型检查器报属性不存在。
-- 根因：`Callable[..., Any]` 只声明「可调用」，仅保证 `__call__`，不保证具有 `__code__`；`__code__` 是普通函数（`types.FunctionType`）专有属性，类、`functools.partial`、可调用实例都没有。
-- 修复：`decorator` 的参数注解由 `Callable[..., Any]` 改为 `types.FunctionType`，返回类型仍为 `Callable[..., Any]`；装饰器本就只支持真正的函数，语义更准确。
-- 验证：`python3 util/hook.py` 输出 `[before add ...]` / `[after add ...]: 3` / `3` 不变；PyCharm 检查该报错消失，仅剩 4 条「局部变量未使用」弱警告（`filename`、`lineno`、`func_name`、`e`）。
+- 根因：`Callable[..., Any]` 只声明「可调用」，仅保证 `__call__`，不保证具有 `__code__`；`__code__` 是普通函数（
+  `types.FunctionType`）专有属性，类、`functools.partial`、可调用实例都没有。
+- 修复：`decorator` 的参数注解由 `Callable[..., Any]` 改为 `types.FunctionType`，返回类型仍为 `Callable[..., Any]`
+  ；装饰器本就只支持真正的函数，语义更准确。
+- 验证：`python3 util/hook.py` 输出 `[before add ...]` / `[after add ...]: 3` / `3` 不变；PyCharm 检查该报错消失，仅剩 4
+  条「局部变量未使用」弱警告（`filename`、`lineno`、`func_name`、`e`）。
 
 ## 2026-11-16 20:18
 
 ### 新增：`docs/orm-default-values.md`，整理各 ORM 字段默认值写法
 
-- 按框架给出 `default=` 示例：SQLAlchemy 2.0（`mapped_column`）、SQLModel/Pydantic（`Field`）、Django、Peewee，并补充普通类参数默认值与 dataclass `field(default_factory=...)` 的对照。
+- 按框架给出 `default=` 示例：SQLAlchemy 2.0（`mapped_column`）、SQLModel/Pydantic（`Field`）、Django、Peewee，并补充普通类参数默认值与
+  dataclass `field(default_factory=...)` 的对照。
 - 梳理 `default`、`default_factory`、`server_default`、`db_default` 的区别与适用场景。
-- 记录两个坑：默认值生效时机因框架而异（SQLAlchemy 普通映射在 flush 时才补值）；可变默认值不能直接写 `[]`/`{}`，要用 `list` 或 `default_factory`。
+- 记录两个坑：默认值生效时机因框架而异（SQLAlchemy 普通映射在 flush 时才补值）；可变默认值不能直接写 `[]`/`{}`，要用 `list` 或
+  `default_factory`。
 - 补充普通类改造成 ORM 模型时的迁移要点。
 
 ## 2026-11-16 16:13
 
 ### 修复：`filter_data` 把 `**kwargs` 注解成 `dict[str, Any]` 导致的类型警告
 
-- 警告现象：四个配置项赋值处报「应为类型 int/bool/str，但实际为 `dict[str, Any] | int`」，两个调用处每个关键字实参都报「应为 `dict[str, Any]`」。
-- 根因：`**kwargs: X` 注解的是**每个关键字参数的值类型**，不是整个 kwargs 的类型。写成 `dict[str, Any]` 等于声明「每个值都是字典」。
+- 警告现象：四个配置项赋值处报「应为类型 int/bool/str，但实际为 `dict[str, Any] | int`」，两个调用处每个关键字实参都报「应为
+  `dict[str, Any]`」。
+- 根因：`**kwargs: X` 注解的是 **每个关键字参数的值类型**，不是整个 kwargs 的类型。写成 `dict[str, Any]` 等于声明「每个值都是字典」。
 - 修复：签名改为 `**kwargs: Any`（值类型为 Any），局部注解保持不变；调用处与 `.get()` 处警告全部消失。
-- 验证：`ruff check` 通过；PyCharm 仅剩 `goods_total_amount` 原有的 `price_sum_new` 弱警告；两组用例输出 `[9, 8, 7, 5]`、`[1, 3, 5]` 不变。
+- 验证：`ruff check` 通过；PyCharm 仅剩 `goods_total_amount` 原有的 `price_sum_new` 弱警告；两组用例输出 `[9, 8, 7, 5]`、
+  `[1, 3, 5]` 不变。
 
 ## 2026-11-16 16:07
 
 ### 修复：`filter_data` 四个配置项赋值处的类型不匹配警告
 
 - 保留「带默认值的局部注解」写法：`threshold: int = kwargs.get("threshold", 1)` 等四行不变。
-- 把签名中的 `**kwargs: int | str | bool` 改为 `**kwargs: Any`：原联合类型里每个键实际类型不同，逐个赋给 `int`/`bool`/`str` 时 PyCharm 报「应为类型 X，但实际为 int | str | bool」共 4 条。
+- 把签名中的 `**kwargs: int | str | bool` 改为 `**kwargs: Any`：原联合类型里每个键实际类型不同，逐个赋给 `int`/`bool`/
+  `str` 时 PyCharm 报「应为类型 X，但实际为 int | str | bool」共 4 条。
 - 清理遗留的 `cast` 未使用导入；`if unique is True` 已简化为 `if unique`。
-- 验证：`ruff check` 全部通过；PyCharm 仅剩 `goods_total_amount` 原有的 `price_sum_new` 弱警告；两组用例输出 `[9, 8, 7, 5]`、`[1, 3, 5]` 不变。
+- 验证：`ruff check` 全部通过；PyCharm 仅剩 `goods_total_amount` 原有的 `price_sum_new` 弱警告；两组用例输出
+  `[9, 8, 7, 5]`、`[1, 3, 5]` 不变。
 
 ## 2026-11-16 15:40
 
 ### 调整：`filter_data` 的过滤恢复为 `filter` + `lambda` 写法
 
-- 把列表推导式改回 `list(filter(lambda x: x >= limit, items))`，并在分支内用 `limit: int = threshold` 显式收窄：lambda 会捕获 `limit`（已声明为 `int`），不再把 `threshold` 推断成含 `None` 的联合类型。
+- 把列表推导式改回 `list(filter(lambda x: x >= limit, items))`，并在分支内用 `limit: int = threshold` 显式收窄：lambda 会捕获
+  `limit`（已声明为 `int`），不再把 `threshold` 推断成含 `None` 的联合类型。
 - 行为与推导式版本完全一致；PyCharm 该行警告消除，`ruff check` 通过。
 - 验证：两组用例输出 `[9, 8, 7, 5]`、`[1, 3, 5]` 不变。
 
@@ -392,17 +577,23 @@
 
 ### 修复：`page/homework/section1/day5.py` 中 `filter_data` 的 `None` 比较警告
 
-- 警告内容：`'int | str | bool | None' 的成员 'None' 没有特性 '__le__'`。根因是 `**kwargs: int | str | bool` 把所有配置值混成一个联合类型，`kwargs.get("threshold", None)` 再叠加 `None`，PyCharm 无法在 lambda 闭包里把 `threshold` 收窄成数值。
-- 新增 `FilterOptions(TypedDict, total=False)` 精确描述四个配置项类型，函数签名改为 `**kwargs: Unpack[FilterOptions]`，`.get("threshold")` 的类型变为 `int | None`。
+- 警告内容：`'int | str | bool | None' 的成员 'None' 没有特性 '__le__'`。根因是 `**kwargs: int | str | bool`
+  把所有配置值混成一个联合类型，`kwargs.get("threshold", None)` 再叠加 `None`，PyCharm 无法在 lambda 闭包里把 `threshold`
+  收窄成数值。
+- 新增 `FilterOptions(TypedDict, total=False)` 精确描述四个配置项类型，函数签名改为 `**kwargs: Unpack[FilterOptions]`，
+  `.get("threshold")` 的类型变为 `int | None`。
 - 过滤改用列表推导式，并在分支内用 `limit: int = threshold` 显式收窄类型，消除闭包类型推断问题；行为与原 `filter` 写法一致。
-- 验证：`ruff check` 全部通过；PyCharm 检查该文件仅剩 `goods_total_amount` 里原有的 `price_sum_new` 未使用弱警告；`filter_data` 两组用例输出 `[9, 8, 7, 5]`、`[1, 3, 5]` 不变。
+- 验证：`ruff check` 全部通过；PyCharm 检查该文件仅剩 `goods_total_amount` 里原有的 `price_sum_new` 未使用弱警告；
+  `filter_data` 两组用例输出 `[9, 8, 7, 5]`、`[1, 3, 5]` 不变。
 
 ## 2026-11-16 15:10
 
 ### 修复：`page/homework/section1/day5.py` 中 `analyze_scores` 的 IDE 警告
 
-- 删除误导入且未使用的 `from itertools import count`：它导致 `goods_total_amount` 和 `analyze_scores` 里的局部变量 `count` 被判为「隐藏外部作用域名称」（ruff F401/F811，PyCharm weak warning）。
-- 三个配置项改用 `kwargs.get(key, 默认值)`：原写法 `pass_line` 取值时误判 `show_detail is not None`，且 `kwargs.get()` 可能返回 `None`，PyCharm 报「`Literal[60] | None | Any` 的成员 `None` 没有 `__le__`」以及 `round()` 实参不匹配。
+- 删除误导入且未使用的 `from itertools import count`：它导致 `goods_total_amount` 和 `analyze_scores` 里的局部变量
+  `count` 被判为「隐藏外部作用域名称」（ruff F401/F811，PyCharm weak warning）。
+- 三个配置项改用 `kwargs.get(key, 默认值)`：原写法 `pass_line` 取值时误判 `show_detail is not None`，且 `kwargs.get()`
+  可能返回 `None`，PyCharm 报「`Literal[60] | None | Any` 的成员 `None` 没有 `__le__`」以及 `round()` 实参不匹配。
 - 按题目要求补全类型注解：`*args: float`、`**kwargs: Any`、返回 `dict[str, int | float | str]`，并修正空分数分支的缩进。
 - 验证：`ruff check` 全部通过；PyCharm 检查 `analyze_scores` 已无警告；脚本运行输出 `report1`、`report2` 与预期数值一致。
 
@@ -411,24 +602,29 @@
 ### 调整：`page/date_demo.py` 改为不封装函数，直接演示底层 API
 
 - 按要求去掉全部函数定义，改为顺序脚本：每段先调用 API 再打印结果，读者可以直接看到输入与输出。
-- 保留 10 个演示段：字符串→datetime、datetime→字符串、datetime→时间戳、时间戳→datetime（本地/UTC）、字符串→时间戳、时间戳→字符串、往返断言、带 `%z` 的时区字符串、`fromisoformat`、当前时间三形态（秒/毫秒时间戳）。
+- 保留 10 个演示段：字符串→datetime、datetime→字符串、datetime→时间戳、时间戳→datetime（本地/UTC）、字符串→时间戳、时间戳→字符串、往返断言、带
+  `%z` 的时区字符串、`fromisoformat`、当前时间三形态（秒/毫秒时间戳）。
 - 验证：`.venv/bin/python page/date_demo.py` 退出码 0，输出与封装版一致，往返断言通过。
 
 ## 2026-11-16 11:13
 
 ### 新增：`page/date_demo.py`，字符串 / datetime / 时间戳三种时间形态互转
 
-- 提供 6 个函数：`str_to_datetime`、`datetime_to_str`、`datetime_to_timestamp`、`timestamp_to_datetime`、`str_to_timestamp`、`timestamp_to_str`，覆盖字符串 ⇄ datetime ⇄ 时间戳的全部方向，统一使用 `DEFAULT_FMT = "%Y-%m-%d %H:%M:%S"`。
-- 演示带时区场景：`fmt` 加 `%z` 才能保留时区；`fromtimestamp(tz=timezone.utc)` 返回 aware 时间；ISO 字符串可直接用 `datetime.fromisoformat`（3.11+ 支持末尾 `Z`）。
+- 提供 6 个函数：`str_to_datetime`、`datetime_to_str`、`datetime_to_timestamp`、`timestamp_to_datetime`、`str_to_timestamp`、
+  `timestamp_to_str`，覆盖字符串 ⇄ datetime ⇄ 时间戳的全部方向，统一使用 `DEFAULT_FMT = "%Y-%m-%d %H:%M:%S"`。
+- 演示带时区场景：`fmt` 加 `%z` 才能保留时区；`fromtimestamp(tz=timezone.utc)` 返回 aware 时间；ISO 字符串可直接用
+  `datetime.fromisoformat`（3.11+ 支持末尾 `Z`）。
 - 注释说明 naive datetime 调用 `timestamp()` 时按本地时区解释，跨时区计算应显式传 `tz`。
-- 验证：`.venv/bin/python page/date_demo.py` 退出码 0，字符串往返、timestamp 往返、带时区字符串往返断言全部通过，本地时间输出 `2026-11-16 10:57:00`。
+- 验证：`.venv/bin/python page/date_demo.py` 退出码 0，字符串往返、timestamp 往返、带时区字符串往返断言全部通过，本地时间输出
+  `2026-11-16 10:57:00`。
 
 ## 2026-11-16 10:57
 
 ### 修复：`page/homework/section1/day5.py` 的 `second2date` 秒数换算
 
 - 保持原有「年/月/日 时:分:秒」的换算结构（365 天/年、30 天/月的近似口径），改用 `divmod` 逐级取商和余数。
-- 修复三处错误：`/` 真除法导致 年/月/日/时/分 全是浮点数；`v % year` 对浮点数取模得到的是无意义的零头，应使用上一级的余数；`hour = v / 3600` 未扣除整天的秒数。
+- 修复三处错误：`/` 真除法导致 年/月/日/时/分 全是浮点数；`v % year` 对浮点数取模得到的是无意义的零头，应使用上一级的余数；
+  `hour = v / 3600` 未扣除整天的秒数。
 - 分/秒改为 `:02d` 补零，函数补上 `-> str` 返回类型注解。
 - 移除误导入的 `from unittest import result`。
 - 验证：时间戳 `1794797837` → `56:11:3 02:57:17`；`3725` → `0:0:0 01:02:05`；`86400` → `0:0:1 00:00:00`，均与预期一致。
@@ -446,17 +642,22 @@
 
 ### 新增：`page/homework/section1/day2.py` 第 7 题，用 match 实现游戏指令分发
 
-- 按题目给出的按键表实现移动/跳跃/攻击/退出的指令映射，使用选择模式（or-pattern）把每个动作的多个按键合并为一个分支，例如 `case "上" | "w" | "W"`。
+- 按题目给出的按键表实现移动/跳跃/攻击/退出的指令映射，使用选择模式（or-pattern）把每个动作的多个按键合并为一个分支，例如
+  `case "上" | "w" | "W"`。
 - 外层包 `while True` 循环，`case` 里执行 `break` 才是"退出游戏"；只写单次 `input` 时退出分支没有意义。
-- 处理 Esc 键的现实差异：`input()` 是按回车提交的行输入，直接按 Esc 得到的是 `"\x1b"` 字符而不是 `"esc"`，所以退出分支同时匹配 `"退出"`、`"esc"`/`"ESC"` 和 `"\x1b"`；代码上方注释说明想按一下立即响应需换 curses / msvcrt / readchar。
+- 处理 Esc 键的现实差异：`input()` 是按回车提交的行输入，直接按 Esc 得到的是 `"\x1b"` 字符而不是 `"esc"`，所以退出分支同时匹配
+  `"退出"`、`"esc"`/`"ESC"` 和 `"\x1b"`；代码上方注释说明想按一下立即响应需换 curses / msvcrt / readchar。
 - 增加 `case _` 兜底，未知指令用 `{action!r}` 打印原始输入，便于排查多余空格等问题。
-- 验证：提取 `# 7` 段统一替换 `input()` 后跑 19 个输入（四个方向的中文/小写/大写共 12 个、`跳`、空格、`攻击`、`j`、`J`、未知指令 `xyz`、`"\x1b"`），输出与预期逐条一致，`\x1b` 触发 break 正常结束；`py_compile` 通过。
+- 验证：提取 `# 7` 段统一替换 `input()` 后跑 19 个输入（四个方向的中文/小写/大写共 12 个、`跳`、空格、`攻击`、`j`、`J`、未知指令
+  `xyz`、`"\x1b"`），输出与预期逐条一致，`\x1b` 触发 break 正常结束；`py_compile` 通过。
 
 ## 2026-11-15 16:44
 
 ### 修复：`page/homework/section1/day2.py` 季度判断的 match 语法错误
 
-- 现象：`py_compile` 报 `IndentationError: expected an indented block after 'case' statement (line 28)`。原写法把 `case 3:`、`case 4:`、`case 5:` 堆叠成空分支，而 Python 要求每个 `case` 后必须有缩进块，空 case 并非 fall-through（Python 的 `match` 不继承 C 的贯穿语义）。
+- 现象：`py_compile` 报 `IndentationError: expected an indented block after 'case' statement (line 28)`。原写法把
+  `case 3:`、`case 4:`、`case 5:` 堆叠成空分支，而 Python 要求每个 `case` 后必须有缩进块，空 case 并非 fall-through（Python 的
+  `match` 不继承 C 的贯穿语义）。
 - 修复：合并为选择模式（or-pattern）`case 3 | 4 | 5:`，四个季度分支各写成一行；`case 12 :` 的多余空格一并去掉。
 - 验证：`py_compile` 通过；把 `input()` 换成固定值后覆盖 0/1/3/5/6/9/12/13 八种输入，输出依次为 异常/冬/春/春/夏/秋/冬/异常，符合预期。
 
@@ -464,7 +665,8 @@
 
 ### 重构：`page/test1.py` 多级排序的 lambda 拆为独立函数
 
-- `sorted(students, key=lambda x: (x['grade'], x['name']))` 中的匿名函数抽成模块级函数 `student_sort_key(student: dict) -> tuple[int, str]`，排序调用改为 `key=student_sort_key`。
+- `sorted(students, key=lambda x: (x['grade'], x['name']))` 中的匿名函数抽成模块级函数
+  `student_sort_key(student: dict) -> tuple[int, str]`，排序调用改为 `key=student_sort_key`。
 - 好处：函数有名字和类型注解，堆栈和类型检查器都能直接定位；排序键逻辑与调用点分离，后续复用或改规则只改一处。
 - 验证：`.venv/bin/python -m page.test1` 退出码 0，排序结果 `Alice(85), Charlie(85), Bob(92)`，与改动前一致。
 
@@ -472,8 +674,10 @@
 
 ### 修复：`page/test1.py` 的计算器 match 分支
 
-- 取消 `result = ""` 的预声明：初始空串从未被读取，每个分支都会覆盖它，判空时还会打印空行；改为在 `case _` 里也赋值，由 `case _` 保证所有路径都有值，`print(result)` 保持不变。
-- 运算符变量 `c` 改名为 `op`，并由 `int(input())` 改为 `input().strip()`：原写法把运算符转成整数，永远匹配不上 `"+"` 等字符串，只能落到 `_` 分支。
+- 取消 `result = ""` 的预声明：初始空串从未被读取，每个分支都会覆盖它，判空时还会打印空行；改为在 `case _` 里也赋值，由
+  `case _` 保证所有路径都有值，`print(result)` 保持不变。
+- 运算符变量 `c` 改名为 `op`，并由 `int(input())` 改为 `input().strip()`：原写法把运算符转成整数，永远匹配不上 `"+"`
+  等字符串，只能落到 `_` 分支。
 - 修正 `case "+"` 里误写成 `a * b` 的加法。
 - 输出格式去掉 `f"a {c} b = ..."` 里的字面量 `a`/`b`，改为拼接实际数值，如 `7 + 3 = 10`。
 - 新增 `case "/" if b == 0` 守卫，避免除零抛 `ZeroDivisionError`。
@@ -483,10 +687,13 @@
 
 ### 新增：`page/lambda_typing.py`，演示 lambda 参数的类型推断写法
 
-- 背景：lambda 语法不支持参数/返回值注解，本文件演示 5 种让类型检查器认识参数类型的写法：赋值时标注 `Callable`、函数参数提供上下文、内置高阶函数（`sort`/`map`）上下文、`cast` 强制标注、改用 `def`。
+- 背景：lambda 语法不支持参数/返回值注解，本文件演示 5 种让类型检查器认识参数类型的写法：赋值时标注 `Callable`
+  、函数参数提供上下文、内置高阶函数（`sort`/`map`）上下文、`cast` 强制标注、改用 `def`。
 - 附演示 `functools.partial` 保留原函数注解，以及运行时事实：lambda 的 `__annotations__` 恒为空字典，`cast` 不写入注解。
 - 修复演示代码中的一处类型问题：`int ** int` 被推断为 `Any`，`power` 改为 `int(base ** exp)` 以通过 `mypy --strict`。
-- 验证：`.venv/bin/python page/lambda_typing.py` 退出码 0；`uvx mypy --strict` 0 报错；另写反例确认检查器能抓到 `f("hello")` 参数类型不符、`lambda s: s + 1` 在 `sort` 上下文中的 `str + int` 错误，以及无上下文 lambda 参数退化为 `Any`。
+- 验证：`.venv/bin/python page/lambda_typing.py` 退出码 0；`uvx mypy --strict` 0 报错；另写反例确认检查器能抓到
+  `f("hello")` 参数类型不符、`lambda s: s + 1` 在 `sort` 上下文中的 `str + int` 错误，以及无上下文 lambda 参数退化为
+  `Any`。
 
 ## 2026-11-14 21:27
 
@@ -494,8 +701,10 @@
 
 - 枚举定义不再重复写：删除文件内的 `WeekdayEnum`，改为 `from enums.weekday_enum import WeekdayEnum`，本文件只保留演示代码。
 - 补全原来悬空的 `for item in WeekdayEnum:` 循环体（`IndentationError` 来源），遍历时打印值、成员名、中文名。
-- 消除 PyCharm 告警：`_member_map_` 内部字典访问加 `# noinspection PyProtectedMember` 并用 `cast` 还原类型；`find(6)` 改为先取变量再判空，避免 `None` 成员取属性告警。
-- 演示按模块枚举的现有能力改写：成员名用 `MON`/`FRI`/`SUN`，中文名用「星期X」；删掉依赖 `IntEnum` 的与 int 比较、排序及 `_missing_` 中文名兜底示例。
+- 消除 PyCharm 告警：`_member_map_` 内部字典访问加 `# noinspection PyProtectedMember` 并用 `cast` 还原类型；`find(6)`
+  改为先取变量再判空，避免 `None` 成员取属性告警。
+- 演示按模块枚举的现有能力改写：成员名用 `MON`/`FRI`/`SUN`，中文名用「星期X」；删掉依赖 `IntEnum` 的与 int 比较、排序及
+  `_missing_` 中文名兜底示例。
 - 增加项目根目录 `sys.path` 引导，`python page/enum_test.py` 可直接运行。
 - 验证：`python page/enum_test.py` 输出正常（退出码 0）；PyCharm 对 `page/enum_test.py`、`enums/weekday_enum.py` 均为 0 告警。
 - 备注：编辑过程中 IDE 缓冲区曾把磁盘改动覆盖回去，导致类定义被删；已按完整内容恢复，后续改动建议先确认编辑器里该文件已无未保存修改。
@@ -504,19 +713,25 @@
 
 ### 修复：`page/test1.py` 中 `DLog as print` 调用报错
 
-- 现象：`from util.dlog import DLog as print` 后，`print(...)` 抛 `TypeError: DLog() takes no arguments`；文件末尾 `DLog.d(...)` 抛 `NameError`（别名后 `DLog` 名字不存在）。
-- 修复 `util/dlog.py`：为 `DLog` 增加 `__init__(*args, sep=" ", end="\n")`，实例可像内置 `print` 一样多参数调用，输出仍走 DEBUG 格式并带调用位置；`_print_log` 增加 `end` 透传。
+- 现象：`from util.dlog import DLog as print` 后，`print(...)` 抛 `TypeError: DLog() takes no arguments`；文件末尾
+  `DLog.d(...)` 抛 `NameError`（别名后 `DLog` 名字不存在）。
+- 修复 `util/dlog.py`：为 `DLog` 增加 `__init__(*args, sep=" ", end="\n")`，实例可像内置 `print` 一样多参数调用，输出仍走
+  DEBUG 格式并带调用位置；`_print_log` 增加 `end` 透传。
 - 修复 `page/test1.py`：`DLog.d(f"list: {l}")` 改为 `print.d(...)`，与新别名保持一致。
-- 验证：`PYTHONPATH=. .venv/bin/python -m page.test1` 全量输出正常，`-O` 模式下静默退出码 0；`page/comprehensions_demo.py` 回归正常。
+- 验证：`PYTHONPATH=. .venv/bin/python -m page.test1` 全量输出正常，`-O` 模式下静默退出码 0；`page/comprehensions_demo.py`
+  回归正常。
 
 ## 2026-11-14 11:16
 
 ### 性能修复：`page/test1.py` 右键运行慢（约 5s）
 
-- 根因：PyCharm 每次运行都会把 `helpers/pycharm_plotly_backend` 等 4 个目录注入 `PYTHONPATH`，其中 `sitecustomize.py` 会 `import datalore.display`，连带导入 pandas/altair，解释器启动阶段耗时 2~5s。与脚本代码、`uv`、`.venv` 无关（`uv run` 包装仅约 0.1s）。
-  - 实测：原样复制 IDE 的 `PYTHONPATH` 在终端运行 5.04s；去掉 4 个 helper 目录 0.05s。
-  - `-X importtime` 显示 `sitecustomize` 2.12s，其中 `pandas` 1.80s（`datalore.display` 引入）。
-- 修复：项目根目录新增 `sitecustomize.py`（空文件，仅注释）。项目根位于 `PYTHONPATH` 最前，Python 优先导入它，覆盖 PyCharm 的绘图后端 sitecustomize。
+- 根因：PyCharm 每次运行都会把 `helpers/pycharm_plotly_backend` 等 4 个目录注入 `PYTHONPATH`，其中 `sitecustomize.py` 会
+  `import datalore.display`，连带导入 pandas/altair，解释器启动阶段耗时 2~5s。与脚本代码、`uv`、`.venv` 无关（`uv run` 包装仅约
+  0.1s）。
+    - 实测：原样复制 IDE 的 `PYTHONPATH` 在终端运行 5.04s；去掉 4 个 helper 目录 0.05s。
+    - `-X importtime` 显示 `sitecustomize` 2.12s，其中 `pandas` 1.80s（`datalore.display` 引入）。
+- 修复：项目根目录新增 `sitecustomize.py`（空文件，仅注释）。项目根位于 `PYTHONPATH` 最前，Python 优先导入它，覆盖 PyCharm
+  的绘图后端 sitecustomize。
 - 效果：同一 IDE 运行路径由 4~5s 降至 **0.14s**（`idea.log` 收到请求 11:16:09.255 → 脚本首行 11:16:09.399）。
 - 代价：PyCharm Plots 工具窗口不再渲染 plotly/matplotlib 图表；需要看图时删除 `sitecustomize.py` 即可恢复。
 - 文档：`README.md` 增加 PyCharm 右键运行说明，解释 `sitecustomize.py` 的作用与删除影响。
@@ -526,14 +741,15 @@
 ### 性能排查：`page/test1.py` 运行耗时约 6s
 
 - 结论：耗时与 Python 代码、`uv`、`.venv` 无关，全部来自 IDE 与系统资源争抢。
-  - 实测：`.venv/bin/python page/test1.py` 0.05s；`uv run`（cwd=page）0.09s；`uv` 自身启动 0.016s。
+    - 实测：`.venv/bin/python page/test1.py` 0.05s；`uv run`（cwd=page）0.09s；`uv` 自身启动 0.016s。
 - 根因：一个失控的 Dart 语言服务器 `PID 11317 dart language-server --protocol lsp`，98% CPU 空转近 2 小时、占用 3.75GB。
-  - 来源：08:54 在 `~`（家目录）启动的 Claude Code 会话（PID 11268）拉起的 dart MCP server，把整个家目录当作工作区索引。
-  - 叠加因素：系统 load 5–7、PyCharm 堆上限仅 `-Xmx2048m` 而 RSS 达 3.75GB、GitHub Copilot 插件 32 次网络失败重试。
+    - 来源：08:54 在 `~`（家目录）启动的 Claude Code 会话（PID 11268）拉起的 dart MCP server，把整个家目录当作工作区索引。
+    - 叠加因素：系统 load 5–7、PyCharm 堆上限仅 `-Xmx2048m` 而 RSS 达 3.75GB、GitHub Copilot 插件 32 次网络失败重试。
 - 处理：结束 `11286`（dart mcp-server）与 `11317`（language-server）两个进程。
 - 效果：PyCharm 内部单次 Run 处理耗时由 **6.26s → 0.005s**（取自 `idea.log` 时间戳），系统 load 由 5.0 降至 3.8。
 
 ### 遗留建议
+
 - 重启 PyCharm：清除进程内残留的旧 `VIRTUAL_ENV`（当前每次运行仍打印 uv 警告，耗时约 0.04s）。
 - 建议将 PyCharm `-Xmx2048m` 提升至 4096m；不使用 Copilot 可禁用该插件。
 - 后续在项目目录启动 Claude Code，避免 dart MCP server 以家目录为 root 索引。
@@ -541,24 +757,34 @@
 ## 2026-11-14 10:38
 
 ### 环境修复
-- 根治 uv 警告 `VIRTUAL_ENV ... does not match the project environment path`：与 10:31 那次不同，本次问题不在 `.venv` 内部，而在 shell 会话继承的**脏环境变量**。
-  - 原因：启动 Claude Code 的终端曾在旧目录 `~/GitHub/python_projects/python_templet_project` 执行过 `activate`，项目迁移后该目录已不存在，但 `VIRTUAL_ENV` 与 `PATH` 首项仍指向它。`.venv` 本身健康（shebang、`activate`、`pyvenv.cfg` 全部正确，旧路径残留为 0）。
-  - 副作用：`PATH` 首位是无效目录，导致裸 `python` 落到系统 `/usr/local/bin/python3` 而非项目 venv。
-- `~/.zshrc` 末尾新增 `[venv-guard]` 段：`VIRTUAL_ENV` 指向不存在的目录时自动 `unset`，并从 `PATH` 剔除已失效的 `*/.venv/bin` 条目；正常 `activate` 不受影响。修改前已备份至 `~/.zshrc.bak.20261114-103841`。
+
+- 根治 uv 警告 `VIRTUAL_ENV ... does not match the project environment path`：与 10:31 那次不同，本次问题不在 `.venv`
+  内部，而在 shell 会话继承的 **脏环境变量**。
+    - 原因：启动 Claude Code 的终端曾在旧目录 `~/GitHub/python_projects/python_templet_project` 执行过 `activate`
+      ，项目迁移后该目录已不存在，但 `VIRTUAL_ENV` 与 `PATH` 首项仍指向它。`.venv` 本身健康（shebang、`activate`、`pyvenv.cfg`
+      全部正确，旧路径残留为 0）。
+    - 副作用：`PATH` 首位是无效目录，导致裸 `python` 落到系统 `/usr/local/bin/python3` 而非项目 venv。
+- `~/.zshrc` 末尾新增 `[venv-guard]` 段：`VIRTUAL_ENV` 指向不存在的目录时自动 `unset`，并从 `PATH` 剔除已失效的
+  `*/.venv/bin` 条目；正常 `activate` 不受影响。修改前已备份至 `~/.zshrc.bak.20261114-103841`。
 
 ### 验证
-- 脏值场景：新 shell 中 `VIRTUAL_ENV` 为空、旧 `PATH` 条目为 0，`uv run python` 无警告且指向 `~/GitHub/python_templet_project/.venv/bin/python`。
+
+- 脏值场景：新 shell 中 `VIRTUAL_ENV` 为空、旧 `PATH` 条目为 0，`uv run python` 无警告且指向
+  `~/GitHub/python_templet_project/.venv/bin/python`。
 - 合法场景：`VIRTUAL_ENV` 指向存在的 `.venv` 时被保留，未被误清理。
 
 ## 2026-11-14 10:31
 
 ### 环境修复
+
 - 重建 `.venv`，消除 uv 警告：`VIRTUAL_ENV ... does not match the project environment path`。
-  - 原因：venv 创建于旧目录 `~/GitHub/python_projects/python_templet_project/.venv`，项目迁移后 `activate` 及 18 个脚本仍写死旧路径，旧目录已不存在。
-  - 操作：`mv .venv .venv.old` → `uv sync` → 验证后 `rm -rf .venv.old`。
-  - `pyproject.toml` / `uv.lock` 未改动，118 个包与重建前完全一致。
+    - 原因：venv 创建于旧目录 `~/GitHub/python_projects/python_templet_project/.venv`，项目迁移后 `activate` 及 18
+      个脚本仍写死旧路径，旧目录已不存在。
+    - 操作：`mv .venv .venv.old` → `uv sync` → 验证后 `rm -rf .venv.old`。
+    - `pyproject.toml` / `uv.lock` 未改动，118 个包与重建前完全一致。
 
 ### 验证
+
 - 新 `.venv/bin` 中旧路径残留为 0，`activate` 中 `VIRTUAL_ENV` 指向 `~/GitHub/python_templet_project/.venv`。
 - `uv sync --check` 输出 `Would make no changes`。
 - `streamlit` / `pydantic_ai` / `anthropic` / `openai` / `fastapi` 导入正常。
@@ -566,39 +792,48 @@
 ## 2026-11-08 16:01
 
 ### 安全修复
+
 - 使用 `git filter-repo` 重写全部历史，从所有提交中彻底移除 `.env`。
-  - 命令：`git filter-repo --path .env --invert-paths --force`
-  - 重写后所有提交哈希发生变化，`main` / `develop` 已同步至新历史。
-  - 重写前已备份至 `/Users/shang/GitHub/python_templet_project-backup-20261108.bundle`。
+    - 命令：`git filter-repo --path .env --invert-paths --force`
+    - 重写后所有提交哈希发生变化，`main` / `develop` 已同步至新历史。
+    - 重写前已备份至 `/Users/shang/GitHub/python_templet_project-backup-20261108.bundle`。
 - filter-repo 清理了未跟踪文件，已从备份 bundle 恢复本地 `.env`（仅存在于工作区，不再被追踪）。
 
 ### 验证
+
 - `git log --all -- .env` 输出为空；`git rev-list --all --objects | grep .env` 无结果。
 - 本地 `.env` 文件保留（648 字节），忽略规则仍生效。
 
 ## 2026-11-08 15:56
 
 ### 安全修复
+
 - `.gitignore`：新增环境变量文件忽略规则（`.env`、`.env.*`）。
 - 执行 `git rm --cached .env` 停止跟踪 `.env`，本地文件保留。
 
 ### 说明
+
 - `.env` 内含 `ANTHROPIC_AUTH_TOKEN` 等敏感凭据，推送到公开仓库会导致泄露。
 - 后续处理：轮换已暴露的 Token；如需彻底清除历史，可使用 `git filter-repo` 重写历史。
 
 ## 2026-11-04 08:58
 
 ### 调整
-- `model/student_model.py`、`model/book_model.py`、`model/book_library_model.py`：由 `@dataclass` 迁移为 Pydantic `BaseModel`。
-  - `StudentModel`：`library_password` 使用 `Field(repr=False)` 隐藏；`member_level` 按枚举值自动校验（`"normal"` / `"vip"`）。
-  - `StudentModel.to_dict()` 改为 `model_dump(mode="json")`，枚举自动序列化为原始值。
-  - `BookModel.from_dict()` 改为 `model_validate()`，JSON 中多余的 `industry` 字段自动忽略。
-  - `BookLibraryModel`：`books` 改为带默认工厂的 Pydantic 字段，原有方法保持不变。
+
+- `model/student_model.py`、`model/book_model.py`、`model/book_library_model.py`：由 `@dataclass` 迁移为 Pydantic
+  `BaseModel`。
+    - `StudentModel`：`library_password` 使用 `Field(repr=False)` 隐藏；`member_level` 按枚举值自动校验（`"normal"` /
+      `"vip"`）。
+    - `StudentModel.to_dict()` 改为 `model_dump(mode="json")`，枚举自动序列化为原始值。
+    - `BookModel.from_dict()` 改为 `model_validate()`，JSON 中多余的 `industry` 字段自动忽略。
+    - `BookLibraryModel`：`books` 改为带默认工厂的 Pydantic 字段，原有方法保持不变。
 - `page/student.py`：解码改用 `StudentModel.model_validate()`。
-- `page/book_managment_system/book_managment_system.py`：修正 `book_out()` 中不存在的字段 `isLetOut`，改为 `is_borrow`（Pydantic 不允许给未声明字段赋值）。
+- `page/book_managment_system/book_managment_system.py`：修正 `book_out()` 中不存在的字段 `isLetOut`，改为 `is_borrow`
+  （Pydantic 不允许给未声明字段赋值）。
 - `pyproject.toml`：新增直接依赖 `pydantic>=2.13.0`（原为 pydantic-ai 的间接依赖）。
 
 ### 验证
+
 - `python page/student.py` 正常输出成绩统计。
 - 图书加载 100 本、按 ISBN 查询、借书状态变更均正常。
 - 学生模型枚举解码、`to_dict()` 序列化、repr 隐藏密码、`==` / `<` 比较均验证通过。
@@ -607,97 +842,117 @@
 ## 2026-11-03 21:12
 
 ### 新增
-- `assets/json/books.json`：新增 100 本大学图书数据，覆盖信息技术、机械制造、电子信息、土木建筑、医学健康、经济管理、法学、教育学、文学人文、环境能源 10 个主流行业，每个行业 10 本；ISBN 为带合法校验位的示例数据。
-- `model/book_library_model.py`：新增 `BOOKS_JSON_PATH` 默认数据路径和 `load_books()` 方法，解析 JSON 后载入 `books` 并返回 `list[BookModel]`。
+
+- `assets/json/books.json`：新增 100 本大学图书数据，覆盖信息技术、机械制造、电子信息、土木建筑、医学健康、经济管理、法学、教育学、文学人文、环境能源
+  10 个主流行业，每个行业 10 本；ISBN 为带合法校验位的示例数据。
+- `model/book_library_model.py`：新增 `BOOKS_JSON_PATH` 默认数据路径和 `load_books()` 方法，解析 JSON 后载入 `books` 并返回
+  `list[BookModel]`。
 
 ### 验证
+
 - `load_books()` 解析出 100 本图书，首尾记录正确；`find_book_by_isbn()` 可按 ISBN 命中；`ruff check` 无告警。
 
 ## 2026-11-03 21:05
 
 ### 调整
+
 - `model/book_model.py`：`BookModel` 改为 `@dataclass` 实现，保留 `title`、`author`、`isbn` 字段。
-  - 新增 `from_dict` / `to_dict`，支持字典与模型互转。
-  - 新增 `__str__`；`__eq__` / `__lt__` 以 ISBN 作为唯一标识，便于比较和排序。
+    - 新增 `from_dict` / `to_dict`，支持字典与模型互转。
+    - 新增 `__str__`；`__eq__` / `__lt__` 以 ISBN 作为唯一标识，便于比较和排序。
 
 ### 验证
+
 - 构造、编解码往返、同 ISBN 相等性、排序均验证通过；`ruff check` 无告警。
 
 ## 2026-11-03 20:48
 
 ### 新增
+
 - `enums/member_level_enum.py`：新增 `MemberLevelEnum` 会员等级枚举，包含 `NORMAL`（普通）、`VIP`。
 - `model/student_model.py`：`StudentModel` 新增属性：
-  - `member_level`：图书馆会员等级，默认 `MemberLevelEnum.NORMAL`。
-  - `borrowed_books`：已借图书列表，默认空列表。
-  - `library_password`：图书馆密码，默认空字符串，并在 `repr` 中隐藏。
+    - `member_level`：图书馆会员等级，默认 `MemberLevelEnum.NORMAL`。
+    - `borrowed_books`：已借图书列表，默认空列表。
+    - `library_password`：图书馆密码，默认空字符串，并在 `repr` 中隐藏。
 
 ### 调整
+
 - `StudentModel.from_dict`：支持新字段解码，旧成绩 JSON 缺少字段时使用默认值。
 - `StudentModel.to_dict`：会员等级输出为原始值（`normal` / `vip`），便于 JSON 序列化。
 
 ### 验证
+
 - `python3 page/student.py` 正常运行。
 - 新字段编码/解码往返验证通过；`ruff check` 无告警。
 
 ## 2026-11-03 20:43
 
 ### 删除
+
 - `model/student.py`：移除旧的 `Student` / `CodableModel` 模型文件。
 
 ### 调整
-- `enum/` 目录重命名为 `enums/`：避免与 Python 标准库 `enum` 同名，否则 `from enum.weekday_enum import WeekdayEnum` 会报 `ModuleNotFoundError: No module named 'enum.weekday_enum'; 'enum' is not a package`。
+
+- `enum/` 目录重命名为 `enums/`：避免与 Python 标准库 `enum` 同名，否则 `from enum.weekday_enum import WeekdayEnum` 会报
+  `ModuleNotFoundError: No module named 'enum.weekday_enum'; 'enum' is not a package`。
 - `page/codable.py`：`CodableModel`、`Student` 类迁移到本文件内，枚举改用 `enums/weekday_enum.py` 中的 `WeekdayEnum`。
 - 已验证：`python3 page/codable.py` 编码/解码输出正常（`weekday: 1` ↔ `星期一`）。
 
 ## 2026-11-02 16:31
 
 ### 修复
-- `docs/pycharm-streamlit-external-tool.md`：修正 External Tool 配置——工作目录改为项目根目录 `$ProjectFileDir$`，并增加环境变量 `PYTHONPATH=$ProjectFileDir$`，解决 `ModuleNotFoundError: No module named 'base_widget'`。
+
+- `docs/pycharm-streamlit-external-tool.md`：修正 External Tool 配置——工作目录改为项目根目录 `$ProjectFileDir$`，并增加环境变量
+  `PYTHONPATH=$ProjectFileDir$`，解决 `ModuleNotFoundError: No module named 'base_widget'`。
 - 已实测：从项目根目录带 `PYTHONPATH=.` 启动 `page/streamlit_demo.py`，健康检查返回 200。
 
 ## 2026-11-02 16:29
 
 ### 修复
+
 - `docs/pycharm-streamlit-external-tool.md`：补充“工作目录末尾多空格导致无法启动进程”的排错说明。
 
 ## 2026-11-02 16:23
 
 ### 文档
+
 - 新增 `docs/pycharm-streamlit-external-tool.md`：PyCharm 右键通过 `uv` 启动 Streamlit 的 External Tools 配置说明与排错指南。
 - 无代码改动；由用户在 PyCharm 中按文档手动配置。
 
 ## 2026-11-02 12:52
 
 ### 调整
+
 - `page/ai_robot/app.py`：取消聊天输入框聚焦时的高亮效果。
-  - 移除 `stChatInput:focus-within` 的蓝色边框与外发光。
-  - 将输入框内层容器的聚焦红色边框置为透明，聚焦前后样式保持一致。
+    - 移除 `stChatInput:focus-within` 的蓝色边框与外发光。
+    - 将输入框内层容器的聚焦红色边框置为透明，聚焦前后样式保持一致。
 
 ## 2026-11-02 12:44
 
 ### 修复
+
 - `page/ai_robot/app.py`：修复底部“深度思考 / 智能搜索”胶囊与输入框重叠。
-  - 抵消 Streamlit Markdown 容器默认的 `margin-bottom: -1rem` 和固定高度，让胶囊区域按实际高度占位。
-  - 底部工具区与输入框间距调整为 0.5rem；实测桌面端和移动端胶囊底部与输入框顶部间隔 14px。
+    - 抵消 Streamlit Markdown 容器默认的 `margin-bottom: -1rem` 和固定高度，让胶囊区域按实际高度占位。
+    - 底部工具区与输入框间距调整为 0.5rem；实测桌面端和移动端胶囊底部与输入框顶部间隔 14px。
 - `page/ai_robot/app.py`：修复侧栏底部用户昵称与“免费版”显示不全。
-  - 头像、昵称、套餐改为单行 Flex 布局，头像固定 34px，昵称超长时单行省略。
-  - 解除用户信息区 Markdown 的负外边距与固定高度，底部信息不再被侧栏 `overflow: hidden` 裁剪。
-  - 移动端历史区限高由 22vh 调整为 18vh，避免页面自动下移遮挡侧栏顶部 Logo。
+    - 头像、昵称、套餐改为单行 Flex 布局，头像固定 34px，昵称超长时单行省略。
+    - 解除用户信息区 Markdown 的负外边距与固定高度，底部信息不再被侧栏 `overflow: hidden` 裁剪。
+    - 移动端历史区限高由 22vh 调整为 18vh，避免页面自动下移遮挡侧栏顶部 Logo。
 
 ## 2026-11-02 11:48
 
 ### 界面重构
+
 - `page/ai_robot/app.py`：重构为 DeepSeek 网页版暗色风格，保留 SQLite 历史、流式回答、图片/文档上传等真实功能。
-  - 使用 `st.columns([1, 3.5])` 分栏，左侧用自定义 `st.container` 模拟侧栏，不使用原生 `st.sidebar`。
-  - 侧栏包含 Logo、搜索、全宽圆角“新建对话”、按置顶/今天/昨天/更早分组的历史记录、当前会话高亮与操作菜单、底部用户信息。
-  - 主区包含吸顶会话标题、分享图标、用户右侧气泡、助手消息操作图标。
-  - 围栏代码块拆分为带语言标签与复制按钮的深色代码块，并补充行内代码、加粗、列表、标题等 Markdown 样式。
-  - 底部输入区固定在页面下方，包含“深度思考”“智能搜索”胶囊、附件按钮与蓝色发送按钮；底部容器不再拦截侧栏点击。
-  - 增加移动端适配：窄屏下侧栏改为文档流布局、历史区限高滚动、分栏保持横排。
+    - 使用 `st.columns([1, 3.5])` 分栏，左侧用自定义 `st.container` 模拟侧栏，不使用原生 `st.sidebar`。
+    - 侧栏包含 Logo、搜索、全宽圆角“新建对话”、按置顶/今天/昨天/更早分组的历史记录、当前会话高亮与操作菜单、底部用户信息。
+    - 主区包含吸顶会话标题、分享图标、用户右侧气泡、助手消息操作图标。
+    - 围栏代码块拆分为带语言标签与复制按钮的深色代码块，并补充行内代码、加粗、列表、标题等 Markdown 样式。
+    - 底部输入区固定在页面下方，包含“深度思考”“智能搜索”胶囊、附件按钮与蓝色发送按钮；底部容器不再拦截侧栏点击。
+    - 增加移动端适配：窄屏下侧栏改为文档流布局、历史区限高滚动、分栏保持横排。
 - `page/ai_robot/chat_store.py`：新增 `pinned` 字段与自动迁移，支持会话置顶/取消置顶。
 
 ### 修复
+
 - 修复侧栏分组标题与历史按钮重叠。
 - 修复用户消息气泡未右对齐。
 - 修复代码块语言栏与代码区重叠、复制按钮不可见及按钮底色过亮。
@@ -707,42 +962,50 @@
 ## 2026-11-02 11:08
 
 ### 新增
+
 - `page/ai_robot/app.py`：等待后端时显示动态状态图标。
-  - 等待阶段：紧凑状态框 + `:shimmer[正在等待后端响应…]` 动画文字，状态图标旋转。
-  - 收到首块内容后：切换为 `:shimmer[正在生成回答…]`。
-  - 完成后显示“回答完成”勾选图标；失败时显示“请求失败”错误图标。
-  - 状态框内展示当前使用的模型名称。
+    - 等待阶段：紧凑状态框 + `:shimmer[正在等待后端响应…]` 动画文字，状态图标旋转。
+    - 收到首块内容后：切换为 `:shimmer[正在生成回答…]`。
+    - 完成后显示“回答完成”勾选图标；失败时显示“请求失败”错误图标。
+    - 状态框内展示当前使用的模型名称。
 - `page/ai_robot/llm_client.py`：新增 `pick_model()`，供界面显示实际选用的模型。
 
 ## 2026-11-02 10:57
 
 ### 文档
+
 - `README.md`：补充 AI 机器人启动命令（含端口占用时的备用命令）。
 
 ## 2026-11-02 10:53
 
 ### 新增
+
 - `page/ai_robot/`：Streamlit AI 聊天机器人。
-  - `app.py`：聊天界面，流式输出；左侧会话历史列表，支持新建、切换、删除。
-  - `chat_store.py`：SQLite 持久化会话与消息，上传文件保存到 `data/uploads/<会话ID>/`。
-  - `file_reader.py`：PDF / Word / Excel / PPT / 文本文字提取，图片类型识别。
-  - `llm_client.py`：Anthropic 兼容接口，含图片时自动切换 `ANTHROPIC_VISION_MODEL`。
+    - `app.py`：聊天界面，流式输出；左侧会话历史列表，支持新建、切换、删除。
+    - `chat_store.py`：SQLite 持久化会话与消息，上传文件保存到 `data/uploads/<会话ID>/`。
+    - `file_reader.py`：PDF / Word / Excel / PPT / 文本文字提取，图片类型识别。
+    - `llm_client.py`：Anthropic 兼容接口，含图片时自动切换 `ANTHROPIC_VISION_MODEL`。
 - 输入框支持多文件上传：图片（png/jpg/jpeg/webp/gif）原生发送，文档提取文字后拼入上下文。
 - 会话自动命名（取首条消息前 20 字，无文字时取首个文件名）。
 
 ### 依赖
+
 - `pyproject.toml` / `uv.lock`：新增 `pypdf`、`python-docx`、`openpyxl`、`python-pptx`。
 
 ### 其他
+
 - `.gitignore`：忽略 `page/ai_robot/data/` 运行时数据。
 
 ## 2026-11-02 10:36
 
 ### 修复
-- `page/ai_client.py`：由 OpenAI SDK 改为 Anthropic SDK，按 `.env` 中的 `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` / `ANTHROPIC_MODEL` 调用模型。
+
+- `page/ai_client.py`：由 OpenAI SDK 改为 Anthropic SDK，按 `.env` 中的 `ANTHROPIC_BASE_URL` / `ANTHROPIC_AUTH_TOKEN` /
+  `ANTHROPIC_MODEL` 调用模型。
 - 问答改为流式输出（`client.messages.stream` + `text_stream`），逐字打印。
 - 增加鉴权失败、模型不存在、限流、网络异常等中文错误提示，出错后不退出程序。
 - 支持 Ctrl+C / EOF 优雅退出。
 
 ### 依赖
+
 - `pyproject.toml` / `uv.lock`：新增 `anthropic>=0.95.0`。
