@@ -9,7 +9,7 @@ from app.model.book import Book
 BOOKS_JSON_PATH = Path(__file__).resolve().parent.parent / "assets" / "json" / "books.json"
 
 
-class BookLibraryModel(BaseModel):
+class BookLibrary(BaseModel):
     """图书馆模型"""
 
     books: list[Book] = Field(default_factory=list)
@@ -17,19 +17,18 @@ class BookLibraryModel(BaseModel):
 
     def borrow_book(self, book: Book) -> bool:
         """借书"""
-        idx = next((i for i, e in enumerate(self.books) if e.isbn == book.isbn), -1)
-        if idx == -1:
+        target = self.find_book_by_isbn(book.isbn)
+        if target is None:
             return False
-        self.books[idx].is_borrow = True
+        target.is_borrow = True
         return True
 
     def return_book(self, book: Book) -> bool:
         """还书"""
-        idx = next((i for i, e in enumerate(self.books) if e.isbn == book.isbn), -1)
-        # values = [e for e in self.books if e.isbn == book.isbn]
-        if idx == -1:
+        target = self.find_book_by_isbn(book.isbn)
+        if target is None:
             return False
-        self.books[idx].is_borrow = False
+        target.is_borrow = False
         return True
 
     def add_book(self, book: Book) -> None:
@@ -42,10 +41,7 @@ class BookLibraryModel(BaseModel):
 
     def find_book_by_isbn(self, isbn: str) -> Book | None:
         """根据ISBN查找图书"""
-        for book in self.books:
-            if book.isbn == isbn:
-                return book
-        return None
+        return next((book for book in self.books if book.isbn == isbn), None)
 
     def load_books(
             self,
@@ -56,5 +52,5 @@ class BookLibraryModel(BaseModel):
         data = json.loads(Path(path).read_text(encoding="utf-8"))
         if count is not None:
             data = data[: max(count, 0)]
-        self.books = [Book.from_dict(item) for item in data]
+        self.books = [Book.model_validate(item) for item in data]
         return self.books

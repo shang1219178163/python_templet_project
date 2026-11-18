@@ -1,6 +1,6 @@
-from app.model import book_library_model
+from app.model.book_library import BookLibrary
 
-library = book_library_model.BookLibraryModel()
+library = BookLibrary()
 
 # 初始化图书馆模型
 books = library.load_books(count=10)
