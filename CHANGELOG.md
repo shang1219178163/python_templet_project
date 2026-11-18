@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-11-18 18:51
+
+### 功能：`ConsoleCRUD` 新增布尔值读取方法 `read_bool`
+
+- `read_bool(tips) -> bool`：沿用 `read_float` 的循环重试写法，非法输入打印提示后重新录入。
+    - 真值：`y` / `yes` / `true` / `1` / `是`；假值：`n` / `no` / `false` / `0` / `否`。
+    - 输入自动去首尾空格并忽略大小写。
+- 验证：各真/假写法、大小写、含空格输入，以及「非法输入 → 重新录入」均实测通过；
+  `py_compile`、`ruff check` 通过。
+
 ## 2026-11-18 15:48
 
 ### 调整：`shopping_cart_demo.py` 的 `format_row` / `summarize` 改为独立函数

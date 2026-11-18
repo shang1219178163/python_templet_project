@@ -82,6 +82,17 @@ class ConsoleCRUD:
             print("必须是非负数字，请重新输入")
 
     @staticmethod
+    def read_bool(tips: str) -> bool:
+        """读取布尔值，非法时要求重新输入"""
+        while True:
+            text = input(tips).strip().lower()
+            if text in {"y", "yes", "true", "1", "是"}:
+                return True
+            if text in {"n", "no", "false", "0", "否"}:
+                return False
+            print("请输入 yes/no（或 y/n、是/否），请重新输入")
+
+    @staticmethod
     def read_int(tips: str) -> int:
         """读取数量，非法时要求重新输入"""
         while True:
