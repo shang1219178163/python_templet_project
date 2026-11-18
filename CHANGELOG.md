@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## 2026-11-18 20:12
+
+### 文档：清理 `docs/` 中残留的 `lib/`、`../app` 旧路径
+
+- `docs/pycharm-streamlit-external-tool.md`：`lib/page/streamlit_demo.py` → `app/page/streamlit_demo.py`，
+  `lib.base_widget` → `app.base_widget`，报错示例 `No module named 'lib'` → `'app'`，
+  绝对路径示例 `~/GitHub/...` 改为当前仓库路径。
+- `docs/python-literal-type.md`：两处 `../app` 还原为 `app/base_widget/_layout.py`、`app/base_widget/flex.py`，
+  枚举对比处补上 `app/enums/weekday_enum.py`、`app/enums/member_level_enum.py`。
+- `docs/python-callable-code-attr.md`：两处 `../app` 还原为 `app/util/hook.py`、`app/util/dlog.py`。
+- 验证：`docs/` 下已无 `lib/`、`lib.`、`../app`、`GitHub/python_templet` 等旧引用。
+
+## 2026-11-18 20:10
+
+### 文档：同步模型改造后的类名与该有的说明
+
+- `docs/pydantic-backend-essentials.md`：`StudentModel` → `Student`；补上 `Student` 已全部改用 `Field` 约束
+  （`min_length`、`ge/le`、`str_strip_whitespace`）的现状；`total_score` 处一并提到 `average_score`。
+- `docs/python-property-decorator.md`：`StudentModel.total_score` → `Student.total_score`。
+- 两篇里被误写成 `../app/model/student.py` 的路径改回 `app/model/student.py`。
+
 ## 2026-11-18 20:07
 
 ### 重构：`BookLibraryModel` 更名为 `BookLibrary`，文件同步改名
