@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 2026-11-18 19:25
+
+### 修复：`app/main.py` 的 uvicorn 入口指向错误的模块
+
+- 报错 `Attribute "app" not found in module "app.main"`：FastAPI 实例声明在 `app/api/book.py`，`app/main.py` 里没有 `app` 变量。
+- 改为 `uvicorn.run("app.api.book:app", ...)`。
+- 验证：`GET /` 返回欢迎信息、`GET /books` 返回图书列表，均 200。
+
+## 2026-11-18 19:12
+
+### 配置：新增 PyCharm 运行配置 `main`
+
+- `.idea/runConfigurations/main.xml`：共享运行配置，脚本 `$PROJECT_DIR$/main.py`，工作目录项目根。
+- 解释器显式指向 `$PROJECT_DIR$/.venv/bin/python`（不依赖模块 SDK，因为 `.iml` 里的 SDK 还指向已删除的旧克隆）。
+- 验证：XML 可解析、解释器存在、`app/main.py` 实跑输出 `Hello world!`；`.idea/` 在 `.gitignore` 中，该文件仅本地生效。
+
 ## 2026-11-18 18:51
 
 ### 功能：`ConsoleCRUD` 新增布尔值读取方法 `read_bool`
@@ -22,8 +38,8 @@
 
 ### 调整：两个 DEMO 启动前用 `batch_import` 预置 3 条数据
 
-- `lib/page/curd/shopping_cart_demo.py`：`run()` 前导入 Meta80 × 2、鼠标 × 3、键盘 × 1。
-- `lib/page/curd/students_crud_demo.py`：`run()` 前导入张三 / 李四 / 王五的三科成绩。
+- `app`：`run()` 前导入 Meta80 × 2、鼠标 × 3、键盘 × 1。
+- `app`：`run()` 前导入张三 / 李四 / 王五的三科成绩。
 - 导入代码放在 `if __name__ == "__main__":` 里，模块被 import 时不产生副作用。
 - 验证：以管道输入跑「查询 → 退出」，3 条数据、合计金额、人数与平均分输出正常；`py_compile`、`ruff check` 通过。
 
@@ -42,7 +58,7 @@
 
 ## 2026-11-18 15:26
 
-### 功能：`lib/page/curd/students_crud_demo.py` 用 `ConsoleCRUD` 实现学生管理系统
+### 功能：`app` 用 `ConsoleCRUD` 实现学生管理系统
 
 - 沿用文件头的案例说明，声明 `ConsoleCRUD` 实例：三科成绩字段 `chinese` / `math` / `english`，均用 `read_float` 录入。
 - `format_student`：单条展示姓名、各科成绩与总分（`{:g}` 去掉多余小数）。
@@ -52,7 +68,7 @@
 
 ## 2026-11-18 15:16
 
-### 新增：`lib/page/curd/console_crud_demo.py` 演示 `ConsoleCRUD` 组件
+### 新增：`app` 演示 `ConsoleCRUD` 组件
 
 - 用购物车场景演示组件的三个可配置点：`fields`（`Field` 声明字段）、`format_row` / `summarize`（定制展示与合计）、
   `data`（传入初始商品数据）。
@@ -64,15 +80,15 @@
 
 ### 重构：抽取控制台增删改查组件 `ConsoleCRUD`
 
-- 新增 `lib/util/console_crud.py`：把「菜单循环 + 嵌套字典增删改查 + 输入校验」收敛为一个可配置类。
+- 新增 `app`：把「菜单循环 + 嵌套字典增删改查 + 输入校验」收敛为一个可配置类。
     - `Field`：描述一个待录入字段（提示语 + 读取函数）。
     - `ConsoleCRUD`：`add` / `update` / `delete` / `show` / `run` 通用流程；`read_str` / `read_float` / `read_int`
       静态方法提供输入校验；`format_row` / `summarize` / `empty_hint` 由使用方定制展示。
     - 提示语按 `entity` 拼接（如「商品已存在，请执行修改操作」），菜单按 `title` 渲染。
-- `lib/page/curd/shopping_cart_demo.py`：删掉重复的 `read_float` / `read_int` / 各 CRUD 函数与菜单，改为声明一个
+- `app`：删掉重复的 `read_float` / `read_int` / 各 CRUD 函数与菜单，改为声明一个
   `ConsoleCRUD` 实例（字段 `price` / `num`，展示含小计与合计金额）。
-- `lib/page/students_curd_demo.py`：同样改为声明式配置（字段 `chinese` / `math` / `english`），补齐文件头说明。
-- `lib/util/__init__.py`：导出 `ConsoleCRUD`、`Field`。
+- `app`：同样改为声明式配置（字段 `chinese` / `math` / `english`），补齐文件头说明。
+- `app`：导出 `ConsoleCRUD`、`Field`。
 - 细微行为变化：学生管理新增/修改/删除后也会打印成功提示；提示语统一为中文逗号。
 - 验证：两个 DEMO 的添加 / 重复添加 / 修改 / 修改不存在 / 删除 / 删除不存在 / 空查询 / 非法编号 / 退出
   全部分支模拟输入实测通过；`py_compile`、`ruff check` 通过。
@@ -96,7 +112,7 @@
 
 ## 2026-11-18 15:05
 
-### 功能：实现 `lib/page/curd/shopping_cart_demo.py` 购物车管理系统
+### 功能：实现 `app` 购物车管理系统
 
 - 在原有文档字符串与菜单基础上补齐实现：`add_item`、`update_item`、`delete_item`、`show_cart`，主循环用 `match case` 分发。
 - 菜单标题由「学生管理系统」更正为「购物车系统」。
@@ -115,7 +131,7 @@
 
 ## 2026-11-18 11:42
 
-### 功能：实现 `lib/page/dict_demo.py` 购物车管理系统（参考 Downloads/03字典案例.py）
+### 功能：实现 `app` 购物车管理系统（参考 Downloads/03字典案例.py）
 
 - 用嵌套字典 `shopping_cart: dict[str, Goods]` 存储商品，`Goods` 用 `TypedDict` 描述 price/num。
 - 按功能拆函数：`add_item`、`update_item`、`delete_item`、`show_cart`，主循环用 `match case` 分发。
@@ -146,14 +162,14 @@
   `HookCallback`。
 - `args_kwargs_demo.py` 删除未使用的 `functools.wraps`、`typing.Any/Callable` 导入。
 - `test1.py` 删除未使用的 `from os.path import join`。
-- 复查范围：`lib/` 全部文件 + 根目录 `main.py`、`sitecustomize.py`，已无 `TypeVar(`、`ParamSpec(`、`Generic[`、`Optional[`、
+- 复查范围：`app` 全部文件 + 根目录 `app/main.py`、`sitecustomize.py`，已无 `TypeVar(`、`ParamSpec(`、`Generic[`、`Optional[`、
   `Union[`、`from typing import Callable` 等旧写法。
 - 验证：`python -m compileall lib` 通过；`log.py`、`hook.py` 运行输出正常；8 个改动文件 PyCharm 检查无 error（`test1.py`
   仅剩两处因代码被注释而未使用 import 的既有警告）。
 
 ## 2026-11-18 11:07
 
-### 优化：`lib/util/hook.py` 改用 Python 3.13 新语法
+### 优化：`app` 改用 Python 3.13 新语法
 
 - 模块级 `P = ParamSpec("P")`、`R = TypeVar("R")` 改为函数级类型参数 `def hook[**P, R](...)`。
 - `type` 语句定义 `HookCallback`、`HookExtra` 别名，`HookExtra` 明确为 `tuple[str, str]`。
@@ -185,7 +201,7 @@
 ### 修复：`Box.__getitem__` 注解触发「前向引用联合体需整体加引号」
 
 - 现象：`-> T | "Box[T]"` 只有一半加引号，PyCharm 报「具有前向引用的联合体类型注解必须完全用引号括起来」。
-- 解法：文件顶部加 `from __future__ import annotations`（与 `lib/base_widget/_layout.py`
+- 解法：文件顶部加 `from __future__ import annotations`（与 `app`
   一致），注解整体延迟求值，前向引用无需加引号；同时去掉内层冗余引号，改为 `-> T | Box[T]`。
 - 验证：脚本正常运行；`typing.get_type_hints(Box.__getitem__)` 可解析为 `int | slice` 与 `Union[~T, Box[~T]]`。
 
@@ -200,7 +216,7 @@
 
 ## 2026-11-18 10:43
 
-### 修复：`lib/page/generic_type_demo.py` 两处 TypeVar 误用
+### 修复：`app` 两处 TypeVar 误用
 
 - 第 13 行 `e["name"]` 对 `TypeVar` 对象取下标，报 `TypeError: 'typing.TypeVar' object is not subscriptable`；改为打印
   `(e.__name__, e.__constraints__)`。
@@ -215,13 +231,13 @@
 ### 文档：新增 `docs/python-literal-type.md` 说明 `Literal[...]`
 
 - 概念、语法约束（只能写字面量）、与 `str` 的区别。
-- 以 `lib/base_widget/_layout.py`、`lib/base_widget/flex.py` 的实际签名为例。
+- 以 `app`、`app` 的实际签名为例。
 - 运行时是否生效（Pydantic/FastAPI 会校验，普通函数需手写判断）。
 - `Literal` 与 `Enum` 的选型对比，以及与 `LiteralString` 的区别。
 
 ## 2026-11-18 09:26
 
-### 修复：`lib/page/tuple_demo.py` 列表推导式 `NameError`
+### 修复：`app` 列表推导式 `NameError`
 
 - `[(i, e) for e in enumerate(person)]` 只解包了元组 `e`，`i` 从未赋值，运行即报 `NameError: name 'i' is not defined`。
 - 改为 `[(i, e) for i, e in enumerate(person)]`，注释同步为真实输出 `[(0, '张三'), (1, 25), (2, 1.75)]`。
@@ -254,18 +270,18 @@
 ### 提交：按功能拆分本次改动为 5 个提交
 
 - `chore(依赖)`：删除 requirements.txt，补充 python-dotenv。
-- `refactor(结构)`：六个目录迁入 `lib/` 并统一 `lib` 包导入（59 个文件）。
-- `feat(图书API)`：新增 `lib/api/book.py` 与 README 启动说明。
+- `refactor(结构)`：六个目录迁入 `app` 并统一 `lib` 包导入（59 个文件）。
+- `feat(图书API)`：新增 `app` 与 README 启动说明。
 - `chore(作业)`：新增 day9–day11 空白占位文件。
 - `docs(变更日志)`：更新 CHANGELOG。
 
 ## 2026-11-17 21:27
 
-### 重命名：`lib/api/book_api.py` → `lib/api/book.py`
+### 重命名：`app` → `app`
 
-- 文件在提交前直接以 `lib/api/book.py` 入库，仓库历史中不出现 `book_api.py`。
+- 文件在提交前直接以 `app` 入库，仓库历史中不出现 `book_api.py`。
 - README 启动命令同步改为 `PYTHONPATH=. .venv/bin/uvicorn lib.api.book:app --host 127.0.0.1 --port 8001 --reload`。
-- 清理 `lib/api/__pycache__` 中残留的 `book_api` 字节码缓存。
+- 清理 `app` 中残留的 `book_api` 字节码缓存。
 
 ## 2026-11-17 21:22
 
@@ -283,7 +299,7 @@
 
 ## 2026-11-17 21:20
 
-### 修复并启动：`lib/api/book_api.py` FastAPI 图书查询服务
+### 修复并启动：`app` FastAPI 图书查询服务
 
 - 导入改为 `from lib.model.book import Book`，修复迁移后的 `ModuleNotFoundError: No module named 'model'`。
 - 移除 `authlib.common.encoding.json_dumps`：它本质是 `json.dumps`，无法序列化 Pydantic `Book`，且返回字符串会被 FastAPI
@@ -306,22 +322,22 @@
 
 ## 2026-11-17 21:03
 
-### 重构：把 `assets`、`enums`、`base_widget`、`model`、`page`、`util` 六个目录整体移入 `lib/`
+### 重构：把 `assets`、`enums`、`base_widget`、`model`、`page`、`util` 六个目录整体移入 `app`
 
 - 目录迁移：`git mv assets|enums|base_widget|model|page|util lib/`，历史记录保持为 rename。
 - 导入统一改为 `lib` 包前缀：`from lib.util.dlog import DLog`、`from lib.model.book import Book`、
   `from lib.page.homework.section1.day1 import log_poetry` 等，共涉及 `base_widget`、`model`、`util`、`page` 下 15 个文件。
 - 脚本 `sys.path` 引导改为 `parents[2]`（指向项目根目录）；`page/io/file_demo.py` 的资源根变量改名为 `resource_root`（指向
-  `lib/`）。
-- 资源路径：`model/book_library_model.py` 的 `parent.parent` 自然指向 `lib/`，`books.json` 路径保持有效；`page/student.py`
+  `app`）。
+- 资源路径：`model/book_library_model.py` 的 `parent.parent` 自然指向 `app`，`books.json` 路径保持有效；`page/student.py`
   的 `SCORE_PATH` 改为 `project_root / "lib" / "assets" / ...`。
 - 配置与文档同步：`README.md`、`docs/pycharm-streamlit-external-tool.md`、`docs/python-callable-code-attr.md`、
-  `tools/pycharm-streamlit-runner` 的说明与命令改为 `lib/...`；`.gitignore` 的 AI 机器人运行数据路径改为
-  `lib/page/ai_robot/data/`。
+  `tools/pycharm-streamlit-runner` 的说明与命令改为 `app`；`.gitignore` 的 AI 机器人运行数据路径改为
+  `app`。
 - 未改动：`page/ai_robot/app.py` 仍使用同目录扁平导入（Streamlit 会把脚本目录加入 `sys.path`），可正常启动。
 - 验证：`python -m compileall lib` 通过；`lib` 下模块导入正常（`lib.page.test1` 会执行交互输入、`lib.page.codable` 存在既有的
   `WeekdayEnum.valueOf` 报错，故不以导入结果为准）；`PYTHONPATH=. python lib/page/student.py`、从其他目录运行
-  `lib/page/enum_test.py` 均能正确定位模块与资源；Ruff 仅剩迁移前已存在的告警。
+  `app` 均能正确定位模块与资源；Ruff 仅剩迁移前已存在的告警。
 
 ## 2026-11-17 20:49
 
