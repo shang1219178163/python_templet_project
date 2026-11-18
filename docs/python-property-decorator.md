@@ -25,7 +25,7 @@ s.total_score  # 不加 ()
 
 本项目里的现成例子：
 
-- `../app/model/student.py` 的 `total_score`：写成 `student.total_score`，不用 `student.total_score()`。
+- `app/model/student.py` 的 `total_score`：写成 `student.total_score`，不用 `student.total_score()`。
 - `app/config.py` 的 `vision_model`：调用方读 `settings.vision_model` 时才计算「单独配了视觉模型就用它，否则回退默认模型」。
 
 ## 二、它解决了什么
@@ -80,5 +80,5 @@ property，真的慢再优化。
 
 ## 五、和本项目相关的两个具体动作
 
-- `StudentModel.total_score` 目前是 `@property`，接口返回时不出现；需要输出就改成 `@computed_field` + `@property`。
+- `Student.total_score` 目前是 `@property`，接口返回时不出现；需要输出就改成 `@computed_field` + `@property`。
 - `Settings.vision_model` 用 `@property` 是对的：它只是回退逻辑，不参与 `.env` 解析，也不该进序列化结果。

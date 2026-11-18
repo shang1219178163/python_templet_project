@@ -33,7 +33,7 @@
 | 嵌套模型自动递归校验                                                                                                | `BookLibrary.books: list[Book]`                                                         |
 | `model_validate(dict)` / `model_dump()` 在模型与字典间转换                                                          | `BookLibrary.load_books` 里的 `Book.model_validate(item)`                               |
 | FastAPI 里模型即请求体/响应体：类型不符自动 422，不用手写校验                                                       | `app/api/book.py` 的 `-> list[Book]`，`/docs` 由模型自动生成                            |
-| `Field(...)` 常用参数：`default_factory`、`ge/gt/min_length`、`pattern`、`alias` / `validation_alias`、`repr=False` | `app/model/book.py` 的约束写法；`../app/model/student.py` 的 `name`、`library_password` |
+| `Field(...)` 常用参数：`default_factory`、`ge/gt/min_length`、`pattern`、`alias` / `validation_alias`、`repr=False` | `app/model/book.py` 的约束写法；`app/model/student.py` 的 `name`、`library_password` |
 | `Decimal` + `decimal_places` / `max_digits` 管金额精度                                                              | `app/model/book.py` 的 `price`                                                          |
 | `model_config = ConfigDict(from_attributes=True)`：从 ORM/普通对象读取（接 SQLAlchemy 时必用）                      | 项目里还没有，接数据库就会用到                                                          |
 | `Literal` / `Enum` / `X \| None` 表达有限取值与可空                                                                 | `member_level: MemberLevelEnum`                                                         |
@@ -64,7 +64,7 @@ class Settings(BaseSettings):
 - **`Decimal` 的 JSON 序列化**：默认输出成 **字符串**（`"66.00"`），前端按字符串处理，需要数字要自己转换或写序列化器。
 - **`ValidationError` 的结构**：`e.errors()` 返回 `loc/msg/type`，自定义 422 响应或记日志时要用。
 - **判别联合（discriminated union）**：`Field(discriminator="type")`，做多形态消息/事件时比一串 `X | Y | Z` 准。
-- **`computed_field`**：像 `StudentModel.total_score` 那样写成 `@property` 不会出现在 JSON 里，要输出就得用
+- **`computed_field`**：像 `Student.total_score` 那样写成 `@property` 不会出现在 JSON 里，要输出就得用
   `@computed_field`。
 
 ---
@@ -90,7 +90,8 @@ strict 模式细节、性能调优、`pydantic.v1` 兼容模块、V1→V2 迁移
 
 - `Book` 已经把默认值全部换成 `Field(...)`：`ge=0` 管范围、`pattern` 管 ISBN 格式、`decimal_places=2` 管金额精度，
   字段说明写进 `description` 后会出现在 `/docs`。
-- `Student` 用 `validation_alias=AliasChoices("name", "userName", "user_name")` 兼容多种字段名，
-  这是第二层的内容，已经用上了一半。
-- `StudentModel.total_score` 目前是 `@property`，接口返回时不出现；需要输出的话改成 `@computed_field`。
+- `Student` 同样全部换成 `Field(...)`：`student_id` / `name` 加 `min_length=1`，三科成绩加 `ge=0, le=100`；
+  并用 `validation_alias=AliasChoices("name", "userName", "user_name")` 兼容多种字段名，`model_config` 开了
+  `str_strip_whitespace`。这是第二层的内容，已经用上一半了。
+- `Student.total_score` / `average_score` 目前是 `@property`，接口返回时不出现；需要输出的话改成 `@computed_field`。
 - 配置统一在 `app/config.py`，其他模块只 `from app.config import settings`，不要再各自 `load_dotenv()`。
