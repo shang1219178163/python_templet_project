@@ -4,9 +4,10 @@
 """
 
 import sys
+from collections.abc import Callable
 from functools import partial
 from pathlib import Path
-from typing import Callable, cast
+from typing import cast
 
 # 本文件在 lib/page/ 下，导入 lib 包需要先把项目根目录加入 sys.path
 project_root = str(Path(__file__).resolve().parents[2])

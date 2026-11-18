@@ -1,7 +1,8 @@
+from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
 from types import FunctionType
-from typing import Any, Callable
+from typing import Any
 
 
 def hook_old(
