@@ -7,7 +7,7 @@
 
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, ClassVar
+from typing import Any
 
 type Row = dict[str, Any]
 type Formatter = Callable[[str, Row], str]
@@ -28,9 +28,9 @@ class ConsoleCRUD:
     数据结构约定：``{名称: {字段名: 值, ...}}``，名称即字典的 key。
     """
 
-    menu_template: ClassVar[str] = """
-####################### {title} #####################
-#         1.添加  2.修改  3.删除  4.查询  5.退出           #
+    menu_template = """
+####################### {title} ########################
+#        1.添加  2.修改  3.删除  4.查询  5.退出            #
 #########################################################
 """
 
