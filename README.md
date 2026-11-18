@@ -1,4 +1,5 @@
 # python_templet_project
+
 用 uv 管理的个人 python 项目工程
 
 运行本地文件 main.py 命令：
@@ -9,24 +10,26 @@
 
 PyCharm 右键运行说明：
 
-项目根目录的 `sitecustomize.py` 用于抵消 PyCharm 每次运行注入的绘图后端开销（其 `sitecustomize` 会连带导入 pandas，使解释器启动多花 2~5 秒）。该文件对普通 Python 进程不做任何事。若删除它，PyCharm 的 Plots 工具窗口会恢复接管 plotly/matplotlib 渲染，但右键运行会重新变慢。
+项目根目录的 `sitecustomize.py` 用于抵消 PyCharm 每次运行注入的绘图后端开销（其 `sitecustomize` 会连带导入
+pandas，使解释器启动多花 2~5 秒）。该文件对普通 Python 进程不做任何事。若删除它，PyCharm 的 Plots 工具窗口会恢复接管
+plotly/matplotlib 渲染，但右键运行会重新变慢。
 
 运行 Streamlit 演示页：
 
 ```bash
-PYTHONPATH=. .venv/bin/streamlit run lib/page/streamlit_demo.py
+PYTHONPATH=. .venv/bin/streamlit run app/page/streamlit_demo.py
 ```
 
 运行 AI 机器人聊天页：
 
 ```bash
-PYTHONPATH=. .venv/bin/streamlit run lib/page/ai_robot/app.py
+PYTHONPATH=. .venv/bin/streamlit run app/page/ai_robot/app.py
 ```
 
 若 8501 端口已被占用，可指定其他端口：
 
 ```bash
-PYTHONPATH=. .venv/bin/streamlit run lib/page/ai_robot/app.py --server.port 8502
+PYTHONPATH=. .venv/bin/streamlit run app/page/ai_robot/app.py --server.port 8502
 ```
 
 默认打开 http://localhost:8501 ；指定端口时改为对应端口。
@@ -34,15 +37,17 @@ PYTHONPATH=. .venv/bin/streamlit run lib/page/ai_robot/app.py --server.port 8502
 启动 FastAPI 图书查询服务：
 
 ```bash
-PYTHONPATH=. .venv/bin/uvicorn lib.api.book:app --host 127.0.0.1 --port 8001 --reload
+PYTHONPATH=. .venv/bin/uvicorn app.api.book:app --host 127.0.0.1 --port 8001 --reload
 ```
 
-接口文档 http://127.0.0.1:8001/docs ；接口：`GET /`（欢迎信息）、`GET /books`（图书列表）、`GET /books/count`（图书总数）。端口被占用时可改用 `--port` 指定其他端口。
+接口文档 http://127.0.0.1:8001/docs ；接口：`GET /`（欢迎信息）、`GET /books`（图书列表）、`GET /books/count`（图书总数）。端口被占用时可改用
+`--port` 指定其他端口。
 
-也可用 FastAPI CLI 启动（依赖 `fastapi[standard]`，本项目已安装）。注意必须带 `PYTHONPATH=.`，否则脚本 `sys.path` 里没有项目根目录，会报 `No module named 'lib'`：
+也可用 FastAPI CLI 启动（依赖 `fastapi[standard]`，本项目已安装）。注意必须带 `PYTHONPATH=.`，否则脚本 `sys.path` 里没有项目根目录，会报
+`No module named 'lib'`：
 
 ```bash
-PYTHONPATH=. .venv/bin/fastapi dev lib/api/book.py --port 8001
+PYTHONPATH=. .venv/bin/fastapi dev app/api/book.py --port 8001
 ```
 
 `fastapi deploy` 是把应用部署到 FastAPI Cloud 的命令，本地开发用上面的 `dev` 或 `uvicorn`。
