@@ -1,5 +1,117 @@
 # CHANGELOG
 
+## 2026-11-18 11:12
+
+### 验证：本次改动涉及的 13 个 Python 文件全部运行通过
+
+- 逐个执行并通过（exit=0）：`generic_type_demo.py`、`day8.py`、`lambda_typing.py`、`test.py`、`test1.py`、`tuple_demo.py`、`exec_time.py`、`hook.py`、`hook_old.py`、`log.py`、`args_kwargs_demo.py`（喂入模拟输入）。
+- 修复：`test.py`、`test1.py` 直接运行报 `No module named 'lib'`，补上 `sys.path` 引导（`parents[2]` 指向项目根目录），与 `lambda_typing.py` 一致，不再依赖 `PYTHONPATH=.`。
+- `file_manager.py`、`file_manager_new.py` 为纯库文件，另做冒烟测试：写入、重复写入拦截、读取、搜索、删除、静态方法版均正常。
+- 遗留：`test1.py` PyCharm 仍报两处「未使用 import」，对应代码已被注释，保留以备恢复。
+
+## 2026-11-18 11:10
+
+### 重构：全项目旧写法统一改为 Python 3.13 新语法
+
+- `Callable` 从 `typing` 迁到 `collections.abc`（PEP 585）：`lambda_typing.py`、`file_manager.py`、`file_manager_new.py`、`hook.py`、`hook_old.py`、`log.py`。
+- `log.py` 重写：`ParamSpec` / `TypeVar` 改为 `def log[**P, R](...)`，`extra` 改为元组，抽出 `_now()`，删除未使用的 `HookCallback`。
+- `args_kwargs_demo.py` 删除未使用的 `functools.wraps`、`typing.Any/Callable` 导入。
+- `test1.py` 删除未使用的 `from os.path import join`。
+- 复查范围：`lib/` 全部文件 + 根目录 `main.py`、`sitecustomize.py`，已无 `TypeVar(`、`ParamSpec(`、`Generic[`、`Optional[`、`Union[`、`from typing import Callable` 等旧写法。
+- 验证：`python -m compileall lib` 通过；`log.py`、`hook.py` 运行输出正常；8 个改动文件 PyCharm 检查无 error（`test1.py` 仅剩两处因代码被注释而未使用 import 的既有警告）。
+
+## 2026-11-18 11:07
+
+### 优化：`lib/util/hook.py` 改用 Python 3.13 新语法
+
+- 模块级 `P = ParamSpec("P")`、`R = TypeVar("R")` 改为函数级类型参数 `def hook[**P, R](...)`。
+- `type` 语句定义 `HookCallback`、`HookExtra` 别名，`HookExtra` 明确为 `tuple[str, str]`。
+- `extra` 由可变 `list` 改为元组，避免回调侧误改后影响后续调用。
+- 抽出 `_now()` 去重 `on_before` / `on_after` 里的时间格式化。
+- 回调判空由 `if before:` 改为 `if before is not None:`，避免误判假值可调用对象。
+- 验证：脚本输出正常；PyCharm 检查无 error/warning。
+
+## 2026-11-18 11:05
+
+### 重构：`generic_type_demo.py` 改用 Python 3.13 新语法并清理演示代码
+
+- 删除 5 个模块级 `TypeVar`（`Int`/`Float`/`Bool`/`List`/`Dict` 还遮蔽了内置名）以及未使用的 `T`。
+- 用 PEP 695 约束类型参数 `def echo[X: (int, str)](value: X) -> X` 保留「受约束类型参数」这一知识点。
+- `__getitem__` 返回类型改为 `T | Self`，消除前向引用，随之删掉 `from __future__ import annotations`。
+- 演示代码收进 `main()` 并用 `if __name__ == "__main__"` 守卫，模块可安全导入（此前 import 会直接打印一堆结果）。
+- 修正因数据换成 `range(20)` 而失真的输出注释。
+- 验证：运行输出正确；PyCharm 检查无 error/warning；`typing.get_type_hints` 解析为 `Union[T, Self]`。
+
+## 2026-11-18 10:50
+
+### 补充：`Box` 切片步长验证与演示
+
+- 结论：步长无需改代码。`nums[0:4:2]` 的 `step` 存放在 Python 传入的 `slice` 对象里，现有实现转发给底层序列后天然生效。
+- 文档字符串补充 `nums[1:4:2]` 说明，新增演示 `nums[0:4:2]` → `Box([10, 30])`、`nums[::-1]` → 倒序。
+
+## 2026-11-18 10:47
+
+### 修复：`Box.__getitem__` 注解触发「前向引用联合体需整体加引号」
+
+- 现象：`-> T | "Box[T]"` 只有一半加引号，PyCharm 报「具有前向引用的联合体类型注解必须完全用引号括起来」。
+- 解法：文件顶部加 `from __future__ import annotations`（与 `lib/base_widget/_layout.py` 一致），注解整体延迟求值，前向引用无需加引号；同时去掉内层冗余引号，改为 `-> T | Box[T]`。
+- 验证：脚本正常运行；`typing.get_type_hints(Box.__getitem__)` 可解析为 `int | slice` 与 `Union[~T, Box[~T]]`。
+
+## 2026-11-18 10:45
+
+### 功能：`Box` 支持下标取值与切片
+
+- 新增 `__getitem__`：`nums[0]` 返回单个元素，`nums[1:3]` 返回新的 `Box`（包装切片结果）。
+- 新增 `__repr__`，打印实例时显示 `Box([20, 30])` 而不是对象地址。
+- 局限：T 必须自身可下标（list/tuple/str），`Box(42)[0]` 会 TypeError。
+- 验证：输出 `10 40`、`Box([20, 30])`、`Box('el')`。
+
+## 2026-11-18 10:43
+
+### 修复：`lib/page/generic_type_demo.py` 两处 TypeVar 误用
+
+- 第 13 行 `e["name"]` 对 `TypeVar` 对象取下标，报 `TypeError: 'typing.TypeVar' object is not subscriptable`；改为打印 `(e.__name__, e.__constraints__)`。
+- `class Box([T])` 把列表字面量当基类，报 `TypeError: list expected at most 1 argument, got 3`；改为 `class Box(Generic[T])` 并导入 `Generic`。
+- 修正复制粘贴导致的约束错误：`Float` 用 `float`、`Bool` 用 `bool`、`Dict` 用 `dict`（原先三者都是 `int`）。
+- 补 `print(box.get(), box2.get())` 便于观察实例化结果。
+- 验证：`python lib/page/generic_type_demo.py` 输出约束列表与 `42 hello`。
+
+## 2026-11-18 09:35
+
+### 文档：新增 `docs/python-literal-type.md` 说明 `Literal[...]`
+
+- 概念、语法约束（只能写字面量）、与 `str` 的区别。
+- 以 `lib/base_widget/_layout.py`、`lib/base_widget/flex.py` 的实际签名为例。
+- 运行时是否生效（Pydantic/FastAPI 会校验，普通函数需手写判断）。
+- `Literal` 与 `Enum` 的选型对比，以及与 `LiteralString` 的区别。
+
+## 2026-11-18 09:26
+
+### 修复：`lib/page/tuple_demo.py` 列表推导式 `NameError`
+
+- `[(i, e) for e in enumerate(person)]` 只解包了元组 `e`，`i` 从未赋值，运行即报 `NameError: name 'i' is not defined`。
+- 改为 `[(i, e) for i, e in enumerate(person)]`，注释同步为真实输出 `[(0, '张三'), (1, 25), (2, 1.75)]`。
+- 验证：`python lib/page/tuple_demo.py` 正常输出，无报错。
+
+## 2026-11-18 08:52
+
+### 清理：删除残留的旧克隆目录 `/Users/shang/GitHub/python_templet_project`
+
+- 该目录已不是 Git 仓库，仅剩一个 479M 的 `.venv`，无源码、无提交历史，删掉不丢代码。
+- 删除前确认：无进程占用、本项目代码/配置均未引用该路径（仅 CHANGELOG 与 docs 中作为举例提到）。
+- 已执行 `rm -rf`，目录不存在；`.venv` 相关环境变量残留需在终端 `deactivate` 解决。
+
+## 2026-11-18 08:51
+
+### 修复：`.venv` 从旧工程拷贝导致所有命令行脚本指向错误解释器
+
+- 现象：`uv run fastapi deploy` 报 `To use the fastapi command, please install "fastapi[standard]"`，堆栈指向 `/Users/shang/GitHub/python_templet_project/.venv`。
+- 根因：本项目 `.venv` 是从 GitHub 那份工程整体拷贝的，`.venv/bin` 下 41 个脚本有 33 个 shebang 仍指向旧路径（`uvicorn`、`streamlit`、`fastapi` 均中招）；`.venv/bin/python` 是二进制启动器不受影响，所以此前没暴露。venv 不可搬迁。
+- 修复：`rm -rf .venv && uv sync` 重建，脚本 shebang 全部指向本项目，旧路径残留 0 个。
+- 依赖：`uv add "fastapi[standard]"`，`pyproject.toml` 改为 `fastapi[standard]>=0.162.0`，新增 fastapi-cli、watchfiles、httpx 等 14 个包，从而可用 `fastapi dev` / `fastapi run`。
+- 澄清：`fastapi deploy` 是部署到 FastAPI Cloud 的命令，本地开发不用它。
+- README 补充 `fastapi dev` 启动方式，并注明必须带 `PYTHONPATH=.`，否则报 `No module named 'lib'`（已实测）。
+
 ## 2026-11-17 21:28
 
 ### 提交：按功能拆分本次改动为 5 个提交
