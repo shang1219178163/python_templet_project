@@ -1,10 +1,116 @@
 # CHANGELOG
 
+## 2026-11-18 20:07
+
+### 重构：`BookLibraryModel` 更名为 `BookLibrary`，文件同步改名
+
+- `app/model/book_library_model.py` → `app/model/book_library.py`（`git mv` 保留历史），类名 `BookLibraryModel` → `BookLibrary`。
+- 调用方同步：`app/page/data_type_test.py`、`app/page/book_managment_system/book_managment_system.py` 改为
+  `from app.model.book_library import BookLibrary`，实例化直接 `BookLibrary()`。
+- `docs/pydantic-backend-essentials.md` 三处路径/类名同步更新；全仓库已无 `book_library_model` 残留。
+- 验证：管理页、`data_type_test.py` 实跑正常，`compileall app` 通过；`ruff` 仅剩管理页第 84 行既有的 `print(f"退出系统")` 告警，非本次引入。
+
+## 2026-11-18 20:04
+
+### 调整：`Student.total_score` 恢复 `sum([...])` 写法
+
+- 按需求把上一轮简化的直接相加改回 `sum([self.chinese, self.math, self.english])`，便于以后增删科目。
+- 验证：总分 240、平均分 80.0；`ruff check` 通过。
+
+## 2026-11-18 20:03
+
+### 优化：`Student` 字段改用 `Field`，去掉三个问题方法
+
+- `app/model/student.py`：`student_id` / `name` 加 `min_length=1`；三科成绩加 `ge=0, le=100`；
+  全部字段补 `description`；新增 `model_config = ConfigDict(str_strip_whitespace=True)`。
+- 删除 `__str__`（字符串未闭合，输出永远截断在 `", "`）、`__eq__` / `__lt__`（全项目无调用，且 `__eq__` 把语义悄悄改成只比学号）、
+  `to_dict`（只是 `model_dump(mode="json")` 的包装，且无人调用）。
+- `total_score` 顺带去掉多余的列表推导，`average_score` 保持不变。
+- 验证：总分 240 / 平均 80.0；`userName` 别名可用；首尾空格被去掉；`repr` 不显示密码；
+  空学号 / 空姓名 / 负分 / 超 100 / 缺字段分别被 `string_too_short`、`greater_than_equal`、`less_than_equal`、`missing` 拦截；
+  `compileall app`、`ruff check` 通过。
+
+## 2026-11-18 19:59
+
+### 文档：新增《Python 里给方法加 `@property` 是什么意思》
+
+- 新增 `docs/python-property-decorator.md`：普通方法与属性的对比、`@property` 的四个作用、三个限制
+  （只读、Pydantic 中不进 `model_dump`、每次重算），以及选型速查表。
+- 全部示例对应本项目代码：`StudentModel.total_score`、`Settings.vision_model`、`@computed_field` 写法。
+
+## 2026-11-18 19:52
+
+### 文档：按 `pyproject.toml` 的依赖版本校准 Pydantic 说明
+
+- `docs/pydantic-backend-essentials.md` 新增「本项目依赖版本」表：`pydantic==2.14.2`、`pydantic-settings>=2.13.1`、
+  `pydantic-ai==2.65.0`、`fastapi>=0.162.0`、Python 3.13，并标注 `==` 锁定的升级注意事项。
+- 示例全部换成当前代码：`Book.model_validate`、`Book` 的 `Field` 约束与 `Decimal` 价格、`field_serializer`、
+  `app/config.py` 的 `SettingsConfigDict` / `extra="ignore"`；补上「Decimal 在 JSON 中是字符串」这一条。
+- 删除已过时的 `Book.from_dict` 建议（该方法已在 19:35 那轮重构中移除）。
+- 顺带修复 `pyproject.toml` 第 15 行被误写成 `"-settings>=2.13.1"` 的依赖名，恢复为 `"pydantic-settings>=2.13.1"`；
+  `uv lock --check` 通过。
+
+## 2026-11-18 19:50
+
+### 重构：用 `pydantic-settings` 统一读取 `.env` 配置
+
+- 新增 `app/config.py`：`Settings(BaseSettings)` 声明 `ANTHROPIC_*` 四项配置，`env_file` 固定指向项目根 `.env`，
+  `extra="ignore"` 兼容其余键；`load_dotenv()` 只在这里调用一次，第三方 SDK 仍能从环境变量读到配置。
+  `vision_model` 属性在未配置视觉模型时回退到默认模型。
+- `app/page/ai_client.py`、`app/page/ai_robot/llm_client.py`：删掉各自的 `load_dotenv()` 与 `os.getenv`，改读 `settings`。
+- `app/page/ai_robot/app.py` 重命名为 `chat.py`：原名与 `app` 包同名，在「脚本目录进 `sys.path`」的场景下会遮蔽
+  包导入，导致 `from app.config import settings` 失败（已复现并修复）；README 两处启动命令同步更新。
+- `pyproject.toml` / `uv.lock`：`pydantic-settings>=2.13.1` 由间接依赖改为直接依赖。
+- 验证：`.env` 键正确读入；`ANTHROPIC_MODEL=env-wins` 时环境变量优先；视觉模型回退生效；
+  在脚本目录优先的路径下 `import llm_client` 通过；`chat.py` 以 bare 模式执行无导入错误；`compileall app` 通过。
+
+## 2026-11-18 19:40
+
+### 调整：`Book.price` 由 `float` 改为 `Decimal`
+
+- `price: Decimal = Field(default=Decimal("0.00"), ge=0, max_digits=8, decimal_places=2)`：
+  超过两位小数、负数、非数字输入在校验层直接拒绝（`decimal_max_places` / `greater_than_equal` / `decimal_parsing`）。
+- 新增 `@field_serializer("price", when_used="json")`：JSON 输出统一为两位小数字符串（如 `"66.00"`），
+  接口返回的 `price` 类型由 number 变为 string，前端需按字符串处理。
+- 验证：`66` / `"66.6"` / `66.66` 通过，`66.666` / `1.005` / `-0.01` / `"abc"` 被拒绝；`Decimal("66.60") * 3` 得 `199.80`；
+  `/books` 返回 200 且 `price: "66.00"`；管理页、`data_type_test.py`、`compileall app`、`ruff check` 均通过。
+
+## 2026-11-18 19:39
+
+### 优化：`Book` 默认值改用 `Field` 并加校验约束
+
+- `id` / `price` / `stock` 加 `ge=0`，拒绝负值；`title` / `author` 加 `min_length=1`，拒绝空串；
+  `isbn` 加 `pattern=r"^\d{13}$"`（现有 100 条数据均为 13 位纯数字，已核对）。
+- 字段说明从下方的字符串字面量改为 `Field(description=...)`，FastAPI 的 `/docs` 才能显示。
+- 新增 `model_config = ConfigDict(str_strip_whitespace=True)`，输入自动去首尾空格。
+- 未改 `price` 的类型（仍为 `float`），换 `Decimal` 涉及接口序列化与页面金额计算，留待单独评估。
+- 验证：100 条 `books.json` 正常载入；空书名 / ISBN 位数不符 / 负价格 / 负库存均被拒绝；
+  JSON Schema 中各字段 description 正确；两个使用方页面与 `compileall app` 通过。
+
+## 2026-11-18 19:35
+
+### 优化：`Book` 去掉冗余魔术方法，`BookLibraryModel` 复用查找逻辑
+
+- `app/model/book.py`：删除 `from_dict`（只是 `model_validate` 的包装）、`__str__`（输出漏了 `id`，不如 Pydantic 默认 `repr`）、
+  `__eq__` / `__lt__`（全项目无依赖，且 `__eq__` 悄悄把相等语义改成了只比 ISBN）。
+- `app/model/book_library_model.py`：`Book.from_dict(item)` 改为 `Book.model_validate(item)`；
+  `borrow_book` / `return_book` 改用 `find_book_by_isbn`，删掉两处重复的 `enumerate + next` 索引查找。
+- 验证：`data_type_test.py`、`book_managment_system.py`（借书 / 还书 / 查借阅 / 退出）实跑正常；
+  借还的不存在 ISBN 返回 False，删除后数量正确，默认相等语义恢复为全字段比较；`compileall app` 通过。
+
+## 2026-11-18 19:30
+
+### 文档：新增《后端开发中 Pydantic 要掌握到什么程度》
+
+- 新增 `docs/pydantic-backend-essentials.md`：按「必须熟练 / 应该知道 / 先跳过」三层划分掌握范围，
+  每层都对应到本项目 `app/model/` 下的现有写法，并列出三个高频坑。
+
 ## 2026-11-18 19:25
 
 ### 修复：`app/main.py` 的 uvicorn 入口指向错误的模块
 
-- 报错 `Attribute "app" not found in module "app.main"`：FastAPI 实例声明在 `app/api/book.py`，`app/main.py` 里没有 `app` 变量。
+- 报错 `Attribute "app" not found in module "app.main"`：FastAPI 实例声明在 `app/api/book.py`，`app/main.py` 里没有 `app`
+  变量。
 - 改为 `uvicorn.run("app.api.book:app", ...)`。
 - 验证：`GET /` 返回欢迎信息、`GET /books` 返回图书列表，均 200。
 
@@ -848,7 +954,7 @@
 
 - `model/student_model.py`、`model/book_model.py`、`model/book_library_model.py`：由 `@dataclass` 迁移为 Pydantic
   `BaseModel`。
-    - `StudentModel`：`library_password` 使用 `Field(repr=False)` 隐藏；`member_level` 按枚举值自动校验（`"normal"` /
+    - `Student`：`library_password` 使用 `Field(repr=False)` 隐藏；`member_level` 按枚举值自动校验（`"normal"` /
       `"vip"`）。
     - `StudentModel.to_dict()` 改为 `model_dump(mode="json")`，枚举自动序列化为原始值。
     - `BookModel.from_dict()` 改为 `model_validate()`，JSON 中多余的 `industry` 字段自动忽略。
@@ -895,7 +1001,7 @@
 ### 新增
 
 - `enums/member_level_enum.py`：新增 `MemberLevelEnum` 会员等级枚举，包含 `NORMAL`（普通）、`VIP`。
-- `model/student_model.py`：`StudentModel` 新增属性：
+- `model/student_model.py`：`Student` 新增属性：
     - `member_level`：图书馆会员等级，默认 `MemberLevelEnum.NORMAL`。
     - `borrowed_books`：已借图书列表，默认空列表。
     - `library_password`：图书馆密码，默认空字符串，并在 `repr` 中隐藏。
