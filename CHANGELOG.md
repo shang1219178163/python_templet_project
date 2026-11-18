@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## 2026-11-18 21:47
+
+### 优化：关闭 Pydantic 插件加载，脚本启动从 0.67s 降到 0.32s
+
+- 现象：`app/page/codable.py` 这类只定义几个模型的小脚本也要等几百毫秒。
+  用 `-X importtime` 定位到：定义 `Book` 类耗时 446ms，其中 logfire + opentelemetry + requests 约 350ms。
+- 原因：Pydantic V2 首次定义模型时扫描 `pydantic` 插件入口，`pydantic-ai` 附带的 `logfire-sdk`
+  注册了一个插件，被无条件导入。
+- 修复：`sitecustomize.py` 中 `os.environ.setdefault("PYDANTIC_DISABLE_PLUGINS", "__all__")`。
+- 新增 `docs/pydantic-slow-startup.md`：记录现象、实测数据、源码位置、三个方案与 `-X importtime` 排查方法。
+- 验证：脚本耗时 0.67s → 0.32s；`get_plugins()` 返回空；`codable.py` 输出完整；`ruff`、`compileall` 通过。
+
+## 2026-11-18 21:21
+
+### 调整：`codable.py` 的打印统一加函数名前缀
+
+- 新增 `log()` 辅助函数，用 `sys._getframe(1).f_code.co_name` 取调用方函数名，输出形如 `[show_validate] ...`。
+- 所有 `print` 改为 `log`，包括多行的 `model_dump_json` 输出；`main()` 增加一行总标题。
+- 验证：实跑输出每行都带 `[函数名]` 前缀，`ruff check` 通过。
+
+## 2026-11-18 21:18
+
+### 示例：`app/page/codable.py` 演示 `Book` 模型的 JSON 转换
+
+- 按《Pydantic V2 的 `model_validate` / `model_dump` 命名》的四个方法矩阵重写该文件：
+  入口 `model_validate` / `model_validate_json`，出口 `model_dump` / `model_dump_json`。
+- 覆盖要点：`"1"` → `int`、`"66.60"` → `Decimal` 的类型转换；`model_dump` 保留 `Decimal`、
+  `model_dump_json` 输出两位小数字符串；往返后模型相等；`exclude` / `include` 用法；
+  非法 `price` / `isbn` 在入口被 `decimal_parsing`、`string_pattern_mismatch` 拦下。
+- 验证：脚本实跑输出符合预期，`ruff check` 通过。
+
 ## 2026-11-18 20:12
 
 ### 文档：清理 `docs/` 中残留的 `lib/`、`../app` 旧路径
