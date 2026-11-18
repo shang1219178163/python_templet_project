@@ -1,9 +1,10 @@
-
-
 a = []
 b = ()
-
+b1 = (1)  # int
+b2 = (1,)  # int
 c = None
+
+print([type(e) for e in [a, b, b1, b2, c]])
 
 if a:
     print("a")
