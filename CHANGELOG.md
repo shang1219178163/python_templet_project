@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 2026-11-18 22:07
+
+### 调整：`DLog` 调用位置加上文件名前缀
+
+- `_caller_name` 统一返回「文件名.函数名」：`codable.show_validate`、`Demo.run`、`outer.inner`；
+  模块顶层仍只输出文件名（`<string>` / `dlog.py`）。
+- 模块 docstring 同步更新格式说明。
+- 验证：`codable.py` 输出 `[时间 DEBUG codable.show_validate Line:36]: ...`；
+  类方法、`classmethod`、嵌套函数、模块顶层四种形态均正确；`ruff` 通过。
+
+## 2026-11-18 22:04
+
+### 调整：`codable.py` 日志改用项目自带的 `DLog`
+
+- 曾用标准库 logging 实现了一版 `printlog`（`stacklevel=2` 让 logging 定位调用点），随后删除，
+  避免项目里出现两套日志工具。
+- `app/page/codable.py` 改用 `DLog`：普通输出用 `DLog(...)`（构造时打印，支持多个参数），
+  非法输入用 `DLog.e(...)` 走 ERROR 级别；同时删除本地 `sys._getframe` 版本与临时的环境变量调试打印。
+- 验证：输出 `[时间 DEBUG 函数名 Line:行号]: 内容`，ERROR 两条正确；全仓库已无 `printlog` 残留；`ruff` 通过。
+
 ## 2026-11-18 21:47
 
 ### 优化：关闭 Pydantic 插件加载，脚本启动从 0.67s 降到 0.32s
