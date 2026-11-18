@@ -1,8 +1,8 @@
-"""DLog 日志打印。格式：[日期时间][日志类型][调用位置 Line:行]: 日志内容
+"""DLog 日志打印。格式：[日期时间][日志类型][文件名.函数名 Line:行]: 日志内容
 
 Python 3.13。调用位置用 ``code.co_qualname``（3.11+）和当前帧行号，
 跳过本模块内的封装，使 ``DLog.d`` / ``DLog.center`` 都指向外部调用点。
-模块顶层用文件名作为调用位置。
+调用位置统一加文件名前缀（如 ``codable.show_validate Line:36``），模块顶层只显示文件名。
 """
 
 from __future__ import annotations
@@ -86,23 +86,26 @@ class DLog:
 
     @staticmethod
     def _caller_name(frame) -> str:
+        """返回「文件名.函数名」，模块顶层只返回文件名（含 .py 后缀）"""
+        filename = Path(frame.f_code.co_filename)
+        stem = filename.stem
         qualname = frame.f_code.co_qualname
         if qualname == "<module>":
-            return Path(frame.f_code.co_filename).name
+            return filename.name
 
         if ".<locals>." in qualname:
             owner, _, function_name = qualname.rpartition(".<locals>.")
             owner_name = owner.split(".")[0]
             if owner_name and owner_name != "<module>":
-                return f"{owner_name}.{function_name}"
-            return function_name or "unknown"
+                return f"{stem}.{owner_name}.{function_name}"
+            return f"{stem}.{function_name or 'unknown'}"
 
         parts = qualname.split(".")
         if len(parts) >= 2:
-            return f"{parts[-2]}.{parts[-1]}"
+            return f"{stem}.{parts[-2]}.{parts[-1]}"
         if parts and parts[0]:
-            return parts[0]
-        return "unknown"
+            return f"{stem}.{parts[0]}"
+        return f"{stem}.unknown"
 
     @staticmethod
     def _print_log(level: str, message: object, ansi_color: str, end: str = "\n") -> str:
@@ -112,7 +115,7 @@ class DLog:
 
         caller_name, line_number = DLog._caller_info()
         log_message = (
-            f"[{datetime.now()}][{level}][{caller_name} Line:{line_number}]: {message}"
+            f"[{datetime.now()} {level} {caller_name} Line:{line_number}]: {message}"
         )
         if DLog.enable_color:
             log_message = f"{ansi_color}{log_message}{DLog._ansi_reset}"
