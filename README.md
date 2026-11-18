@@ -39,6 +39,14 @@ PYTHONPATH=. .venv/bin/uvicorn lib.api.book:app --host 127.0.0.1 --port 8001 --r
 
 接口文档 http://127.0.0.1:8001/docs ；接口：`GET /`（欢迎信息）、`GET /books`（图书列表）、`GET /books/count`（图书总数）。端口被占用时可改用 `--port` 指定其他端口。
 
+也可用 FastAPI CLI 启动（依赖 `fastapi[standard]`，本项目已安装）。注意必须带 `PYTHONPATH=.`，否则脚本 `sys.path` 里没有项目根目录，会报 `No module named 'lib'`：
+
+```bash
+PYTHONPATH=. .venv/bin/fastapi dev lib/api/book.py --port 8001
+```
+
+`fastapi deploy` 是把应用部署到 FastAPI Cloud 的命令，本地开发用上面的 `dev` 或 `uvicorn`。
+
 停止 FastAPI 服务：前台运行时按 `Ctrl+C`；后台运行时按端口结束进程：
 
 ```bash
