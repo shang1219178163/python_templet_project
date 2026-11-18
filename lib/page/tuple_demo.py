@@ -1,34 +1,56 @@
+from collections import namedtuple
 
-students = (
-    ("S002", "李慕婉", 92, 88, 95),
-    ("S003", "+三", 78, 85, 82),
-    ("S004", "曾牛", 88, 79, 91),
-    ("S005", "周轶", 95,96, 89),
-    ("S006", "王卓", 76, 82,77),
-    ("S007", "红蝶", 89, 91,94),
-    ("S008", "徐立国", 75, 69, 82),
-    ("S009", "许木", 86, 89, 98),
-    ("S010", "遁天", 66, 59, 72)
-)
-#1、每个学生信息拿出来, 进行计算for
+
+def name_tuple_test():
+    # 定义命名元组类型
+    Person = namedtuple("Person", ["name", "age", "height"])
+
+    # 创建对象
+    person = Person("张三", 25, 1.75)
+
+    print([(person.index(e), e) for e in person])  # [(0, '张三'), (1, 25), (2, 1.75)]
+
+    # 通过属性名称访问
+    print(f"person.name: {person.name}")  # 张三
+    print(f"person.age: {person.age}")  # 张三
+    print(f"person.height: {person.height}")  # 张三
+
+    # 解包
+    name, age, height = person
+    print(f"name: {name}")  # 张三
+    print(f"age: {age}")  # 25
+    print(f"height: {height}")  # 1.75
+
+
+# 1、每个学生信息拿出来, 进行计算for
 # for student in students:
 
-    # 方式2:解包
-    #_解包接收单个元素, 后续不需要用到
+# 方式2:解包
+# _解包接收单个元素, 后续不需要用到
 
 def avg_score(scores) -> float:
     """求平均分，scores 为分数序列（元组/列表都可）"""
     return sum(scores) / len(scores)
 
 
-def handle() -> None:
+def test() -> None:
+    students = (
+        ("S002", "李慕婉", 92, 88, 95),
+        ("S003", "+三", 78, 85, 82),
+        ("S004", "曾牛", 88, 79, 91),
+        ("S005", "周轶", 95, 96, 89),
+        ("S006", "王卓", 76, 82, 77),
+        ("S007", "红蝶", 89, 91, 94),
+        ("S008", "徐立国", 75, 69, 82),
+        ("S009", "许木", 86, 89, 98),
+        ("S010", "遁天", 66, 59, 72)
+    )
 
     for student in students:
         _, name, chinese, math, english = student
         total = chinese + math + english
         average = total / 3
         print(f'{student[1]}: {total}, #5: {round(average, 1)}')
-
 
     chinese_list = [e[2] for e in students]
     chinese_list_s = sorted(chinese_list)
@@ -47,4 +69,6 @@ def handle() -> None:
     # print(f"better_list: {"\n".join(better_list)}")
 
 
-handle()
+test()
+
+name_tuple_test()
