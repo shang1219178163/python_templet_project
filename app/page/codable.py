@@ -85,7 +85,7 @@ def show_reject() -> None:
         DLog.e(f"非法 isbn 被拒绝: {err['type']} @ {err['loc']}")
 
 
-def main() -> None:
+def run() -> None:
     DLog("开始演示 Book 模型的 JSON 转换")
     show_validate()
     show_validate_json()
@@ -96,5 +96,4 @@ def main() -> None:
     show_reject()
 
 
-if __name__ == "__main__":
-    main()
+run()
