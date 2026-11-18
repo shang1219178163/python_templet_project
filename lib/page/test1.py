@@ -1,6 +1,12 @@
 import random
+import sys
 from functools import reduce
-from os.path import join
+from pathlib import Path
+
+# 本文件在 lib/page/ 下，导入 lib 包需要先把项目根目录加入 sys.path
+project_root = str(Path(__file__).resolve().parents[2])
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from lib.page.cheng_fa_biao import cheng_fa_biao, cheng_fa_biao_new
 from lib.page.homework.section1.day1 import log_poetry
