@@ -30,6 +30,7 @@ def format_student(name: str, row: Row) -> str:
 def summarize_students(data: Mapping[str, Row]) -> str:
     """汇总行：人数 + 平均总分（空数据时 show 不会调用到这里）"""
     avg = sum(sum(row.values()) for row in data.values()) / len(data)
+    # print(f"summarize_students_{type(data.values())}_{data.values()}")
     return f"共 {len(data)} 名学生，平均总分 {avg:g}"
 
 
@@ -49,8 +50,8 @@ student_crud = ConsoleCRUD(
 
 if __name__ == "__main__":
     student_crud.batch_import({
-        "张三": {"chinese": 90, "math": 85, "english": 88},
-        "李四": {"chinese": 78, "math": 92, "english": 80},
-        "王五": {"chinese": 88, "math": 76, "english": 95},
+        "张三": {"chinese": 90.5, "math": 85, "english": 88},
+        "李四": {"chinese": 78.7, "math": 92, "english": 80},
+        "王五": {"chinese": 88.9, "math": 76, "english": 95},
     })
     student_crud.run()
