@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 import base64
-import os
 from collections.abc import Iterator
 from pathlib import Path
 
 import anthropic
-from dotenv import load_dotenv
 
+from app.config import settings
 from file_reader import image_media_type
 
-load_dotenv()
-
-MODEL = os.getenv("ANTHROPIC_MODEL", "deepseek-chat")
-VISION_MODEL = os.getenv("ANTHROPIC_VISION_MODEL") or MODEL
+MODEL = settings.anthropic_model
+VISION_MODEL = settings.vision_model
 SYSTEM_PROMPT = "你是资深软件工程师,请用中文回答我的问题"
 MAX_TOKENS = 8192
 

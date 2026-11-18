@@ -23,13 +23,13 @@ PYTHONPATH=. .venv/bin/streamlit run app/page/streamlit_demo.py
 运行 AI 机器人聊天页：
 
 ```bash
-PYTHONPATH=. .venv/bin/streamlit run app/page/ai_robot/app.py
+PYTHONPATH=. .venv/bin/streamlit run app/page/ai_robot/chat.py
 ```
 
 若 8501 端口已被占用，可指定其他端口：
 
 ```bash
-PYTHONPATH=. .venv/bin/streamlit run app/page/ai_robot/app.py --server.port 8502
+PYTHONPATH=. .venv/bin/streamlit run app/page/ai_robot/chat.py --server.port 8502
 ```
 
 默认打开 http://localhost:8501 ；指定端口时改为对应端口。
@@ -70,3 +70,6 @@ ANTHROPIC_AUTH_TOKEN=你的密钥
 ANTHROPIC_MODEL=deepseek-flash
 ANTHROPIC_VISION_MODEL=deepseek-flash
 ```
+
+配置加载集中在 `app/config.py`（`pydantic-settings`），其他模块统一 `from app.config import settings`，
+不要再各自调用 `load_dotenv()`。优先级：已存在的环境变量 > `.env` > 代码里的默认值。

@@ -1,17 +1,14 @@
-import os
-
 import anthropic
-from dotenv import load_dotenv
 
-load_dotenv()
+from app.config import settings
 
-# Anthropic() 会自动读取环境变量：
+# Anthropic() 会自动读取环境变量（.env 由 app.config 统一加载）：
 #   ANTHROPIC_BASE_URL   接口地址
 #   ANTHROPIC_AUTH_TOKEN 或 ANTHROPIC_API_KEY  鉴权密钥
 # load_dotenv() 不会覆盖已存在的环境变量，因此终端里已有的配置优先级更高
 client = anthropic.Anthropic()
 
-MODEL = os.getenv("ANTHROPIC_MODEL", "deepseek-chat")
+MODEL = settings.anthropic_model
 SYSTEM_PROMPT = "你是资深软件工程师,请用中文回答我的问题"
 MAX_TOKENS = 4096
 
