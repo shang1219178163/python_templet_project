@@ -1,49 +1,28 @@
-from typing import Any
+from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class Book(BaseModel):
     """图书模型"""
 
-    id: int = 0
-    """图书ID"""
+    model_config = ConfigDict(str_strip_whitespace=True)
 
-    title: str
-    """书名"""
+    id: int = Field(default=0, ge=0, description="图书ID")
+    title: str = Field(min_length=1, max_length=100, description="书名")
+    author: str = Field(min_length=1, max_length=50, description="作者")
+    isbn: str = Field(pattern=r"^\d{13}$", description="ISBN，唯一标识")
+    price: Decimal = Field(
+        default=Decimal("0.00"),
+        ge=0,
+        max_digits=8,
+        decimal_places=2,
+        description="价格(范围 0 ~ 999999.99，精度到分)",
+    )
+    stock: int = Field(default=0, ge=0, description="库存数量")
+    is_borrow: bool = Field(default=False, description="是否已借出")
 
-    author: str
-    """作者"""
-
-    isbn: str
-    """ISBN，唯一标识"""
-
-    price: float = 0.0
-    """价格"""
-
-    stock: int = 0
-    """库存数量"""
-
-    is_borrow: bool = False
-    """是否已借出"""
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Book":
-        """字典解码为模型"""
-        return cls.model_validate(data)
-
-    def __str__(self) -> str:
-        return (
-            f"Book(isbn={self.isbn}, title={self.title}, author={self.author}, "
-            f"price={self.price}, stock={self.stock}, is_borrow={self.is_borrow})"
-        )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Book):
-            return NotImplemented
-        return self.isbn == other.isbn
-
-    def __lt__(self, other: object) -> bool:
-        if not isinstance(other, Book):
-            return NotImplemented
-        return self.isbn < other.isbn
+    @field_serializer("price", when_used="json")
+    def _serialize_price(self, price: Decimal) -> str:
+        """JSON 中统一按两位小数输出，避免前端再做浮点格式化"""
+        return f"{price:.2f}"
