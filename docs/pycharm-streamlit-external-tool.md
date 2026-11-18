@@ -26,8 +26,9 @@
     - `Synchronize files after run`：运行结束后自动同步文件。
 5. 点击 **OK / Apply** 保存，无需重启 IDE。
 
-> 关键点：工作目录必须是 **项目根目录**，并通过 `PYTHONPATH` 把根目录加入模块搜索路径。因为 `../app` 会导入根目录下的 `lib`
-> 包（如 `lib.base_widget`），Streamlit 默认只把脚本所在目录（`../app`）加入 `sys.path`，找不到根目录的模块。
+> 关键点：工作目录必须是 **项目根目录**，并通过 `PYTHONPATH` 把根目录加入模块搜索路径。因为 `app/page/streamlit_demo.py`
+> 会导入根目录 `app` 包里的模块（如 `app.base_widget`），Streamlit 默认只把脚本所在目录（`app/page`）加入 `sys.path`，
+> 找不到根目录的模块。
 
 ## 二、使用方式
 
@@ -56,14 +57,14 @@ run streamlit run "$FilePath$" --server.port 8502
 
 ## 四、常见问题
 
-- **报错 `ModuleNotFoundError: No module named 'lib'`**：`Working directory` 仍是文件所在目录，或缺少 `PYTHONPATH`
+- **报错 `ModuleNotFoundError: No module named 'app'`**：`Working directory` 仍是文件所在目录，或缺少 `PYTHONPATH`
   。按上表改为项目根目录并添加 `PYTHONPATH=$ProjectFileDir$`。
 - **报错“工作目录 `.../page ` 不存在”**：`Working directory` 末尾多了空格。删掉空格，确保严格为 `$ProjectFileDir$`；
   `Program`、`Arguments` 末尾也不要有无意义的空格。
 - **提示找不到 `uv`**：确认 Program 使用绝对路径（`which uv` 可查，本机为 `/usr/local/bin/uv`）。从 Dock 启动 PyCharm 时 PATH
   可能不完整，因此不要只写 `uv`。
 - **`PYTHONPATH` 宏没有展开**：可先尝试重启 IDE；仍无效时直接把该栏写成项目根目录的绝对路径，例如
-  `/Users/shang/GitHub/python_templet_project`。
+  `/Users/shang/PycharmProjects/python_templet_project`。
 - **端口被占用**：使用 `lsof -i :8501` 查看占用进程，或追加 `--server.port` 换端口。
 - **非 `.py` 文件也显示该菜单**：这是 External Tools 的固有限制，无法按扩展名过滤；只有开发 PyCharm 插件才能做到“仅 `.py`
   显示”的一级右键菜单。
@@ -73,8 +74,8 @@ run streamlit run "$FilePath$" --server.port 8502
 
 ## 五、为什么不能把工作目录设成 `$FileDir$`
 
-本项目的页面位于 `../app`，公共组件包 `base_widget` 位于 `../app`，两者都以 `lib` 为包前缀导入（如 `lib.base_widget`）。
-`streamlit run lib/page/streamlit_demo.py` 只会把 `../app` 加入 `sys.path`，不会加入项目根目录，因此会报
+本项目的页面位于 `app/page`，公共组件包 `base_widget` 位于 `app/base_widget`，两者都以 `app.` 为包前缀导入（如
+`app.base_widget`）。`streamlit run app/page/streamlit_demo.py` 只会把 `app/page` 加入 `sys.path`，不会加入项目根目录，因此会报
 `ModuleNotFoundError`。README 中的启动命令同样是：
 
 ```bash
@@ -82,4 +83,4 @@ PYTHONPATH=. .venv/bin/streamlit run app/page/streamlit_demo.py
 ```
 
 即： **从项目根目录启动，并把根目录加入 `PYTHONPATH`**。外部工具按同样方式配置即可。同时，工作目录固定在项目根目录，也能让
-`../app`、`data/` 等相对路径按项目约定解析。
+`app/assets/`、`data/` 等相对路径按项目约定解析。

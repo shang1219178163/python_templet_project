@@ -6,7 +6,7 @@
 
 ## 项目里的实例
 
-`../app`：
+`app/base_widget/_layout.py`：
 
 ```python
 from typing import Literal
@@ -17,7 +17,7 @@ def gap_token(spacing: float | str | None) -> Literal["small", "medium", "large"
 
 含义：返回值只可能是 `"small"`、`"medium"`、`"large"` 或 `None` 四种，不可能是别的字符串。
 
-`../app`：
+`app/base_widget/flex.py`：
 
 ```python
 def row(
@@ -80,7 +80,7 @@ def gap_token(spacing: float | str | None) -> Literal["small", "medium", "large"
 | 几个固定字符串，只在参数里用一下                   | `Literal`，不用定义类 |
 | 需要方法、需要遍历全部成员、需要序列化或数据库映射 | `Enum`                |
 
-项目里 `../app`、`../app` 属于后者；`base_widget` 里那些只用于参数取值的字符串属于前者。
+项目里 `app/enums/weekday_enum.py`、`app/enums/member_level_enum.py` 属于后者；`base_widget` 里那些只用于参数取值的字符串属于前者。
 
 ## 容易混淆的 `LiteralString`
 
