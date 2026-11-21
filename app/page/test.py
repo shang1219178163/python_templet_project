@@ -40,10 +40,6 @@ from app.util.dlog import DLog
 # for i in range(3):
 #     print(i)   # 输出 0, 1, 2
 
-
-l = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-DLog.d(f"list {l}")
-
 array = "a,b,c".split(",")
 # array.append("d")
 # print(f"array: {array}")
@@ -77,3 +73,32 @@ print(f"{rag} {type(rag)}, {arr1} {type(arr1)}")
 dic = {"name": "王林", "age": 999, "hobby": "修炼升级"}
 dic.pop("hobby")
 print({k: v for k, v in dic.items()})
+
+FloatOrInt = float
+
+
+# 多入参单返回
+def rectangle_area(l: float, w: float) -> float:
+    """
+    计算长方形面积
+    :param l: 长
+    :param w: 宽
+    :return: 面积
+    """
+    _area = l * w
+    return round(_area, 1)
+
+
+print(rectangle_area(10, 50))
+
+
+# 多返回
+# 能够同时计算圆的面积和周长
+def calc_circle(r: float) -> tuple[float, float]:
+    _area = 3.14 * r * r
+    _length = 2 * 3.14 * r
+    return round(_area, 1), round(_length, 1)
+
+
+area, length = calc_circle(10)
+print(area, length)

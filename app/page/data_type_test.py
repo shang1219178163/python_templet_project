@@ -1,38 +1,41 @@
-from app.model.book_library import BookLibrary
+from _pydecimal import Decimal
+from collections import namedtuple
 
-library = BookLibrary()
+from util.dlog import DLog as print
 
-# 初始化图书馆模型
-books = library.load_books(count=10)
-book_titles = [f"{books.index(book)},{book.title},{book.isbn}" for book in books]
-print(f"图书馆藏书列表:\n{'\n'.join(book_titles)},共{len(books)}本")
+print(Decimal(str(66.99)))  # Decimal('66.99')   ✅ 先转字符串)
 
-isbn = "9787030000088"
 
-# 获取模型列表中第一个目标模型
-target = next((e for e in books if e.isbn == isbn), None)
-print(f"查找第一个符合条件的模型 target: {target.title}, {target.isbn}" if target else "target: None")
+def tuple_test():
+    # 定义命名元组类型
+    Person = namedtuple("Person", ["name", "age", "height"])
+    # 创建对象
+    person = Person("张三", 25, 1.75)
+    # 通过索引访问
+    print(person[0])  # 张三
+    # 通过属性名称访问
+    print(person.name)  # 张三
+    print(person.age)  # 25
+    print(person.height)  # 25
 
-# 获取模型列表中第一个目标模型的索引
-idx = next((i for i, e in enumerate(books) if e.isbn == isbn), -1)
-print(f"查找第一个符合条件的模型索引 idx: {idx}, {books[idx].title}" if idx != -1 else "idx: -1")
 
-# 拆分写法
-indices = (i for i, e in enumerate(books) if e.isbn == isbn)
-idxNew = next(indices, -1)
+def jie_cheng(n: int) -> int:
+    """阶乘(空间复杂度高)"""
+    if n == 1:
+        return n
+    return n * jie_cheng(n - 1)
 
-print(f"查找第一个符合条件的模型索引 idxNew: {idxNew}, idx == idxNew: {idx == idxNew}")
 
-# 获取模型列表中所有符合条件的模型列表
-results = [(i, e) for i, e in enumerate(books) if e.isbn == isbn]
-print(f"查找所有符合条件的模型 results: {results}, {type(results)}")
+def jie_cheng_new(n: int) -> int:
+    if n < 0:
+        raise ValueError("n 必须是非负整数")
+    result = 1
+    for i in range(1, n + 1):
+        # print(f"i:{i}")
+        result *= i
+    return result
 
-# 快速初始化数组
-squares = (n ** 2 for n in range(5))
 
-print(next(squares))  # 0
-print(next(squares))  # 1
-print(list(squares))  # [4, 9, 16]
+print(jie_cheng_new(8))
 
-array = [n + 1 for n in range(5)]
-print(array)  # [0, 1, 2, 3, 4]
+tuple_test()
