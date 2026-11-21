@@ -1,5 +1,142 @@
 # CHANGELOG
 
+## 2026-11-21 15:16
+
+### 重构：`EduManagement` 改为 pydantic 模型，默认值用 `Field(default_factory=dict)`
+
+- 调整：`app/page/classroom/edu_management.py` 中 `EduManagement` 改为 `BaseModel`，删除手写 `__init__`，字段声明为 `data: dict[str, Student] = Field(default_factory=dict, description="学生数据，按姓名索引")`；`Student` 仍是普通类，故加 `ConfigDict(arbitrary_types_allowed=True)`。
+- 修复：移除 `from dns import update`（PyCharm 误导入，实际是 `dns.update` 模块，调用会报 `module is not callable`），菜单 1/2 改为调用 `self.update(name)`；末尾 `EduManagement({})` 改为 `EduManagement()`，pydantic v2 不支持位置参数。
+- 验证：运行示例并输入 `6` 正常退出；两个实例的 `data` 互不共享（`a.data is b.data` 为 `False`）；`EduManagement(data={...})` 关键字传参正常。
+
+## 2026-11-21 15:12
+
+### 调整：`EduManagement` 构造参数 `data` 增加默认值
+
+- 调整：`app/page/classroom/edu_management.py` 中 `__init__` 签名改为 `data: dict[str, Student] | None = None`，为空时内部初始化为空字典，`self.data` 类型仍为 `dict[str, Student]`。
+- 效果：`EduManagement()` 可直接实例化，不再强制传参；传入字典时行为与之前一致。
+
+## 2026-11-21 13:18
+
+### 回退：`BaseEnum` 退回普通 `Enum`，移除 `int` 混入
+
+- 原因：`int` 混入虽能让标准库 `json.dumps` 直接序列化枚举，但会让 PyCharm 认为成员值必须是 int，三个枚举共 12 条警告，需在每个枚举类上加 `# noinspection PyTypeChecker`；而项目主要走 FastAPI/pydantic，普通 `Enum` 已按 `value`（即 code）自动输出数字。
+- 调整：`class BaseEnum(Enum)`，`__new__` 恢复 `object.__new__(cls)`；三个枚举的 `# noinspection PyTypeChecker` 一并移除。
+- 效果：`json.dumps` 需取 `.code` / `.value`；`enum == 1` 为 `False`；pydantic/FastAPI 仍序列化为 `{"status": 1}`；pickle、查找、`call_extra`、重复 code 校验不受影响。
+- 文档：`docs/枚举使用指南.md` 移除 int 比较与抑制说明，恢复 JSON 序列化说明及模板。
+- 验证：三个示例脚本运行正常，pydantic 输出 `{"status":1}`，PyCharm lint 四个文件零警告。
+
+## 2026-11-21 13:16
+
+### 优化：`BaseEnum` 混入 `int`，支持原生序列化与 int 比较
+
+- 原因：枚举不是 int 子类时，`json.dumps` 不认，入库/日志/第三方 int 接口都要手动取 `.code`。
+- 调整：`app/enums/base_enum.py` 改为 `class BaseEnum(int, Enum)`，`__new__` 用 `int.__new__(cls, code)`；`value` 仍为 `code`，`code` / `label` / `extra` 行为不变。
+- 效果：`json.dumps({"status": UserStatus.ACTIVE})` → `{"status": 1}`；`UserStatus.ACTIVE == 1` 为 `True`；pydantic/FastAPI 直接按 int 收发；`str()` 仍显示成员名（`UserStatus.ACTIVE`），`repr()` 不变。
+- 抑制：`int` mixin 让 PyCharm 认为成员值必须是 int，三个枚举类定义前加 `# noinspection PyTypeChecker`，恢复零警告。
+- 文档：`docs/枚举使用指南.md` 更新 API 表、JSON/比较/抑制说明及新增枚举模板。
+- 验证：三个示例脚本运行正常；json、pickle、pydantic、`== int`、重复 code 校验均通过；PyCharm lint 四个文件零警告。
+
+## 2026-11-21 11:50
+
+### 文档：新增 `docs/枚举使用指南.md`
+
+- 内容：整理 `BaseEnum` 的定义语法、API 一览表、三个枚举（函数型/字典型/无 extra）的完整示例、注意事项（code 唯一、Enum 别名、继承限制、JSON 序列化、pickle）以及新增枚举模板。
+- 验证：文档中的示例与三个枚举脚本的实际输出一致。
+
+## 2026-11-21 11:48
+
+### 示例：三个枚举补充 `BaseEnum` 使用示例
+
+- 内容：`user_status.py`（函数型 extra）、`review_status.py`（dict 型 extra）、`order_status.py`（无 extra）各自补充 5~7 段可运行示例，覆盖遍历、`code_of`/`name_of`/`cls(value)`/`cls[name]` 查找、`match_of` 条件查找、`call_extra`、`choices()`、序列化取 code 和业务判断。
+- 修复：`match_of` 的 lambda 参数由 `e` 改为 `item`，消除“隐藏外部作用域名称”弱警告。
+- 验证：三个脚本均正常运行，PyCharm lint 零警告。
+
+## 2026-11-21 11:38
+
+### 重构：`BaseEnum` 改用 `__new__`，让枚举 value 回归 code
+
+- 原因：原实现把 `(code, label, extra)` 整体当 value，`UserStatus(1)` 无法按 code 查找，`code_of` 只能 O(n) 遍历；含 lambda 时 `pickle` 也会失败。
+- 调整：`app/enums/base_enum.py` 用 `__new__` 将 `_value_` 设为 `code`，其余信息挂实例属性；`code_of` 改为 `cls(code)` 查找；`name_of` 改用 `__members__`；新增 `__init_subclass__` 校验 code 唯一（基于 `__members__`，能查到别名）、`choices()` 下拉框数据、`call_extra()` 统一处理函数型/数据型 `extra`。
+- 配套：`user_status.py`、`review_status.py` 调用处由 `getattr(e, "extra")` 改为 `e.call_extra(...)`；`extra` 保持 `Any`，因为 `ReviewStatus` 存的是 dict。
+- 验证：三个枚举脚本运行正常，`UserStatus(2)` / `code_of` / `choices` / 重复 code 报错 / `pickle` 往返均通过；PyCharm lint 四个文件零警告。
+
+## 2026-11-20 20:03
+
+### 修复：`jn/book_test.ipynb` 读 CSV 报 FileNotFoundError
+
+- 现象：`pandas.read_csv('app/assets/csv/books.csv')` 报 `[Errno 2] No such file or directory`。目录已由 `cvs` 改名为 `csv`，但 notebook 的 cwd 是 `app/page/jn`，相对路径被解析成 `app/page/jn/app/assets/...`。
+- 修复：用 `pathlib` 从 cwd 向上查找 `pyproject.toml` 定位项目根目录，再拼 `app/assets/csv/books.csv`；同时清空上次失败的输出。
+- 验证：在 `app/page/jn` 下执行，读到 101 行 9 列，`price > 50` 过滤结果正常。
+
+## 2026-11-20 15:47
+
+### 修复：`jn/test.ipynb` 用 `list.index` 取序号触发 ValueError
+
+- 现象：`properts.index(e)` 内部用 `==` 逐项比较，遇到 `df.size = 3` 时 `RangeIndex == 3` 返回布尔数组，`if` 无法判断真值，抛出 `ValueError: The truth value of an array with more than one element is ambiguous`。
+- 修复：改用 `enumerate(properts)` 直接拿序号，避免元素比较。
+- 验证：改写后脚本输出 9 项属性的序号与类型，无异常。
+
+## 2026-11-20 14:51
+
+### 修复：`test.py` 调用处误用注解语法 + `rectangle_area` 注解规范化
+
+- 现象：`print(rectangle_area(l:10, w: 50))` 中 `:` 是定义期注解语法，调用时非法，整个文件 `SyntaxError` 无法运行。
+- 修复：改为关键字参数调用 `rectangle_area(l=10, w=50)`；函数签名规范为 `l: float, w: float -> float`，docstring 参数名 `Z`/`W` 更正为 `l`/`w`。
+- 验证：`python app/page/test.py` 正常运行，输出 `500`，`help()` 显示注解与文档一致。
+
+## 2026-11-20 14:45
+
+### 依赖：pandas 锁定 2.x 以匹配 streamlit
+
+- 现象：原环境为 pandas 3.1.0（传递依赖，未在 `pyproject.toml` 声明）。pandas 3 默认字符串 dtype、移除 `applymap`、CoW 默认开启，streamlit 及生态尚未完全适配。
+- 调整：`pyproject.toml` 新增 `pandas>=2.2,<3`，`uv add` 解析并安装 pandas 2.3.3（新增 `tzdata`）；顺带补录已在环境中使用但未声明的 `ipykernel>=7.4.0`。
+- 验证：`AppTest` 跑 `app/page/streamlit_demo.py` 无异常；`st.dataframe` / `st.line_chart` / `st.write` 正常；仅 `st.table(df.describe())` 在混合 dtype 列上触发 streamlit 的 Arrow 自动修复告警（与 pandas 版本无关）。
+
+## 2026-11-20 10:37
+
+### 修复：`Book.price` 传整数字面量导致类型检查报错
+
+- 现象：`price=66` 被推断为 `Literal[66]`，无法赋值给 `Decimal`；运行期 Pydantic 会自动转换，仅静态检查报错。
+- 修复：`app/api/book.py` 引入 `Decimal`，三处 `price` 改为 `Decimal("66")` / `Decimal("77")` / `Decimal("88")`。
+- 验证：JSON 序列化仍为 `"66.00"` 等两位小数字符串；`ruff` 通过。
+
+## 2026-11-20 10:33
+
+### 修复：统一开发启动入口与后端调试文档
+
+- `app/main.py` 端口 8000 → 8001，与 README 的启动命令一致。
+- `docs/后端调试指南.md` 按本仓库修正：`app.main:app` → `app.api.book:app`；
+  Working directory 改为项目根目录；解释器改为 `.venv`（Python 3.13）；
+  断点示例改为 `app/api/book.py` 的 `get_books()`；pdb / debugpy 命令同步更新；
+  日志一节改为 uvicorn 终端访问日志（原 `/tmp/book_backend_8010.log` 不属于本项目）。
+- 验证：文档中已无 `backend` / `book_management_system` / `app.main:app` 残留；
+  `import app.api.book` 正常；`ruff` 通过。
+
+## 2026-11-20 09:11
+
+### 调整：`printdlog.py` 改为从零独立实现
+
+- `app/util/printdlog.py` 不再从 `dlog.py` 再导出，改为自包含实现：
+  `printdlog(*args, sep=" ", end="\n")` 输出 `[日期时间 文件名.函数名 Line:行]: 内容`，
+  调用位置由 `sys._getframe` 跳过本模块封装取得；模块级 `enable_log` / `enable_color` 可配置。
+- `app/util/dlog.py` 移除上一版临时加入的 `printdlog` 函数，`DLog` 保持原样。
+- `app/util/__init__.py` 不导出 `printdlog`，避免包属性与同名子模块互相覆盖；
+  使用 `from app.util.printdlog import printdlog` 导入。
+- 验证：模块顶层、嵌套函数、类方法、classmethod 四种调用点定位正确；`sep` / `end` 生效；
+  `enable_log = False` 时不再输出；`ruff`、`compileall` 通过。
+
+## 2026-11-20 09:08
+
+### 新增：`printdlog`（`DLog` 的 print 式函数入口）
+
+- `app/util/dlog.py` 新增 `printdlog(*args, sep=" ", end="\n")`：像 `print` 一样调用，
+  按 DEBUG 输出，格式与 `DLog(...)` 完全一致（`[时间 DEBUG 文件名.函数名 Line:行]: 内容`）。
+- 新增 `app/util/printdlog.py` 做再导出，可 `from app.util.printdlog import printdlog`；
+  `app/util/__init__.py` 同步导出。
+- 实现直接复用 `DLog._print_log`，不引入第二套日志设施；此前删掉的 logging 版 `printlog` 不再恢复。
+- 验证：函数内、类方法、模块顶层三种调用点均正确定位到外部调用处；
+  `sep="-", end="!\n"` 生效；`ruff` 通过。
+
 ## 2026-11-18 22:07
 
 ### 调整：`DLog` 调用位置加上文件名前缀
