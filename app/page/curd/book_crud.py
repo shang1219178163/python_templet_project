@@ -49,7 +49,7 @@
 
 from collections.abc import Mapping
 
-from app.util.console_crud import ConsoleCRUD, CrudField, CrudRow
+from app.util.console_crud import ConsoleCrud, CrudField, CrudRow
 
 
 def format_row(title: str, row: CrudRow) -> str:
@@ -61,14 +61,14 @@ def summarize(data: Mapping[str, CrudRow]) -> str:
     return f"{len(data.keys())}本书价值总和: {sum_price}"
 
 
-book_m = ConsoleCRUD(
+book_m = ConsoleCrud(
     title="图书管理系统",
     entity="图书",
-    name_prompt="图书名称:",
+    key_prompt="图书名称:",
     fields={
-        "author": CrudField("作者: ", ConsoleCRUD.read_str),
-        "price": CrudField("价格: ", ConsoleCRUD.read_float),
-        "stock": CrudField("库存: ", ConsoleCRUD.read_int),
+        "author": CrudField("作者: ", ConsoleCrud.read_str),
+        "price": CrudField("价格: ", ConsoleCrud.read_float, lambda e: e > 0, "价格必须大于 0"),
+        "stock": CrudField("库存: ", ConsoleCrud.read_int, lambda e: e >= 0, "库存大于等于0")
     },
     format_row=format_row,
     summarize=summarize,

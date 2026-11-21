@@ -76,7 +76,7 @@ class CrudField[T]:
     verify_hint: str = DEFAULT_VERIFY_HINT
 
 
-class ConsoleCRUD:
+class ConsoleCrud:
     """基于嵌套字典的控制台增删改查组件。
 
     数据结构约定：``{名称: {字段名: 值, ...}}``，名称即字典的 key。
@@ -84,7 +84,7 @@ class ConsoleCRUD:
 
     menu_template = """
 ####################### {title} ########################
-#        1.添加  2.修改  3.删除  4.查询  5.退出            #
+# 1.添加  2.修改  3.删除  4.精确查询  5.查询全部 6.退出 #
 #########################################################
 """
 
@@ -94,7 +94,7 @@ class ConsoleCRUD:
             title: str,
             entity: str,
             fields: Mapping[str, CrudField[Any]],
-            name_prompt: str | None = None,
+            key_prompt: str | None = None,
             format_row: CrudFormatter | None = None,
             summarize: CrudSummary | None = None,
             empty_hint: str | None = None,
@@ -104,7 +104,7 @@ class ConsoleCRUD:
         :param title: 菜单标题，如「购物车系统」
         :param entity: 条目名称，用于拼接提示语，如「商品」「学生」
         :param fields: 字段名 -> CrudField，添加/修改时按顺序录入
-        :param name_prompt: 录入名称时的提示语，默认「{entity}名称：」
+        :param key_prompt: 录入名称时的提示语，默认「{entity}名称：」
         :param format_row: 单条展示格式，默认「名称: {字典}」
         :param summarize: 查询末尾的汇总行，返回 None 或空串则不打印
         :param empty_hint: 查询为空时的提示，默认「暂无{entity}记录」
@@ -113,7 +113,7 @@ class ConsoleCRUD:
         self.title = title
         self.entity = entity
         self.fields: dict[str, CrudField[Any]] = dict(fields)
-        self.name_prompt = name_prompt or f"{entity}名称："
+        self.key_prompt = key_prompt or f"{entity}名称："
         self.format_row = format_row or _default_format_row
         self.summarize = summarize
         self.empty_hint = empty_hint or f"暂无{entity}记录"
@@ -142,28 +142,28 @@ class ConsoleCRUD:
     @staticmethod
     def read_str(tips: str, verify: CrudVerify[str] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> str:
         """读取字符串：去首尾空格后返回，verify 不通过时打印 hint 并重读。"""
-        return ConsoleCRUD._read(tips, str, verify, hint)
+        return ConsoleCrud._read(tips, str, verify, hint)
 
     @staticmethod
     def read_float(tips: str, verify: CrudVerify[float] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> float:
         """读取非负浮点数，格式错误或 verify 不通过时重新输入。"""
-        return ConsoleCRUD._read(tips, _parse_float, verify, hint)
+        return ConsoleCrud._read(tips, _parse_float, verify, hint)
 
     @staticmethod
     def read_int(tips: str, verify: CrudVerify[int] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> int:
         """读取非负整数，格式错误或 verify 不通过时重新输入。"""
-        return ConsoleCRUD._read(tips, _parse_int, verify, hint)
+        return ConsoleCrud._read(tips, _parse_int, verify, hint)
 
     @staticmethod
     def read_bool(tips: str, verify: CrudVerify[bool] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> bool:
         """读取布尔值：先转成 bool 再交给 verify，不通过时打印 hint 并重读。"""
-        return ConsoleCRUD._read(tips, _parse_bool, verify, hint)
+        return ConsoleCrud._read(tips, _parse_bool, verify, hint)
 
     # ---------------- 增删改查 ----------------
 
     def add(self) -> None:
         """添加：名称已存在时拒绝，避免覆盖原有数据"""
-        name = self.read_str(self.name_prompt)
+        name = self.read_str(self.key_prompt)
         if name in self.data:
             print(f"{self.entity}已存在，请执行修改操作")
             return
@@ -172,7 +172,7 @@ class ConsoleCRUD:
 
     def update(self) -> None:
         """修改：只允许修改已存在的"""
-        name = self.read_str(self.name_prompt)
+        name = self.read_str(self.key_prompt)
         if name not in self.data:
             print(f"{self.entity}不存在，请执行新增操作")
             return
@@ -181,12 +181,21 @@ class ConsoleCRUD:
 
     def delete(self) -> None:
         """删除：先判断存在，再按 key 删除"""
-        name = self.read_str(self.name_prompt)
+        name = self.read_str(self.key_prompt)
         if name not in self.data:
             print(f"{self.entity}不存在")
             return
         del self.data[name]
         print(f"删除成功：{name}")
+
+    def query(self) -> None:
+        """精确查询：按名称查找并展示单条记录"""
+        name = self.read_str(self.key_prompt)
+        row = self.data.get(name)
+        if row is None:
+            print(f"{self.entity}不存在")
+            return
+        print(self.format_row(name, row))
 
     def batch_import(
             self,
@@ -231,10 +240,10 @@ class ConsoleCRUD:
                 print(line)
 
     def run(self) -> None:
-        """主循环：打印菜单，用模式匹配分发操作，选 5 退出"""
+        """主循环：打印菜单，用模式匹配分发操作，选 6 退出"""
         while True:
             print(self.menu_template.format(title=self.title))
-            oper = input("请输入对应操作编号（1-5）:").strip()
+            oper = input("请输入对应操作编号（1-6）:").strip()
             match oper:
                 case "1":
                     self.add()
@@ -243,8 +252,10 @@ class ConsoleCRUD:
                 case "3":
                     self.delete()
                 case "4":
-                    self.show()
+                    self.query()
                 case "5":
+                    self.show()
+                case "6":
                     print("退出成功，欢迎下次使用！")
                     break
                 case _:

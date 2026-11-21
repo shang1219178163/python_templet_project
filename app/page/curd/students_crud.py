@@ -14,7 +14,7 @@
 
 from collections.abc import Mapping
 
-from app.util.console_crud import ConsoleCRUD, CrudField, CrudRow
+from app.util.console_crud import ConsoleCrud, CrudField, CrudRow
 
 
 def format_student(name: str, row: CrudRow) -> str:
@@ -34,14 +34,14 @@ def summarize_students(data: Mapping[str, CrudRow]) -> str:
     return f"共 {len(data)} 名学生，平均总分 {avg:g}"
 
 
-student_crud = ConsoleCRUD(
+student_crud = ConsoleCrud(
     title="学生管理系统",
     entity="学生",
-    name_prompt="学生姓名：",
+    key_prompt="学生姓名：",
     fields={
-        "chinese": CrudField("语文成绩：", ConsoleCRUD.read_float),
-        "math": CrudField("数学成绩：", ConsoleCRUD.read_float),
-        "english": CrudField("英语成绩：", ConsoleCRUD.read_float),
+        "chinese": CrudField("语文成绩：", ConsoleCrud.read_float),
+        "math": CrudField("数学成绩：", ConsoleCrud.read_float),
+        "english": CrudField("英语成绩：", ConsoleCrud.read_float),
     },
     format_row=format_student,
     summarize=summarize_students,

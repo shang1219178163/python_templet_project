@@ -14,7 +14,7 @@
 
 from collections.abc import Mapping
 
-from app.util.console_crud import ConsoleCRUD, CrudField, CrudRow
+from app.util.console_crud import ConsoleCrud, CrudField, CrudRow
 
 
 def format_item(name: str, row: CrudRow) -> str:
@@ -28,13 +28,13 @@ def summarize_cart(data: Mapping[str, CrudRow]) -> str:
     return f"合计金额: {sum(r['price'] * r['num'] for r in data.values())}"
 
 
-cart = ConsoleCRUD(
+cart = ConsoleCrud(
     title="购物车系统",
     entity="商品",
-    name_prompt="商品名称：",
+    key_prompt="商品名称：",
     fields={
-        "price": CrudField("商品价格：", ConsoleCRUD.read_float),
-        "num": CrudField("商品数量：", ConsoleCRUD.read_int),
+        "price": CrudField("商品价格：", ConsoleCrud.read_float),
+        "num": CrudField("商品数量：", ConsoleCrud.read_int),
     },
     format_row=format_item,
     summarize=summarize_cart,
