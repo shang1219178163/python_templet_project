@@ -14,16 +14,16 @@
 
 from collections.abc import Mapping
 
-from app.util.console_crud import ConsoleCRUD, Field, Row
+from app.util.console_crud import ConsoleCRUD, CrudField, CrudRow
 
 
-def format_item(name: str, row: Row) -> str:
+def format_item(name: str, row: CrudRow) -> str:
     """单条展示：名称 + 价格 + 数量 + 小计"""
     price, num = row["price"], row["num"]
     return f"名称: {name}, 价格: {price}, 数量: {num}, 小计: {price * num}"
 
 
-def summarize_cart(data: Mapping[str, Row]) -> str:
+def summarize_cart(data: Mapping[str, CrudRow]) -> str:
     """汇总行：合计金额"""
     return f"合计金额: {sum(r['price'] * r['num'] for r in data.values())}"
 
@@ -33,8 +33,8 @@ cart = ConsoleCRUD(
     entity="商品",
     name_prompt="商品名称：",
     fields={
-        "price": Field("商品价格：", ConsoleCRUD.read_float),
-        "num": Field("商品数量：", ConsoleCRUD.read_int),
+        "price": CrudField("商品价格：", ConsoleCRUD.read_float),
+        "num": CrudField("商品数量：", ConsoleCRUD.read_int),
     },
     format_row=format_item,
     summarize=summarize_cart,

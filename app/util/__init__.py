@@ -3,7 +3,7 @@
 __version__ = '0.1.0'
 __author__ = 'shang'
 
-from .console_crud import ConsoleCRUD, Field
+from .console_crud import ConsoleCRUD, CrudField
 from .dlog import DLog
 
-__all__ = ["DLog", "ConsoleCRUD", "Field", "hook"]
+__all__ = ["DLog", "ConsoleCRUD", "CrudField", "hook"]

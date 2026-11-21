@@ -9,16 +9,16 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
-type Row = dict[str, Any]
-type Formatter = Callable[[str, Row], str]
-type Summary = Callable[[Mapping[str, Row]], str | None]
-type Verify[T] = Callable[[T], bool]
-type Reader[T] = Callable[[str, Verify[T] | None, str], T]
+type CrudRow = dict[str, Any]
+type CrudFormatter = Callable[[str, CrudRow], str]
+type CrudSummary = Callable[[Mapping[str, CrudRow]], str | None]
+type CrudVerify[T] = Callable[[T], bool]
+type CrudReader[T] = Callable[[str, CrudVerify[T] | None, str], T]
 
 DEFAULT_VERIFY_HINT = "校验未通过，请重新输入"
 
 
-def _passes[T](value: T, verify: Verify[T] | None) -> bool:
+def _passes[T](value: T, verify: CrudVerify[T] | None) -> bool:
     """未提供校验回调时一律视为通过。"""
     return verify is None or verify(value)
 
@@ -56,7 +56,7 @@ def _parse_bool(text: str) -> bool:
 
 
 @dataclass(slots=True, frozen=True)
-class Field[T]:
+class CrudField[T]:
     """一个待录入字段：提示语 + 读取函数 + 可选校验回调。
 
     ``verify`` 收到 ``reader`` 解析后的**类型化**结果（``read_bool`` 收到 bool），
@@ -66,8 +66,8 @@ class Field[T]:
     """
 
     prompt: str
-    reader: Reader[T]
-    verify: Verify[T] | None = None
+    reader: CrudReader[T]
+    verify: CrudVerify[T] | None = None
     verify_hint: str = DEFAULT_VERIFY_HINT
 
 
@@ -88,17 +88,17 @@ class ConsoleCRUD:
             *,
             title: str,
             entity: str,
-            fields: Mapping[str, Field[Any]],
+            fields: Mapping[str, CrudField[Any]],
             name_prompt: str | None = None,
-            format_row: Formatter | None = None,
-            summarize: Summary | None = None,
+            format_row: CrudFormatter | None = None,
+            summarize: CrudSummary | None = None,
             empty_hint: str | None = None,
-            data: dict[str, Row] | None = None,
+            data: dict[str, CrudRow] | None = None,
     ) -> None:
         """
         :param title: 菜单标题，如「购物车系统」
         :param entity: 条目名称，用于拼接提示语，如「商品」「学生」
-        :param fields: 字段名 -> Field，添加/修改时按顺序录入
+        :param fields: 字段名 -> CrudField，添加/修改时按顺序录入
         :param name_prompt: 录入名称时的提示语，默认「{entity}名称：」
         :param format_row: 单条展示格式，默认「名称: {字典}」
         :param summarize: 查询末尾的汇总行，返回 None 或空串则不打印
@@ -107,12 +107,12 @@ class ConsoleCRUD:
         """
         self.title = title
         self.entity = entity
-        self.fields: dict[str, Field[Any]] = dict(fields)
+        self.fields: dict[str, CrudField[Any]] = dict(fields)
         self.name_prompt = name_prompt or f"{entity}名称："
         self.format_row = format_row or _default_format_row
         self.summarize = summarize
         self.empty_hint = empty_hint or f"暂无{entity}记录"
-        self.data: dict[str, Row] = data if data is not None else {}
+        self.data: dict[str, CrudRow] = data if data is not None else {}
 
     # ---------------- 输入 ----------------
 
@@ -120,7 +120,7 @@ class ConsoleCRUD:
     def _read[T](
             tips: str,
             parse: Callable[[str], T],
-            verify: Verify[T] | None,
+            verify: CrudVerify[T] | None,
             hint: str,
     ) -> T:
         """循环读取：``parse`` 抛 ValueError 时打印异常信息，``verify`` 不通过时打印 hint。"""
@@ -135,22 +135,22 @@ class ConsoleCRUD:
                 print(hint)
 
     @staticmethod
-    def read_str(tips: str, verify: Verify[str] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> str:
+    def read_str(tips: str, verify: CrudVerify[str] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> str:
         """读取字符串：去首尾空格后返回，verify 不通过时打印 hint 并重读。"""
         return ConsoleCRUD._read(tips, str, verify, hint)
 
     @staticmethod
-    def read_float(tips: str, verify: Verify[float] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> float:
+    def read_float(tips: str, verify: CrudVerify[float] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> float:
         """读取非负浮点数，格式错误或 verify 不通过时重新输入。"""
         return ConsoleCRUD._read(tips, _parse_float, verify, hint)
 
     @staticmethod
-    def read_int(tips: str, verify: Verify[int] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> int:
+    def read_int(tips: str, verify: CrudVerify[int] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> int:
         """读取非负整数，格式错误或 verify 不通过时重新输入。"""
         return ConsoleCRUD._read(tips, _parse_int, verify, hint)
 
     @staticmethod
-    def read_bool(tips: str, verify: Verify[bool] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> bool:
+    def read_bool(tips: str, verify: CrudVerify[bool] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> bool:
         """读取布尔值：先转成 bool 再交给 verify，不通过时打印 hint 并重读。"""
         return ConsoleCRUD._read(tips, _parse_bool, verify, hint)
 
@@ -185,7 +185,7 @@ class ConsoleCRUD:
 
     def batch_import(
             self,
-            rows: Mapping[str, Row] | Iterable[tuple[str, Row]],
+            rows: Mapping[str, CrudRow] | Iterable[tuple[str, CrudRow]],
             *,
             overwrite: bool = False,
             validate: bool = True,
@@ -245,7 +245,7 @@ class ConsoleCRUD:
                 case _:
                     print("不支持该操作！")
 
-    def _input_row(self) -> Row:
+    def _input_row(self) -> CrudRow:
         """按 field 声明顺序逐个读取，组装成一行数据"""
         return {
             key: field.reader(field.prompt, field.verify, field.verify_hint)
@@ -253,5 +253,5 @@ class ConsoleCRUD:
         }
 
 
-def _default_format_row(name: str, row: Row) -> str:
+def _default_format_row(name: str, row: CrudRow) -> str:
     return f"{name}: {row}"

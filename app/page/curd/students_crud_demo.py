@@ -14,10 +14,10 @@
 
 from collections.abc import Mapping
 
-from app.util.console_crud import ConsoleCRUD, Field, Row
+from app.util.console_crud import ConsoleCRUD, CrudField, CrudRow
 
 
-def format_student(name: str, row: Row) -> str:
+def format_student(name: str, row: CrudRow) -> str:
     """单条展示：姓名 + 各科成绩 + 总分"""
     total_score = sum(row.values())
     avg_score = round(total_score / len(row.values()))
@@ -27,7 +27,7 @@ def format_student(name: str, row: Row) -> str:
     return f"{name}: {items}, 总分 {sum(row.values()):g}, 平均分{avg_score}"
 
 
-def summarize_students(data: Mapping[str, Row]) -> str:
+def summarize_students(data: Mapping[str, CrudRow]) -> str:
     """汇总行：人数 + 平均总分（空数据时 show 不会调用到这里）"""
     avg = sum(sum(row.values()) for row in data.values()) / len(data)
     # print(f"summarize_students_{type(data.values())}_{data.values()}")
@@ -39,9 +39,9 @@ student_crud = ConsoleCRUD(
     entity="学生",
     name_prompt="学生姓名：",
     fields={
-        "chinese": Field("语文成绩：", ConsoleCRUD.read_float),
-        "math": Field("数学成绩：", ConsoleCRUD.read_float),
-        "english": Field("英语成绩：", ConsoleCRUD.read_float),
+        "chinese": CrudField("语文成绩：", ConsoleCRUD.read_float),
+        "math": CrudField("数学成绩：", ConsoleCRUD.read_float),
+        "english": CrudField("英语成绩：", ConsoleCRUD.read_float),
     },
     format_row=format_student,
     summarize=summarize_students,

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2026-11-21 20:45
+
+### 调整：`ConsoleCRUD` 类型别名统一加 `Crud` 前缀
+
+- 调整：`Row` → `CrudRow`、`Formatter` → `CrudFormatter`、`Summary` → `CrudSummary`、`Verify[T]` → `CrudVerify[T]`、`Reader[T]` → `CrudReader[T]`。
+- 配套：`Field` 已更名为 `CrudField`，修正 `__init__` 中遗留的 `Field[Any]`；`app/util/__init__.py` 与三个已跟踪的 CRUD 示例同步更新导入与类型注解。
+- 验证：`console_crud.py` 在 PyCharm 中零警告；mock 输入、`app.util` 导出、五个相关文件编译均通过。
+
 ## 2026-11-21 20:38
 
 ### 修复：消除 PyCharm 对 `read_` 方法返回值可能为 `None` 的警告
