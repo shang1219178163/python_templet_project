@@ -1,14 +1,5 @@
 # CHANGELOG
 
-## 2026-11-21 20:26
-
-### 新增：`Field` 支持自定义校验提示语
-
-- 新增：`Field.verify_hint`（默认 `DEFAULT_VERIFY_HINT = "校验未通过，请重新输入"`），`verify` 返回 False 时打印该提示，可写成「价格必须大于 0，请重新输入」这类完整说明。
-- 调整：`read_str` / `read_float` / `read_int` / `read_bool` 增加第三个参数 `hint`，`_input_row` 透传 `field.verify_hint`；新增 `Reader[T]` 类型别名统一读取函数签名。
-- 兼容：`Field(prompt, reader, verify)` 的位置参数不变，`verify_hint` 作为第四个参数可选。
-- 验证：mock 输入覆盖四个方法的自定义/默认提示及字段联动；既有 CRUD 示例均通过编译。
-
 ## 2026-11-21 20:25
 
 ### 完善：`ConsoleCRUD` 四个 `read_` 方法统一支持校验回调
