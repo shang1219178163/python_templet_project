@@ -13,8 +13,9 @@ type Row = dict[str, Any]
 type Formatter = Callable[[str, Row], str]
 type Summary = Callable[[Mapping[str, Row]], str | None]
 type Verify[T] = Callable[[T], bool]
+type Reader[T] = Callable[[str, Verify[T] | None, str], T]
 
-_RETRY = "校验未通过，请重新输入"
+DEFAULT_VERIFY_HINT = "校验未通过，请重新输入"
 
 
 def _passes[T](value: T, verify: Verify[T] | None) -> bool:
@@ -27,12 +28,15 @@ class Field[T]:
     """一个待录入字段：提示语 + 读取函数 + 可选校验回调。
 
     ``verify`` 收到 ``reader`` 解析后的**类型化**结果（``read_bool`` 收到 bool），
-    返回 False 时提示并重新输入；回调内部抛异常则直接向上抛。
+    返回 False 时打印 ``verify_hint`` 并重新输入；回调内部抛异常则直接向上抛。
+    ``verify_hint`` 是完整提示语，默认「校验未通过，请重新输入」，
+    可改成「价格必须大于 0，请重新输入」这类具体说明。
     """
 
     prompt: str
-    reader: Callable[[str, Verify[T] | None], T]
+    reader: Reader[T]
     verify: Verify[T] | None = None
+    verify_hint: str = DEFAULT_VERIFY_HINT
 
 
 class ConsoleCRUD:
@@ -81,16 +85,16 @@ class ConsoleCRUD:
     # ---------------- 输入 ----------------
 
     @staticmethod
-    def read_str(tips: str, verify: Verify[str] | None = None) -> str:
-        """读取字符串：去首尾空格后返回，verify 不通过时重新输入。"""
+    def read_str(tips: str, verify: Verify[str] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> str:
+        """读取字符串：去首尾空格后返回，verify 不通过时打印 hint 并重读。"""
         while True:
             text = input(tips).strip()
             if _passes(text, verify):
                 return text
-            print(_RETRY)
+            print(hint)
 
     @staticmethod
-    def read_float(tips: str, verify: Verify[float] | None = None) -> float:
+    def read_float(tips: str, verify: Verify[float] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> float:
         """读取非负浮点数，格式错误或 verify 不通过时重新输入。"""
         while True:
             try:
@@ -103,10 +107,10 @@ class ConsoleCRUD:
                 continue
             if _passes(value, verify):
                 return value
-            print(_RETRY)
+            print(hint)
 
     @staticmethod
-    def read_int(tips: str, verify: Verify[int] | None = None) -> int:
+    def read_int(tips: str, verify: Verify[int] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> int:
         """读取非负整数，格式错误或 verify 不通过时重新输入。"""
         while True:
             try:
@@ -119,11 +123,11 @@ class ConsoleCRUD:
                 continue
             if _passes(value, verify):
                 return value
-            print(_RETRY)
+            print(hint)
 
     @staticmethod
-    def read_bool(tips: str, verify: Verify[bool] | None = None) -> bool:
-        """读取布尔值：先转成 bool 再交给 verify，不通过时重新输入。"""
+    def read_bool(tips: str, verify: Verify[bool] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> bool:
+        """读取布尔值：先转成 bool 再交给 verify，不通过时打印 hint 并重读。"""
         while True:
             text = input(tips).strip().lower()
             match text:
@@ -136,7 +140,7 @@ class ConsoleCRUD:
                     continue
             if _passes(value, verify):
                 return value
-            print(_RETRY)
+            print(hint)
 
     # ---------------- 增删改查 ----------------
 
@@ -231,7 +235,10 @@ class ConsoleCRUD:
 
     def _input_row(self) -> Row:
         """按 field 声明顺序逐个读取，组装成一行数据"""
-        return {key: field.reader(field.prompt, field.verify) for key, field in self.fields.items()}
+        return {
+            key: field.reader(field.prompt, field.verify, field.verify_hint)
+            for key, field in self.fields.items()
+        }
 
 
 def _default_format_row(name: str, row: Row) -> str:
