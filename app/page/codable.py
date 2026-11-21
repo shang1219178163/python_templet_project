@@ -33,7 +33,7 @@ RAW_JSON = json.dumps(RAW_DICT, ensure_ascii=False)
 def show_validate() -> None:
     """入口一：外部 Python 对象 -> 模型，顺带完成类型转换"""
     book = Book.model_validate(RAW_DICT)
-    DLog("model_validate       ->", book)
+    DLog("model_validate ->", book)
     DLog("id 由 '1' 转成 int :", repr(book.id))
     DLog("price 由 str 转 Decimal:", repr(book.price))
 
