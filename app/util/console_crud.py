@@ -23,6 +23,38 @@ def _passes[T](value: T, verify: Verify[T] | None) -> bool:
     return verify is None or verify(value)
 
 
+def _parse_float(text: str) -> float:
+    """转成非负浮点数；不合规时抛带提示语的 ValueError。"""
+    try:
+        value = float(text)
+    except ValueError:
+        raise ValueError("请输入数字，请重新输入") from None
+    if value < 0:
+        raise ValueError("必须是非负数字，请重新输入")
+    return value
+
+
+def _parse_int(text: str) -> int:
+    """转成非负整数；不合规时抛带提示语的 ValueError。"""
+    try:
+        value = int(text)
+    except ValueError:
+        raise ValueError("请输入整数，请重新输入") from None
+    if value < 0:
+        raise ValueError("必须是非负整数，请重新输入")
+    return value
+
+
+def _parse_bool(text: str) -> bool:
+    """把 yes/no 系列输入转成 bool；不合规时抛带提示语的 ValueError。"""
+    match text.strip().lower():
+        case "y" | "yes" | "true" | "1" | "是":
+            return True
+        case "n" | "no" | "false" | "0" | "否":
+            return False
+    raise ValueError("请输入 yes/no（或 y/n、是/否），请重新输入")
+
+
 @dataclass(slots=True, frozen=True)
 class Field[T]:
     """一个待录入字段：提示语 + 读取函数 + 可选校验回调。
@@ -85,62 +117,42 @@ class ConsoleCRUD:
     # ---------------- 输入 ----------------
 
     @staticmethod
+    def _read[T](
+            tips: str,
+            parse: Callable[[str], T],
+            verify: Verify[T] | None,
+            hint: str,
+    ) -> T:
+        """循环读取：``parse`` 抛 ValueError 时打印异常信息，``verify`` 不通过时打印 hint。"""
+        while True:
+            try:
+                value = parse(input(tips).strip())
+            except ValueError as err:
+                print(err)
+            else:
+                if _passes(value, verify):
+                    return value
+                print(hint)
+
+    @staticmethod
     def read_str(tips: str, verify: Verify[str] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> str:
         """读取字符串：去首尾空格后返回，verify 不通过时打印 hint 并重读。"""
-        while True:
-            text = input(tips).strip()
-            if _passes(text, verify):
-                return text
-            print(hint)
+        return ConsoleCRUD._read(tips, str, verify, hint)
 
     @staticmethod
     def read_float(tips: str, verify: Verify[float] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> float:
         """读取非负浮点数，格式错误或 verify 不通过时重新输入。"""
-        while True:
-            try:
-                value = float(input(tips).strip())
-            except ValueError:
-                print("请输入数字，请重新输入")
-                continue
-            if value < 0:
-                print("必须是非负数字，请重新输入")
-                continue
-            if _passes(value, verify):
-                return value
-            print(hint)
+        return ConsoleCRUD._read(tips, _parse_float, verify, hint)
 
     @staticmethod
     def read_int(tips: str, verify: Verify[int] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> int:
         """读取非负整数，格式错误或 verify 不通过时重新输入。"""
-        while True:
-            try:
-                value = int(input(tips).strip())
-            except ValueError:
-                print("请输入整数，请重新输入")
-                continue
-            if value < 0:
-                print("必须是非负整数，请重新输入")
-                continue
-            if _passes(value, verify):
-                return value
-            print(hint)
+        return ConsoleCRUD._read(tips, _parse_int, verify, hint)
 
     @staticmethod
     def read_bool(tips: str, verify: Verify[bool] | None = None, hint: str = DEFAULT_VERIFY_HINT) -> bool:
         """读取布尔值：先转成 bool 再交给 verify，不通过时打印 hint 并重读。"""
-        while True:
-            text = input(tips).strip().lower()
-            match text:
-                case "y" | "yes" | "true" | "1" | "是":
-                    value = True
-                case "n" | "no" | "false" | "0" | "否":
-                    value = False
-                case _:
-                    print("请输入 yes/no（或 y/n、是/否），请重新输入")
-                    continue
-            if _passes(value, verify):
-                return value
-            print(hint)
+        return ConsoleCRUD._read(tips, _parse_bool, verify, hint)
 
     # ---------------- 增删改查 ----------------
 

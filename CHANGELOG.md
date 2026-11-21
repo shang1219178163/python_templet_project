@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-11-21 20:38
+
+### 修复：消除 PyCharm 对 `read_` 方法返回值可能为 `None` 的警告
+
+- 原因：PyCharm 的控制流分析对 `while True` + `continue` 组合会认为函数可能隐式返回 `None`，把 `read_float` / `read_int` / `read_bool` 的返回类型推断为 `float | None` 等并告警。
+- 调整：抽出泛型 `_read[T]` 统一「解析 → 校验 → 重试」循环（`try/else`，不使用 `continue`）；格式校验拆为 `_parse_float` / `_parse_int` / `_parse_bool`，用带提示语的 `ValueError` 表达失败原因；四个 `read_` 方法委托给 `_read`。
+- 效果：`console_crud.py` 在 PyCharm 中零警告；提示语与重试行为保持不变。
+- 验证：mock 输入覆盖格式错误、负数、校验失败、自定义提示、无回调及字段联动；五个 CRUD 相关文件均通过编译。
+
 ## 2026-11-21 20:26
 
 ### 新增：`Field` 支持自定义校验提示语
