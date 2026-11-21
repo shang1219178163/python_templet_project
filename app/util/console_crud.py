@@ -12,14 +12,27 @@ from typing import Any
 type Row = dict[str, Any]
 type Formatter = Callable[[str, Row], str]
 type Summary = Callable[[Mapping[str, Row]], str | None]
+type Verify[T] = Callable[[T], bool]
+
+_RETRY = "校验未通过，请重新输入"
+
+
+def _passes[T](value: T, verify: Verify[T] | None) -> bool:
+    """未提供校验回调时一律视为通过。"""
+    return verify is None or verify(value)
 
 
 @dataclass(slots=True, frozen=True)
-class Field:
-    """一个待录入字段：提示语 + 读取函数（如 ``ConsoleCRUD.read_float``）。"""
+class Field[T]:
+    """一个待录入字段：提示语 + 读取函数 + 可选校验回调。
+
+    ``verify`` 收到 ``reader`` 解析后的**类型化**结果（``read_bool`` 收到 bool），
+    返回 False 时提示并重新输入；回调内部抛异常则直接向上抛。
+    """
 
     prompt: str
-    reader: Callable[[str], Any]
+    reader: Callable[[str, Verify[T] | None], T]
+    verify: Verify[T] | None = None
 
 
 class ConsoleCRUD:
@@ -39,7 +52,7 @@ class ConsoleCRUD:
             *,
             title: str,
             entity: str,
-            fields: Mapping[str, Field],
+            fields: Mapping[str, Field[Any]],
             name_prompt: str | None = None,
             format_row: Formatter | None = None,
             summarize: Summary | None = None,
@@ -58,7 +71,7 @@ class ConsoleCRUD:
         """
         self.title = title
         self.entity = entity
-        self.fields = dict(fields)
+        self.fields: dict[str, Field[Any]] = dict(fields)
         self.name_prompt = name_prompt or f"{entity}名称："
         self.format_row = format_row or _default_format_row
         self.summarize = summarize
@@ -68,38 +81,62 @@ class ConsoleCRUD:
     # ---------------- 输入 ----------------
 
     @staticmethod
-    def read_str(tips: str) -> str:
-        """读取字符串：去首尾空格后返回。"""
-        return input(tips).strip()
-
-    @staticmethod
-    def read_float(tips: str) -> float:
-        """读取价格，非法时要求重新输入"""
+    def read_str(tips: str, verify: Verify[str] | None = None) -> str:
+        """读取字符串：去首尾空格后返回，verify 不通过时重新输入。"""
         while True:
-            price = float(input(tips).strip())
-            if price is not None and price > 0:
-                return price
-            print("必须是非负数字，请重新输入")
+            text = input(tips).strip()
+            if _passes(text, verify):
+                return text
+            print(_RETRY)
 
     @staticmethod
-    def read_bool(tips: str) -> bool:
-        """读取布尔值，非法时要求重新输入"""
+    def read_float(tips: str, verify: Verify[float] | None = None) -> float:
+        """读取非负浮点数，格式错误或 verify 不通过时重新输入。"""
+        while True:
+            try:
+                value = float(input(tips).strip())
+            except ValueError:
+                print("请输入数字，请重新输入")
+                continue
+            if value < 0:
+                print("必须是非负数字，请重新输入")
+                continue
+            if _passes(value, verify):
+                return value
+            print(_RETRY)
+
+    @staticmethod
+    def read_int(tips: str, verify: Verify[int] | None = None) -> int:
+        """读取非负整数，格式错误或 verify 不通过时重新输入。"""
+        while True:
+            try:
+                value = int(input(tips).strip())
+            except ValueError:
+                print("请输入整数，请重新输入")
+                continue
+            if value < 0:
+                print("必须是非负整数，请重新输入")
+                continue
+            if _passes(value, verify):
+                return value
+            print(_RETRY)
+
+    @staticmethod
+    def read_bool(tips: str, verify: Verify[bool] | None = None) -> bool:
+        """读取布尔值：先转成 bool 再交给 verify，不通过时重新输入。"""
         while True:
             text = input(tips).strip().lower()
-            if text in {"y", "yes", "true", "1", "是"}:
-                return True
-            if text in {"n", "no", "false", "0", "否"}:
-                return False
-            print("请输入 yes/no（或 y/n、是/否），请重新输入")
-
-    @staticmethod
-    def read_int(tips: str) -> int:
-        """读取数量，非法时要求重新输入"""
-        while True:
-            num = int(input(tips).strip())
-            if num is not None and num > 0:
-                return num
-            print("必须是非负整数，请重新输入")
+            match text:
+                case "y" | "yes" | "true" | "1" | "是":
+                    value = True
+                case "n" | "no" | "false" | "0" | "否":
+                    value = False
+                case _:
+                    print("请输入 yes/no（或 y/n、是/否），请重新输入")
+                    continue
+            if _passes(value, verify):
+                return value
+            print(_RETRY)
 
     # ---------------- 增删改查 ----------------
 
@@ -194,7 +231,7 @@ class ConsoleCRUD:
 
     def _input_row(self) -> Row:
         """按 field 声明顺序逐个读取，组装成一行数据"""
-        return {key: field.reader(field.prompt) for key, field in self.fields.items()}
+        return {key: field.reader(field.prompt, field.verify) for key, field in self.fields.items()}
 
 
 def _default_format_row(name: str, row: Row) -> str:

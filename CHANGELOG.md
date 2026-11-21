@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-11-21 20:25
+
+### 完善：`ConsoleCRUD` 四个 `read_` 方法统一支持校验回调
+
+- 调整：`read_str` / `read_float` / `read_int` / `read_bool` 均新增 `verify: Verify[T]` 参数，回调收到解析后的类型化值（`read_bool` 收到 `bool`），返回 `False` 时提示「校验未通过，请重新输入」并重读。
+- 调整：`Field` 改为泛型 `Field[T]`，新增泛型别名 `Verify[T] = Callable[[T], bool]`，约束 `reader` 与 `verify` 的入参类型一致。
+- 修复：`read_float` / `read_int` 输入非数字时直接抛 `ValueError` 崩溃，改为提示后重新输入；数值约束由 `> 0` 放宽为 `>= 0`，与原有「非负」提示一致（0 分、0 库存可录入）。
+- 修复：`read_bool` 原先校验通过后无条件返回 `True`，与用户输入无关；改为先解析 yes/no 得到 `bool` 再交给 `verify`。
+- 验证：mock 输入覆盖格式错误、校验失败、校验放行、无回调四种路径；四个既有 CRUD 示例均通过编译。
+
 ## 2026-11-21 15:16
 
 ### 重构：`EduManagement` 改为 pydantic 模型，默认值用 `Field(default_factory=dict)`
