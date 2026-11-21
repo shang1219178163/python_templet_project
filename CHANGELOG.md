@@ -1,26 +1,63 @@
 # CHANGELOG
 
+## 2026-11-21 21:07
+
+### 简化：移除 `movie_system_oo.py` 中的套壳方法
+
+- 调整：删除 `add_movie` / `update_movie` / `delete_movie` / `query_movie` / `list_movies` 五个仅转发 `self.crud` 的方法，`run()` 直接调用 `crud.add()` / `update()` / `delete()` / `query()` / `show()`。
+- 影响：`MovieSystem` 不再暴露需求文档中的同名方法，CRUD 能力通过 `crud` 与菜单提供；`top_rated_movie` 与 `movie_list` 保留。
+- 验证：`python -m unittest tests.test_movie_system_oo` 24 项全部通过；PyCharm 零警告。
+
+## 2026-11-21 21:06
+
+### 调整：`movie_system_oo.py` 改用 ConsoleCrud 实现
+
+- 实现：`app/page/curd/movie_system_oo.py`（原 `movie_system.py` 保持不变）中 `Movie` 保留 `__str__` 与 `update_info`；`MovieSystem` 组合 `ConsoleCrud`，导演/主演/票价/评分字段与校验交给组件，`add_movie` / `update_movie` / `delete_movie` / `query_movie` / `list_movies` 委托组件，`movie_list` 由字典数据转换为 `Movie`，`top_rated_movie` 单独实现并列输出，菜单扩展为 1-7 项。
+- 测试：`tests/test_movie_system_oo.py` 调整为 24 个用例，覆盖空导演/非数字/票价与评分越界的重新录入、重名、增删改查、空列表、汇总行、并列最高分与菜单流程。
+- 验证：`python -m unittest tests.test_movie_system_oo -v` 24 项全部通过；两个文件在 PyCharm 中零警告。
+
+## 2026-11-21 20:59
+
+### 调整：`ConsoleCrud.name_prompt` 属性更名为 `key_prompt`
+
+- 调整：`self.name_prompt` → `self.key_prompt`，与构造参数 `key_prompt` 保持一致；`add` / `update` / `delete` / `query` 四处读取同步更新。
+- 影响：外部若直接访问 `crud.name_prompt` 需改为 `crud.key_prompt`；四个 CRUD 示例均通过构造参数传值，不受影响。
+- 验证：以 `key_prompt="书名: "` 实例化后添加与精确查询正常；PyCharm 检查零警告。
+
+## 2026-11-21 20:58
+
+### 新增：`ConsoleCrud` 精确查询方法并接入菜单
+
+- 新增：`query()` 按名称精确查找并展示单条记录，复用 `name_prompt` 与 `format_row`；记录不存在时提示「{entity}不存在」。
+- 调整：菜单改为「1.添加 2.修改 3.删除 4.精确查询 5.查询全部 6.退出」，输入提示改为 1-6，`run()` 的 `match` 分支同步调整；菜单行宽按中日韩字符显示宽度对齐边框。
+- 验证：模拟完整流程覆盖添加、精确查询命中/未命中、查询全部、非法编号与退出；PyCharm 检查零警告。
+
 ## 2026-11-21 20:45
 
-### 文档：`ConsoleCRUD` 五个类型别名补充注释
+### 文档：`ConsoleCrud` 五个类型别名补充注释
 
-- 内容：`CrudRow`、`CrudFormatter`、`CrudSummary`、`CrudVerify[T]`、`CrudReader[T]` 上方各加一行注释，说明数据形状、参数与返回值；`CrudReader` 注明参数顺序为「提示语 + 校验回调 + 失败提示语」。
+- 内容：`CrudRow`、`CrudFormatter`、`CrudSummary`、`CrudVerify[T]`、`CrudReader[T]` 上方各加一行注释，说明数据形状、参数与返回值；
+  `CrudReader` 注明参数顺序为「提示语 + 校验回调 + 失败提示语」。
 - 验证：PyCharm 检查零警告，模块导入正常。
 
 ## 2026-11-21 20:45
 
-### 调整：`ConsoleCRUD` 类型别名统一加 `Crud` 前缀
+### 调整：`ConsoleCrud` 类型别名统一加 `Crud` 前缀
 
-- 调整：`Row` → `CrudRow`、`Formatter` → `CrudFormatter`、`Summary` → `CrudSummary`、`Verify[T]` → `CrudVerify[T]`、`Reader[T]` → `CrudReader[T]`。
-- 配套：`Field` 已更名为 `CrudField`，修正 `__init__` 中遗留的 `Field[Any]`；`app/util/__init__.py` 与三个已跟踪的 CRUD 示例同步更新导入与类型注解。
+- 调整：`Row` → `CrudRow`、`Formatter` → `CrudFormatter`、`Summary` → `CrudSummary`、`Verify[T]` → `CrudVerify[T]`、
+  `Reader[T]` → `CrudReader[T]`。
+- 配套：`Field` 已更名为 `CrudField`，修正 `__init__` 中遗留的 `Field[Any]`；`app/util/__init__.py` 与三个已跟踪的 CRUD
+  示例同步更新导入与类型注解。
 - 验证：`console_crud.py` 在 PyCharm 中零警告；mock 输入、`app.util` 导出、五个相关文件编译均通过。
 
 ## 2026-11-21 20:38
 
 ### 修复：消除 PyCharm 对 `read_` 方法返回值可能为 `None` 的警告
 
-- 原因：PyCharm 的控制流分析对 `while True` + `continue` 组合会认为函数可能隐式返回 `None`，把 `read_float` / `read_int` / `read_bool` 的返回类型推断为 `float | None` 等并告警。
-- 调整：抽出泛型 `_read[T]` 统一「解析 → 校验 → 重试」循环（`try/else`，不使用 `continue`）；格式校验拆为 `_parse_float` / `_parse_int` / `_parse_bool`，用带提示语的 `ValueError` 表达失败原因；四个 `read_` 方法委托给 `_read`。
+- 原因：PyCharm 的控制流分析对 `while True` + `continue` 组合会认为函数可能隐式返回 `None`，把 `read_float` / `read_int` /
+  `read_bool` 的返回类型推断为 `float | None` 等并告警。
+- 调整：抽出泛型 `_read[T]` 统一「解析 → 校验 → 重试」循环（`try/else`，不使用 `continue`）；格式校验拆为 `_parse_float` /
+  `_parse_int` / `_parse_bool`，用带提示语的 `ValueError` 表达失败原因；四个 `read_` 方法委托给 `_read`。
 - 效果：`console_crud.py` 在 PyCharm 中零警告；提示语与重试行为保持不变。
 - 验证：mock 输入覆盖格式错误、负数、校验失败、自定义提示、无回调及字段联动；五个 CRUD 相关文件均通过编译。
 
@@ -28,18 +65,22 @@
 
 ### 新增：`Field` 支持自定义校验提示语
 
-- 新增：`Field.verify_hint`（默认 `DEFAULT_VERIFY_HINT = "校验未通过，请重新输入"`），`verify` 返回 False 时打印该提示，可写成「价格必须大于 0，请重新输入」这类完整说明。
-- 调整：`read_str` / `read_float` / `read_int` / `read_bool` 增加第三个参数 `hint`，`_input_row` 透传 `field.verify_hint`；新增 `Reader[T]` 类型别名统一读取函数签名。
+- 新增：`Field.verify_hint`（默认 `DEFAULT_VERIFY_HINT = "校验未通过，请重新输入"`），`verify` 返回 False 时打印该提示，可写成「价格必须大于
+  0，请重新输入」这类完整说明。
+- 调整：`read_str` / `read_float` / `read_int` / `read_bool` 增加第三个参数 `hint`，`_input_row` 透传 `field.verify_hint`
+  ；新增 `Reader[T]` 类型别名统一读取函数签名。
 - 兼容：`Field(prompt, reader, verify)` 的位置参数不变，`verify_hint` 作为第四个参数可选。
 - 验证：mock 输入覆盖四个方法的自定义/默认提示及字段联动；既有 CRUD 示例均通过编译。
 
 ## 2026-11-21 20:25
 
-### 完善：`ConsoleCRUD` 四个 `read_` 方法统一支持校验回调
+### 完善：`ConsoleCrud` 四个 `read_` 方法统一支持校验回调
 
-- 调整：`read_str` / `read_float` / `read_int` / `read_bool` 均新增 `verify: Verify[T]` 参数，回调收到解析后的类型化值（`read_bool` 收到 `bool`），返回 `False` 时提示「校验未通过，请重新输入」并重读。
+- 调整：`read_str` / `read_float` / `read_int` / `read_bool` 均新增 `verify: Verify[T]` 参数，回调收到解析后的类型化值（
+  `read_bool` 收到 `bool`），返回 `False` 时提示「校验未通过，请重新输入」并重读。
 - 调整：`Field` 改为泛型 `Field[T]`，新增泛型别名 `Verify[T] = Callable[[T], bool]`，约束 `reader` 与 `verify` 的入参类型一致。
-- 修复：`read_float` / `read_int` 输入非数字时直接抛 `ValueError` 崩溃，改为提示后重新输入；数值约束由 `> 0` 放宽为 `>= 0`，与原有「非负」提示一致（0 分、0 库存可录入）。
+- 修复：`read_float` / `read_int` 输入非数字时直接抛 `ValueError` 崩溃，改为提示后重新输入；数值约束由 `> 0` 放宽为 `>= 0`
+  ，与原有「非负」提示一致（0 分、0 库存可录入）。
 - 修复：`read_bool` 原先校验通过后无条件返回 `True`，与用户输入无关；改为先解析 yes/no 得到 `bool` 再交给 `verify`。
 - 验证：mock 输入覆盖格式错误、校验失败、校验放行、无回调四种路径；四个既有 CRUD 示例均通过编译。
 
@@ -47,24 +88,32 @@
 
 ### 重构：`EduManagement` 改为 pydantic 模型，默认值用 `Field(default_factory=dict)`
 
-- 调整：`app/page/classroom/edu_management.py` 中 `EduManagement` 改为 `BaseModel`，删除手写 `__init__`，字段声明为 `data: dict[str, Student] = Field(default_factory=dict, description="学生数据，按姓名索引")`；`Student` 仍是普通类，故加 `ConfigDict(arbitrary_types_allowed=True)`。
-- 修复：移除 `from dns import update`（PyCharm 误导入，实际是 `dns.update` 模块，调用会报 `module is not callable`），菜单 1/2 改为调用 `self.update(name)`；末尾 `EduManagement({})` 改为 `EduManagement()`，pydantic v2 不支持位置参数。
-- 验证：运行示例并输入 `6` 正常退出；两个实例的 `data` 互不共享（`a.data is b.data` 为 `False`）；`EduManagement(data={...})` 关键字传参正常。
+- 调整：`app/page/classroom/edu_management.py` 中 `EduManagement` 改为 `BaseModel`，删除手写 `__init__`，字段声明为
+  `data: dict[str, Student] = Field(default_factory=dict, description="学生数据，按姓名索引")`；`Student` 仍是普通类，故加
+  `ConfigDict(arbitrary_types_allowed=True)`。
+- 修复：移除 `from dns import update`（PyCharm 误导入，实际是 `dns.update` 模块，调用会报 `module is not callable`），菜单 1/2
+  改为调用 `self.update(name)`；末尾 `EduManagement({})` 改为 `EduManagement()`，pydantic v2 不支持位置参数。
+- 验证：运行示例并输入 `6` 正常退出；两个实例的 `data` 互不共享（`a.data is b.data` 为 `False`）；`EduManagement(data={...})`
+  关键字传参正常。
 
 ## 2026-11-21 15:12
 
 ### 调整：`EduManagement` 构造参数 `data` 增加默认值
 
-- 调整：`app/page/classroom/edu_management.py` 中 `__init__` 签名改为 `data: dict[str, Student] | None = None`，为空时内部初始化为空字典，`self.data` 类型仍为 `dict[str, Student]`。
+- 调整：`app/page/classroom/edu_management.py` 中 `__init__` 签名改为 `data: dict[str, Student] | None = None`
+  ，为空时内部初始化为空字典，`self.data` 类型仍为 `dict[str, Student]`。
 - 效果：`EduManagement()` 可直接实例化，不再强制传参；传入字典时行为与之前一致。
 
 ## 2026-11-21 13:18
 
 ### 回退：`BaseEnum` 退回普通 `Enum`，移除 `int` 混入
 
-- 原因：`int` 混入虽能让标准库 `json.dumps` 直接序列化枚举，但会让 PyCharm 认为成员值必须是 int，三个枚举共 12 条警告，需在每个枚举类上加 `# noinspection PyTypeChecker`；而项目主要走 FastAPI/pydantic，普通 `Enum` 已按 `value`（即 code）自动输出数字。
+- 原因：`int` 混入虽能让标准库 `json.dumps` 直接序列化枚举，但会让 PyCharm 认为成员值必须是 int，三个枚举共 12
+  条警告，需在每个枚举类上加 `# noinspection PyTypeChecker`；而项目主要走 FastAPI/pydantic，普通 `Enum` 已按 `value`（即
+  code）自动输出数字。
 - 调整：`class BaseEnum(Enum)`，`__new__` 恢复 `object.__new__(cls)`；三个枚举的 `# noinspection PyTypeChecker` 一并移除。
-- 效果：`json.dumps` 需取 `.code` / `.value`；`enum == 1` 为 `False`；pydantic/FastAPI 仍序列化为 `{"status": 1}`；pickle、查找、`call_extra`、重复 code 校验不受影响。
+- 效果：`json.dumps` 需取 `.code` / `.value`；`enum == 1` 为 `False`；pydantic/FastAPI 仍序列化为 `{"status": 1}`
+  ；pickle、查找、`call_extra`、重复 code 校验不受影响。
 - 文档：`docs/枚举使用指南.md` 移除 int 比较与抑制说明，恢复 JSON 序列化说明及模板。
 - 验证：三个示例脚本运行正常，pydantic 输出 `{"status":1}`，PyCharm lint 四个文件零警告。
 
@@ -73,8 +122,10 @@
 ### 优化：`BaseEnum` 混入 `int`，支持原生序列化与 int 比较
 
 - 原因：枚举不是 int 子类时，`json.dumps` 不认，入库/日志/第三方 int 接口都要手动取 `.code`。
-- 调整：`app/enums/base_enum.py` 改为 `class BaseEnum(int, Enum)`，`__new__` 用 `int.__new__(cls, code)`；`value` 仍为 `code`，`code` / `label` / `extra` 行为不变。
-- 效果：`json.dumps({"status": UserStatus.ACTIVE})` → `{"status": 1}`；`UserStatus.ACTIVE == 1` 为 `True`；pydantic/FastAPI 直接按 int 收发；`str()` 仍显示成员名（`UserStatus.ACTIVE`），`repr()` 不变。
+- 调整：`app/enums/base_enum.py` 改为 `class BaseEnum(int, Enum)`，`__new__` 用 `int.__new__(cls, code)`；`value` 仍为
+  `code`，`code` / `label` / `extra` 行为不变。
+- 效果：`json.dumps({"status": UserStatus.ACTIVE})` → `{"status": 1}`；`UserStatus.ACTIVE == 1` 为 `True`；pydantic/FastAPI
+  直接按 int 收发；`str()` 仍显示成员名（`UserStatus.ACTIVE`），`repr()` 不变。
 - 抑制：`int` mixin 让 PyCharm 认为成员值必须是 int，三个枚举类定义前加 `# noinspection PyTypeChecker`，恢复零警告。
 - 文档：`docs/枚举使用指南.md` 更新 API 表、JSON/比较/抑制说明及新增枚举模板。
 - 验证：三个示例脚本运行正常；json、pickle、pydantic、`== int`、重复 code 校验均通过；PyCharm lint 四个文件零警告。
@@ -83,14 +134,17 @@
 
 ### 文档：新增 `docs/枚举使用指南.md`
 
-- 内容：整理 `BaseEnum` 的定义语法、API 一览表、三个枚举（函数型/字典型/无 extra）的完整示例、注意事项（code 唯一、Enum 别名、继承限制、JSON 序列化、pickle）以及新增枚举模板。
+- 内容：整理 `BaseEnum` 的定义语法、API 一览表、三个枚举（函数型/字典型/无 extra）的完整示例、注意事项（code 唯一、Enum
+  别名、继承限制、JSON 序列化、pickle）以及新增枚举模板。
 - 验证：文档中的示例与三个枚举脚本的实际输出一致。
 
 ## 2026-11-21 11:48
 
 ### 示例：三个枚举补充 `BaseEnum` 使用示例
 
-- 内容：`user_status.py`（函数型 extra）、`review_status.py`（dict 型 extra）、`order_status.py`（无 extra）各自补充 5~7 段可运行示例，覆盖遍历、`code_of`/`name_of`/`cls(value)`/`cls[name]` 查找、`match_of` 条件查找、`call_extra`、`choices()`、序列化取 code 和业务判断。
+- 内容：`user_status.py`（函数型 extra）、`review_status.py`（dict 型 extra）、`order_status.py`（无 extra）各自补充 5~7
+  段可运行示例，覆盖遍历、`code_of`/`name_of`/`cls(value)`/`cls[name]` 查找、`match_of` 条件查找、`call_extra`、`choices()`
+  、序列化取 code 和业务判断。
 - 修复：`match_of` 的 lambda 参数由 `e` 改为 `item`，消除“隐藏外部作用域名称”弱警告。
 - 验证：三个脚本均正常运行，PyCharm lint 零警告。
 
@@ -98,16 +152,22 @@
 
 ### 重构：`BaseEnum` 改用 `__new__`，让枚举 value 回归 code
 
-- 原因：原实现把 `(code, label, extra)` 整体当 value，`UserStatus(1)` 无法按 code 查找，`code_of` 只能 O(n) 遍历；含 lambda 时 `pickle` 也会失败。
-- 调整：`app/enums/base_enum.py` 用 `__new__` 将 `_value_` 设为 `code`，其余信息挂实例属性；`code_of` 改为 `cls(code)` 查找；`name_of` 改用 `__members__`；新增 `__init_subclass__` 校验 code 唯一（基于 `__members__`，能查到别名）、`choices()` 下拉框数据、`call_extra()` 统一处理函数型/数据型 `extra`。
-- 配套：`user_status.py`、`review_status.py` 调用处由 `getattr(e, "extra")` 改为 `e.call_extra(...)`；`extra` 保持 `Any`，因为 `ReviewStatus` 存的是 dict。
-- 验证：三个枚举脚本运行正常，`UserStatus(2)` / `code_of` / `choices` / 重复 code 报错 / `pickle` 往返均通过；PyCharm lint 四个文件零警告。
+- 原因：原实现把 `(code, label, extra)` 整体当 value，`UserStatus(1)` 无法按 code 查找，`code_of` 只能 O (n) 遍历；含 lambda
+  时 `pickle` 也会失败。
+- 调整：`app/enums/base_enum.py` 用 `__new__` 将 `_value_` 设为 `code`，其余信息挂实例属性；`code_of` 改为 `cls(code)` 查找；
+  `name_of` 改用 `__members__`；新增 `__init_subclass__` 校验 code 唯一（基于 `__members__`，能查到别名）、`choices()` 下拉框数据、
+  `call_extra()` 统一处理函数型/数据型 `extra`。
+- 配套：`user_status.py`、`review_status.py` 调用处由 `getattr(e, "extra")` 改为 `e.call_extra(...)`；`extra` 保持 `Any`，因为
+  `ReviewStatus` 存的是 dict。
+- 验证：三个枚举脚本运行正常，`UserStatus(2)` / `code_of` / `choices` / 重复 code 报错 / `pickle` 往返均通过；PyCharm lint
+  四个文件零警告。
 
 ## 2026-11-20 20:03
 
 ### 修复：`jn/book_test.ipynb` 读 CSV 报 FileNotFoundError
 
-- 现象：`pandas.read_csv('app/assets/csv/books.csv')` 报 `[Errno 2] No such file or directory`。目录已由 `cvs` 改名为 `csv`，但 notebook 的 cwd 是 `app/page/jn`，相对路径被解析成 `app/page/jn/app/assets/...`。
+- 现象：`pandas.read_csv('app/assets/csv/books.csv')` 报 `[Errno 2] No such file or directory`。目录已由 `cvs` 改名为
+  `csv`，但 notebook 的 cwd 是 `app/page/jn`，相对路径被解析成 `app/page/jn/app/assets/...`。
 - 修复：用 `pathlib` 从 cwd 向上查找 `pyproject.toml` 定位项目根目录，再拼 `app/assets/csv/books.csv`；同时清空上次失败的输出。
 - 验证：在 `app/page/jn` 下执行，读到 101 行 9 列，`price > 50` 过滤结果正常。
 
@@ -115,7 +175,8 @@
 
 ### 修复：`jn/test.ipynb` 用 `list.index` 取序号触发 ValueError
 
-- 现象：`properts.index(e)` 内部用 `==` 逐项比较，遇到 `df.size = 3` 时 `RangeIndex == 3` 返回布尔数组，`if` 无法判断真值，抛出 `ValueError: The truth value of an array with more than one element is ambiguous`。
+- 现象：`properts.index(e)` 内部用 `==` 逐项比较，遇到 `df.size = 3` 时 `RangeIndex == 3` 返回布尔数组，`if` 无法判断真值，抛出
+  `ValueError: The truth value of an array with more than one element is ambiguous`。
 - 修复：改用 `enumerate(properts)` 直接拿序号，避免元素比较。
 - 验证：改写后脚本输出 9 项属性的序号与类型，无异常。
 
@@ -124,16 +185,20 @@
 ### 修复：`test.py` 调用处误用注解语法 + `rectangle_area` 注解规范化
 
 - 现象：`print(rectangle_area(l:10, w: 50))` 中 `:` 是定义期注解语法，调用时非法，整个文件 `SyntaxError` 无法运行。
-- 修复：改为关键字参数调用 `rectangle_area(l=10, w=50)`；函数签名规范为 `l: float, w: float -> float`，docstring 参数名 `Z`/`W` 更正为 `l`/`w`。
+- 修复：改为关键字参数调用 `rectangle_area(l=10, w=50)`；函数签名规范为 `l: float, w: float -> float`，docstring 参数名
+  `Z`/`W` 更正为 `l`/`w`。
 - 验证：`python app/page/test.py` 正常运行，输出 `500`，`help()` 显示注解与文档一致。
 
 ## 2026-11-20 14:45
 
 ### 依赖：pandas 锁定 2.x 以匹配 streamlit
 
-- 现象：原环境为 pandas 3.1.0（传递依赖，未在 `pyproject.toml` 声明）。pandas 3 默认字符串 dtype、移除 `applymap`、CoW 默认开启，streamlit 及生态尚未完全适配。
-- 调整：`pyproject.toml` 新增 `pandas>=2.2,<3`，`uv add` 解析并安装 pandas 2.3.3（新增 `tzdata`）；顺带补录已在环境中使用但未声明的 `ipykernel>=7.4.0`。
-- 验证：`AppTest` 跑 `app/page/streamlit_demo.py` 无异常；`st.dataframe` / `st.line_chart` / `st.write` 正常；仅 `st.table(df.describe())` 在混合 dtype 列上触发 streamlit 的 Arrow 自动修复告警（与 pandas 版本无关）。
+- 现象：原环境为 pandas 3.1.0（传递依赖，未在 `pyproject.toml` 声明）。pandas 3 默认字符串 dtype、移除 `applymap`、CoW
+  默认开启，streamlit 及生态尚未完全适配。
+- 调整：`pyproject.toml` 新增 `pandas>=2.2,<3`，`uv add` 解析并安装 pandas 2.3.3（新增 `tzdata`）；顺带补录已在环境中使用但未声明的
+  `ipykernel>=7.4.0`。
+- 验证：`AppTest` 跑 `app/page/streamlit_demo.py` 无异常；`st.dataframe` / `st.line_chart` / `st.write` 正常；仅
+  `st.table(df.describe())` 在混合 dtype 列上触发 streamlit 的 Arrow 自动修复告警（与 pandas 版本无关）。
 
 ## 2026-11-20 10:37
 
@@ -256,11 +321,13 @@
 
 ### 重构：`BookLibraryModel` 更名为 `BookLibrary`，文件同步改名
 
-- `app/model/book_library_model.py` → `app/model/book_library.py`（`git mv` 保留历史），类名 `BookLibraryModel` → `BookLibrary`。
+- `app/model/book_library_model.py` → `app/model/book_library.py`（`git mv` 保留历史），类名 `BookLibraryModel` →
+  `BookLibrary`。
 - 调用方同步：`app/page/data_type_test.py`、`app/page/book_managment_system/book_managment_system.py` 改为
   `from app.model.book_library import BookLibrary`，实例化直接 `BookLibrary()`。
 - `docs/pydantic-backend-essentials.md` 三处路径/类名同步更新；全仓库已无 `book_library_model` 残留。
-- 验证：管理页、`data_type_test.py` 实跑正常，`compileall app` 通过；`ruff` 仅剩管理页第 84 行既有的 `print(f"退出系统")` 告警，非本次引入。
+- 验证：管理页、`data_type_test.py` 实跑正常，`compileall app` 通过；`ruff` 仅剩管理页第 84 行既有的 `print(f"退出系统")`
+  告警，非本次引入。
 
 ## 2026-11-18 20:04
 
@@ -376,7 +443,7 @@
 
 ## 2026-11-18 18:51
 
-### 功能：`ConsoleCRUD` 新增布尔值读取方法 `read_bool`
+### 功能：`ConsoleCrud` 新增布尔值读取方法 `read_bool`
 
 - `read_bool(tips) -> bool`：沿用 `read_float` 的循环重试写法，非法输入打印提示后重新录入。
     - 真值：`y` / `yes` / `true` / `1` / `是`；假值：`n` / `no` / `false` / `0` / `否`。
@@ -386,10 +453,10 @@
 
 ## 2026-11-18 15:48
 
-### 调整：`shopping_cart_demo.py` 的 `format_row` / `summarize` 改为独立函数
+### 调整：`shopping_cart.py` 的 `format_row` / `summarize` 改为独立函数
 
 - 去掉 `ConsoleCRUD(...)` 里的两个 lambda，抽成模块级函数 `format_item` / `summarize_cart`，
-  与 `students_crud_demo.py` 的 `format_student` / `summarize_students` 写法一致。
+  与 `students_crud.py` 的 `format_student` / `summarize_students` 写法一致。
 - 验证：查询输出 3 条商品与合计 14894 正常；`py_compile`、`ruff check` 通过。
 
 ## 2026-11-18 15:46
@@ -403,7 +470,7 @@
 
 ## 2026-11-18 15:44
 
-### 功能：`ConsoleCRUD` 新增批量导入 `batch_import`
+### 功能：`ConsoleCrud` 新增批量导入 `batch_import`
 
 - `import_many(rows, *, overwrite=False, validate=True) -> int`：一次写入多条记录，返回实际写入条数。
     - `rows` 支持 `{名称: 字段字典}` 或 `[(名称, 字段字典), ...]` 两种形式。
@@ -416,9 +483,9 @@
 
 ## 2026-11-18 15:26
 
-### 功能：`app` 用 `ConsoleCRUD` 实现学生管理系统
+### 功能：`app` 用 `ConsoleCrud` 实现学生管理系统
 
-- 沿用文件头的案例说明，声明 `ConsoleCRUD` 实例：三科成绩字段 `chinese` / `math` / `english`，均用 `read_float` 录入。
+- 沿用文件头的案例说明，声明 `ConsoleCrud` 实例：三科成绩字段 `chinese` / `math` / `english`，均用 `read_float` 录入。
 - `format_student`：单条展示姓名、各科成绩与总分（`{:g}` 去掉多余小数）。
 - `summarize_students`：查询末尾追加人数与平均总分。
 - 验证：空查询、添加、重复添加、修改、查询、删除不存在、删除、再查、退出全部分支模拟输入实测通过；
@@ -426,7 +493,7 @@
 
 ## 2026-11-18 15:16
 
-### 新增：`app` 演示 `ConsoleCRUD` 组件
+### 新增：`app` 演示 `ConsoleCrud` 组件
 
 - 用购物车场景演示组件的三个可配置点：`fields`（`Field` 声明字段）、`format_row` / `summarize`（定制展示与合计）、
   `data`（传入初始商品数据）。
@@ -436,24 +503,24 @@
 
 ## 2026-11-18 15:14
 
-### 重构：抽取控制台增删改查组件 `ConsoleCRUD`
+### 重构：抽取控制台增删改查组件 `ConsoleCrud`
 
 - 新增 `app`：把「菜单循环 + 嵌套字典增删改查 + 输入校验」收敛为一个可配置类。
     - `Field`：描述一个待录入字段（提示语 + 读取函数）。
-    - `ConsoleCRUD`：`add` / `update` / `delete` / `show` / `run` 通用流程；`read_str` / `read_float` / `read_int`
+    - `ConsoleCrud`：`add` / `update` / `delete` / `show` / `run` 通用流程；`read_str` / `read_float` / `read_int`
       静态方法提供输入校验；`format_row` / `summarize` / `empty_hint` 由使用方定制展示。
     - 提示语按 `entity` 拼接（如「商品已存在，请执行修改操作」），菜单按 `title` 渲染。
 - `app`：删掉重复的 `read_float` / `read_int` / 各 CRUD 函数与菜单，改为声明一个
-  `ConsoleCRUD` 实例（字段 `price` / `num`，展示含小计与合计金额）。
+  `ConsoleCrud` 实例（字段 `price` / `num`，展示含小计与合计金额）。
 - `app`：同样改为声明式配置（字段 `chinese` / `math` / `english`），补齐文件头说明。
-- `app`：导出 `ConsoleCRUD`、`Field`。
+- `app`：导出 `ConsoleCrud`、`Field`。
 - 细微行为变化：学生管理新增/修改/删除后也会打印成功提示；提示语统一为中文逗号。
 - 验证：两个 DEMO 的添加 / 重复添加 / 修改 / 修改不存在 / 删除 / 删除不存在 / 空查询 / 非法编号 / 退出
   全部分支模拟输入实测通过；`py_compile`、`ruff check` 通过。
 
 ## 2026-11-18 15:12
 
-### 调整：`shopping_cart_demo.py` 输入函数改为参数化提示语
+### 调整：`shopping_cart.py` 输入函数改为参数化提示语
 
 - `read_price(tips)` / `read_num(tips)` 参考 `read_float` / `read_int` 的写法，把提示语改为入参，调用方传「商品价格：」「商品数量：」。
 - 保留 `try/except ValueError`：参考写法把 `float()` / `int()` 放在 `try` 外，输入非数字会直接抛异常，这里仍按非法输入重试处理。
@@ -461,7 +528,7 @@
 
 ## 2026-11-18 15:10
 
-### 调整：`shopping_cart_demo.py` 输入函数对齐 `students_curd_demo.py`
+### 调整：`shopping_cart.py` 输入函数对齐 `students_curd_demo.py`
 
 - `read_price` / `read_num` 重命名为 `read_float` / `read_int`，实现与 `students_curd_demo.py` 中的同名函数保持一致：
   循环内直接 `float()` / `int()` 转换，单个 `if ... and ...` 判断，非法时打印提示后重试。
