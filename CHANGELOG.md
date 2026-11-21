@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-11-21 21:14
+
+### 调整：`movie_system_oo.py` 更名为 `movie_system_new.py`
+
+- 调整：`app/page/curd/movie_system_oo.py` → `movie_system_new.py`，测试文件同步更名为 `tests/test_movie_system_new.py`，导入路径与运行命令一并更新。
+- 验证：`python -m unittest tests.test_movie_system_new` 与 `discover -s tests` 均 24 项通过；PyCharm 零警告。
+
 ## 2026-11-21 21:07
 
 ### 简化：移除 `movie_system_oo.py` 中的套壳方法

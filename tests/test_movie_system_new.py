@@ -1,9 +1,9 @@
 """电影信息管理系统（ConsoleCrud 版）需求验收测试。
 
 运行方式（项目根目录）：
-    python -m unittest tests.test_movie_system_oo -v
+    python -m unittest tests.test_movie_system_new -v
     python -m unittest discover -s tests -v
-    python -m tests.test_movie_system_oo
+    python -m tests.test_movie_system_new
 """
 
 import io
@@ -11,7 +11,7 @@ import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
-from app.page.curd.movie_system_oo import Movie, MovieSystem
+from app.page.curd.movie_system_new import Movie, MovieSystem
 
 
 def run_with_inputs(system: MovieSystem, inputs: list[str]) -> str:
