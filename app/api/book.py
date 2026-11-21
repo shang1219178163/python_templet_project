@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from fastapi import FastAPI
 
 from app.model.book import Book
@@ -19,19 +21,19 @@ def get_books() -> list[Book]:
             title="算法导论",
             author="Thomas H. Cormen",
             isbn="9787111000013",
-            price=66,
+            price=Decimal("66"),
         ),
         Book(
             title="计算机程序设计艺术",
             author="Donald E. Knuth",
             isbn="9787302000020",
-            price=77,
+            price=Decimal("77"),
         ),
         Book(
             title="深入理解计算机系统",
             author="Randal E. Bryant",
             isbn="9787040000030",
-            price=88,
+            price=Decimal("88"),
         ),
     ]
 
