@@ -9,10 +9,15 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
+# 一行记录：字段名 -> 字段值，如 {"title": "三体", "price": 93.0}
 type CrudRow = dict[str, Any]
+# 单条展示：名称 + 该行记录 -> 要打印的文本
 type CrudFormatter = Callable[[str, CrudRow], str]
+# 汇总展示：全部记录 -> 汇总文案；返回 None 或空串表示不打印
 type CrudSummary = Callable[[Mapping[str, CrudRow]], str | None]
+# 校验回调：收到读取函数解析后的类型化值，返回 False 表示校验不通过
 type CrudVerify[T] = Callable[[T], bool]
+# 读取函数：输入提示语 + 校验回调 + 校验失败提示语 -> 解析后的类型化值
 type CrudReader[T] = Callable[[str, CrudVerify[T] | None, str], T]
 
 DEFAULT_VERIFY_HINT = "校验未通过，请重新输入"

@@ -2,6 +2,13 @@
 
 ## 2026-11-21 20:45
 
+### 文档：`ConsoleCRUD` 五个类型别名补充注释
+
+- 内容：`CrudRow`、`CrudFormatter`、`CrudSummary`、`CrudVerify[T]`、`CrudReader[T]` 上方各加一行注释，说明数据形状、参数与返回值；`CrudReader` 注明参数顺序为「提示语 + 校验回调 + 失败提示语」。
+- 验证：PyCharm 检查零警告，模块导入正常。
+
+## 2026-11-21 20:45
+
 ### 调整：`ConsoleCRUD` 类型别名统一加 `Crud` 前缀
 
 - 调整：`Row` → `CrudRow`、`Formatter` → `CrudFormatter`、`Summary` → `CrudSummary`、`Verify[T]` → `CrudVerify[T]`、`Reader[T]` → `CrudReader[T]`。
