@@ -1,17 +1,68 @@
 # CHANGELOG
 
+## 2026-11-23
+
+### 新增文档：`docs/python可变参数默认值注意点.md`
+
+- 内容：解释 `ModelTest` 中 `data: dict = {}` / `items: list = []` 导致 a、b 实例共享同一对象的原因
+  （默认值在 `def` 时创建一次，存于 `__init__.__defaults__`）、共享可变状态的危害，以及 `None` 哨兵修复写法与判断规则。
+- 补充：新增「`data or {}` 与 `is not None` 的区别」一节，含假值（`{}`/`[]`/`0`/`""`）对比实测、语义对照表与 `or` 适用场景。
+- 补充：新增「适用范围：所有函数，不只 `__init__`」一节，覆盖 `__defaults__` / `__kwdefaults__`、实例/静态/类方法、`lambda`、
+  重新 `def` 即新建，以及与类属性、`@dataclass`、pydantic 默认值的对比。
+
+### 修复：`ReprMixin.__repr__` 遇到自定义对象抛 `TypeError`
+
+- 原因：`json.dumps(self.__dict__)` 只认 JSON 原生类型，`MemberNew.books` 里是 `BookNew` 实例，序列化时抛
+  `TypeError: Object of type BookNew is not JSON serializable`。
+- 修复：`repr_mixin.py` 增加 `_json_default` 兜底函数，自定义对象转 `__dict__`（嵌套输出为字典）、集合/元组转列表、其余转 `str`，并作为
+  `json.dumps(..., default=...)` 传入。
+- 验证：模拟登录 → 借书 → 查看借阅 → 退出，会员与图书均正常打印；`Book`（pydantic）自身 `__repr__` 不受影响。
+
+### 新增：`book_system_new.py` 借还书交互功能
+
+- 原因：`run()` 缩进在 `__init__` 内部，只是局部函数而非方法；PyCharm 只对类体中直接定义的方法做 `self` 类型推断，局部函数里的
+  `self` 是无标注参数，故 `self.login()` 等未定义调用不报警。
+- 修复：`run` / `login` / `book_borrow` / `book_back` / `book_look` 全部移回类体并实现；`run` 改为登录失败即退出，菜单增加无效选项提示。
+- 借还逻辑：按 `book_id` 查字典取书，校验库存与「是否本人借阅」；借出扣库存并加入会员 `books`，归还加库存并移出列表。
+- 清理：恢复乱码书名（如 `《Python编程》`）与会员姓名为正常中文；`VipMemberNew` 去掉多余的 `ReprMixin` 基类。
+- 验证：`PYTHONPATH=app .venv/bin/python ...` 模拟登录 → 借书 → 查看 → 还书 → 查看 → 退出，输出正确。
+
+### 修复：`book_system_new.py` 语法与运行时错误
+
+- 语法：`book id=` → `book_id=`、`total num=` → `total_num=`；字典值里的 `password:` / `vip _level:` / `vip level:` 冒号改为等号；
+  `"E\"` 这类被转义引号截断的字符串恢复为完整字符串。
+- 运行时：`NormalMemberNew` 原为 `pass` 空类，无法接收构造参数，改为继承 `MemberNew`；`VipMemberNew` 调用 `super().__init__`
+  时缺少 `books` 参数且形参与实参名 `pwd`/`password` 不一致，统一为 `password` 并补传 `books`。
+- 健壮性：`books` 改为 `list[BookNew] | None = None` + `books or []`，避免可变默认参数被所有实例共享；`member_id` 类型注解由
+  `int` 改为 `str`（实际使用 N001 这类卡号）。
+- 清理：删除 ORM/OCR 残留的乱码书名与会员名，书名与作者保持一致、会员名统一为 `会员{卡号}` 占位；补充 `__main__` 打印示例。
+- 验证：`PYTHONPATH=app python app/page/classroom/book_sys/bookNew.py` 正常输出图书与 VIP 会员信息，无报错。
+
+## 2026-11-22
+
+### 修复：`plot_demo.ipynb` 中文字体在 macOS 上缺失
+
+- 原因：`font.sans-serif` 只配置了 `SimHei`（Windows 自带字体），macOS 无此字体，matplotlib 回退失败并刷出
+  `findfont: Generic family 'sans-serif' not found` 警告，中文显示为方块。
+- 修复：改为跨平台字体列表 `['Heiti SC', 'Microsoft YaHei', 'SimHei', 'Arial Unicode MS', 'sans-serif']`，并补充
+  `axes.unicode_minus = False` 防止负号显示异常。
+- 修复：`plt.figure(figsize=(10, 6))` 移到 `plt.plot()` 之前，避免折线画在默认图上、`show()` 显示的却是新建空白图。
+- 验证：`python3` 以 Agg 后端渲染中英文坐标轴，零警告。
+
 ## 2026-11-21 21:14
 
 ### 调整：`movie_system_oo.py` 更名为 `movie_system_new.py`
 
-- 调整：`app/page/curd/movie_system_oo.py` → `movie_system_new.py`，测试文件同步更名为 `tests/test_movie_system_new.py`，导入路径与运行命令一并更新。
+- 调整：`app/page/curd/movie_system_oo.py` → `movie_system_new.py`，测试文件同步更名为 `tests/test_movie_system_new.py`
+  ，导入路径与运行命令一并更新。
 - 验证：`python -m unittest tests.test_movie_system_new` 与 `discover -s tests` 均 24 项通过；PyCharm 零警告。
 
 ## 2026-11-21 21:07
 
 ### 简化：移除 `movie_system_oo.py` 中的套壳方法
 
-- 调整：删除 `add_movie` / `update_movie` / `delete_movie` / `query_movie` / `list_movies` 五个仅转发 `self.crud` 的方法，`run()` 直接调用 `crud.add()` / `update()` / `delete()` / `query()` / `show()`。
+- 调整：删除 `add_movie` / `update_movie` / `delete_movie` / `query_movie` / `list_movies` 五个仅转发 `self.crud` 的方法，
+  `run()` 直接调用 `crud.add()` / `update()` / `delete()` / `query()` / `show()`。
 - 影响：`MovieSystem` 不再暴露需求文档中的同名方法，CRUD 能力通过 `crud` 与菜单提供；`top_rated_movie` 与 `movie_list` 保留。
 - 验证：`python -m unittest tests.test_movie_system_oo` 24 项全部通过；PyCharm 零警告。
 
@@ -19,7 +70,10 @@
 
 ### 调整：`movie_system_oo.py` 改用 ConsoleCrud 实现
 
-- 实现：`app/page/curd/movie_system_oo.py`（原 `movie_system.py` 保持不变）中 `Movie` 保留 `__str__` 与 `update_info`；`MovieSystem` 组合 `ConsoleCrud`，导演/主演/票价/评分字段与校验交给组件，`add_movie` / `update_movie` / `delete_movie` / `query_movie` / `list_movies` 委托组件，`movie_list` 由字典数据转换为 `Movie`，`top_rated_movie` 单独实现并列输出，菜单扩展为 1-7 项。
+- 实现：`app/page/curd/movie_system_oo.py`（原 `movie_system.py` 保持不变）中 `Movie` 保留 `__str__` 与 `update_info`；
+  `MovieSystem` 组合 `ConsoleCrud`，导演/主演/票价/评分字段与校验交给组件，`add_movie` / `update_movie` / `delete_movie` /
+  `query_movie` / `list_movies` 委托组件，`movie_list` 由字典数据转换为 `Movie`，`top_rated_movie` 单独实现并列输出，菜单扩展为
+  1-7 项。
 - 测试：`tests/test_movie_system_oo.py` 调整为 24 个用例，覆盖空导演/非数字/票价与评分越界的重新录入、重名、增删改查、空列表、汇总行、并列最高分与菜单流程。
 - 验证：`python -m unittest tests.test_movie_system_oo -v` 24 项全部通过；两个文件在 PyCharm 中零警告。
 
@@ -27,7 +81,8 @@
 
 ### 调整：`ConsoleCrud.name_prompt` 属性更名为 `key_prompt`
 
-- 调整：`self.name_prompt` → `self.key_prompt`，与构造参数 `key_prompt` 保持一致；`add` / `update` / `delete` / `query` 四处读取同步更新。
+- 调整：`self.name_prompt` → `self.key_prompt`，与构造参数 `key_prompt` 保持一致；`add` / `update` / `delete` / `query`
+  四处读取同步更新。
 - 影响：外部若直接访问 `crud.name_prompt` 需改为 `crud.key_prompt`；四个 CRUD 示例均通过构造参数传值，不受影响。
 - 验证：以 `key_prompt="书名: "` 实例化后添加与精确查询正常；PyCharm 检查零警告。
 
@@ -36,7 +91,8 @@
 ### 新增：`ConsoleCrud` 精确查询方法并接入菜单
 
 - 新增：`query()` 按名称精确查找并展示单条记录，复用 `name_prompt` 与 `format_row`；记录不存在时提示「{entity}不存在」。
-- 调整：菜单改为「1.添加 2.修改 3.删除 4.精确查询 5.查询全部 6.退出」，输入提示改为 1-6，`run()` 的 `match` 分支同步调整；菜单行宽按中日韩字符显示宽度对齐边框。
+- 调整：菜单改为「1.添加 2.修改 3.删除 4.精确查询 5.查询全部 6.退出」，输入提示改为 1-6，`run()` 的 `match`
+  分支同步调整；菜单行宽按中日韩字符显示宽度对齐边框。
 - 验证：模拟完整流程覆盖添加、精确查询命中/未命中、查询全部、非法编号与退出；PyCharm 检查零警告。
 
 ## 2026-11-21 20:45
