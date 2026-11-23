@@ -36,6 +36,30 @@ def jie_cheng_new(n: int) -> int:
     return result
 
 
-print(jie_cheng_new(8))
+def test_empty():
+    a = ""
+    b = False
+    c = 0
 
-tuple_test()
+    d = []
+    e = {}
+    f = set()
+
+    # for x in [a, b, c, d, e, f]:
+    #     if x:
+    #         print(f"{type(x)}: True")
+    #     else:
+    #         print(f"{type(x)}: False")
+
+    print(f"{type(a)}: {a or "99"}")
+    print(f"{type(b)}: {b or True}")
+    print(f"{type(c)}: {c or 9}")
+    print(f"{type(d)}: {d or [9]}")
+    print(f"{type(e)}: {e or {"9": "EE"} }")
+    print(f"{type(f)}: {f or {"99", "88"} }")
+
+
+# print(jie_cheng_new(8))
+#
+# tuple_test()
+test_empty()
