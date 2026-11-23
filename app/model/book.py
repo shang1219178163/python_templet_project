@@ -2,8 +2,10 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
+from mixins.repr_mixin import ReprMixin
 
-class Book(BaseModel):
+
+class Book(BaseModel, ReprMixin):
     """图书模型"""
 
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -19,6 +21,7 @@ class Book(BaseModel):
         decimal_places=2,
         description="价格(范围 0 ~ 999999.99，精度到分)",
     )
+    total_num: int = Field(default=0, ge=0, description="总数")
     stock: int = Field(default=0, ge=0, description="库存数量")
     is_borrow: bool = Field(default=False, description="是否已借出")
 
