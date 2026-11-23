@@ -14,10 +14,6 @@ def _json_default(obj: Any) -> Any:
 class ReprMixin:
     """打印信息"""
 
-    # def toDict(self) -> dict[str, Any]:
-    #     """模型转字典"""
-    #     return self.__dict__
-
     def __repr__(self) -> str:
         t = f"{type(self)}".replace("__main__.", "")
         return f"{t} {hex(id(self))}:{json.dumps(self.__dict__, ensure_ascii=False, default=_json_default)}"
