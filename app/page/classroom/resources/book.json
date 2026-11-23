@@ -1,0 +1,37 @@
+[
+    {
+        "book_id": "9787115546081",
+        "title": "《Python编程》",
+        "author": "埃里克·马瑟斯",
+        "total_num": 5,
+        "stock": 5
+    },
+    {
+        "book_id": "9787302587613",
+        "title": "《C++程序设计》",
+        "author": "谭浩强",
+        "total_num": 3,
+        "stock": 3
+    },
+    {
+        "book_id": "9787111213826",
+        "title": "《Java编程思想》",
+        "author": "布鲁斯·埃克尔",
+        "total_num": 2,
+        "stock": 2
+    },
+    {
+        "book_id": "9787302481447",
+        "title": "《C程序设计》",
+        "author": "谭浩强",
+        "total_num": 1,
+        "stock": 1
+    },
+    {
+        "book_id": "9787115545381",
+        "title": "《JavaScript高级程序设计》",
+        "author": "马特·弗里斯比",
+        "total_num": 4,
+        "stock": 4
+    }
+]

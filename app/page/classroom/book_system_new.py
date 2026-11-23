@@ -1,11 +1,12 @@
 import json
 from abc import abstractmethod, ABC
-from typing import Any
 
 from mixins.repr_mixin import ReprMixin
+from mixins.serializable_mixin import SerializableMixin
+from storage.file_ext import FileExt
 
 
-class BookNew(ReprMixin):
+class BookNew(SerializableMixin, ReprMixin):
     """图书模型"""
 
     def __init__(self, book_id: str, title: str, author: str, total_num: int):
@@ -28,12 +29,14 @@ class BookNew(ReprMixin):
         self.__stock += num
 
 
-class MemberNew(ABC, ReprMixin):
+class MemberNew(SerializableMixin, ABC, ReprMixin):
+    books: list[BookNew] = []  # 借阅列表：非构造参数，序列化时递归还原
+
     def __init__(self, member_id: str, name: str, password: str):
         self.member_id = member_id
         self.name = name
         self.password = password
-        self.books: list[BookNew] = []
+        self.books = []
 
     @abstractmethod
     def max_borrow_count(self) -> int:
@@ -82,37 +85,56 @@ class VipMemberNew(MemberNew, ReprMixin):
         return 3 + self.vip_level
 
 
-def write_json(obj: Any, file: Any):
-    with open(file, "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, indent=4)
-
-
 class LibraryNew(ReprMixin):
+    BOOKS_JSON = "resources/book.json"  # 图书数据文件
+    MEMBERS_JSON = "resources/member.json"  # 会员数据文件
+
+    # MEMBERS_BORROW_JSON = "resources/member_borrow.json"  # 会员数据文件
 
     def __init__(self):
-        self.books = {
-            "1001": BookNew(book_id="1001", title="《Python编程》", author="Python", total_num=5),
-            "1002": BookNew(book_id="1002", title="《C++程序设计》", author="C++", total_num=3),
-            "1003": BookNew(book_id="1003", title="《Java编程思想》", author="Java", total_num=2),
-            "1004": BookNew(book_id="1004", title="《C程序设计》", author="C", total_num=1),
-            "1005": BookNew(book_id="1005", title="《JavaScript高级程序设计》", author="JavaScript", total_num=4),
-        }
+        self.books: dict[str, BookNew] = {}
+        self.members: dict[str, MemberNew] = {}
 
-        # 所有会员：用卡号作为字典 key，方便快速检索对应会员
-        self.members = {
-            "N001": NormalMemberNew(member_id="N001", name="张三", password="668001"),
-            "N002": NormalMemberNew(member_id="N002", name="李四", password="668002"),
-            "N003": NormalMemberNew(member_id="N003", name="王五", password="668003"),
-            "V001": VipMemberNew(member_id="V001", name="赵六", password="669001", vip_level=1),
-            "V002": VipMemberNew(member_id="V002", name="钱七", password="669002", vip_level=2),
-            "V003": VipMemberNew(member_id="V003", name="孙八", password="669003", vip_level=3),
-            "V004": VipMemberNew(member_id="V004", name="周九", password="669004", vip_level=4),
-        }
+        with open(self.BOOKS_JSON, "r", encoding="utf-8") as f:
+            items = json.load(f)
+            for e in items:
+                self.books[e["book_id"]] = BookNew.from_dict(e)
+
+        with open(self.MEMBERS_JSON, "r", encoding="utf-8") as f:
+            items = json.load(f)
+            for e in items:
+                member_cls = VipMemberNew if "vip_level" in e else NormalMemberNew
+                self.members[e["member_id"]] = member_cls.from_dict(e)
 
         self.current_member: MemberNew | None = None  # 当前登录会员
 
-        write_json(self.books, "data/book.json")
-        # write_json(self.members, "members.data")
+    @staticmethod
+    def cache_json() -> None:
+        books: list[BookNew] = [
+            BookNew(book_id="9787115546081", title="《Python编程》", author="埃里克·马瑟斯", total_num=5),
+            BookNew(book_id="9787302587613", title="《C++程序设计》", author="谭浩强", total_num=3),
+            BookNew(book_id="9787111213826", title="《Java编程思想》", author="布鲁斯·埃克尔", total_num=2),
+            BookNew(book_id="9787302481447", title="《C程序设计》", author="谭浩强", total_num=1),
+            BookNew(book_id="9787115545381", title="《JavaScript高级程序设计》", author="马特·弗里斯比", total_num=4),
+        ]
+
+        # 所有会员：用卡号作为字典 key，方便快速检索对应会员
+        members = [
+            NormalMemberNew(member_id="N001", name="张三", password="668001"),
+            NormalMemberNew(member_id="N002", name="李四", password="668002"),
+            NormalMemberNew(member_id="N003", name="王五", password="668003"),
+            VipMemberNew(member_id="V001", name="赵六", password="669001", vip_level=1),
+            VipMemberNew(member_id="V002", name="钱七", password="669002", vip_level=2),
+            VipMemberNew(member_id="V003", name="孙八", password="669003", vip_level=3),
+            VipMemberNew(member_id="V004", name="周九", password="669004", vip_level=4),
+        ]
+
+        FileExt.write_json(books, LibraryNew.BOOKS_JSON, lambda o: o.to_dict())
+        FileExt.write_json(members, LibraryNew.MEMBERS_JSON, lambda o: o.to_dict())
+        a = FileExt.read_json(LibraryNew.BOOKS_JSON)
+        b = FileExt.read_json(LibraryNew.MEMBERS_JSON)
+        print(f"a: {a}")
+        print(f"b: {b}")
 
     def login(self, name: str = "", password: str = "") -> MemberNew | None:
         while True:
@@ -169,16 +191,18 @@ class LibraryNew(ReprMixin):
         """查询图书借阅情况"""
         if self.current_member is None:
             return
-        # l1 = [f"{x.name} 借阅书籍:{','.join([f"{e.book_id}, {e.title}" for e in x.books])}"
-        #       for x in self.members.values()
-        #       if x.books]
-        # for x in l1:
-        #     print(f"{x}")
 
         for book in self.current_member.books:
-            print(f"图书编号 {book.book_id}, 书名: {book.total_num}, 作者: {book.author}")
+            print(f"图书编号 {book.book_id}, 书名: {book.title}, 作者: {book.author}")
 
         print(f"你一共借阅{len(self.current_member.books)}本书")
+
+    def save_borrow_book(self) -> None:
+        if self.current_member is None:
+            return
+
+        with open(self.MEMBERS_JSON, "w", encoding="utf-8") as f:
+            json.dump(self.members, f, ensure_ascii=False, indent=4, default=lambda x: x.to_dict())
 
     def run(self) -> None:
         self.current_member = self.login(name="N002", password="668002")
@@ -199,6 +223,7 @@ class LibraryNew(ReprMixin):
                 case "3":
                     self.book_look()
                 case "4":
+                    self.save_borrow_book()
                     print("退出系统")
                     break
                 case _:
@@ -206,4 +231,8 @@ class LibraryNew(ReprMixin):
 
 
 if __name__ == "__main__":
-    LibraryNew().run()
+    LibraryNew.cache_json()
+    s = LibraryNew()
+    # if len(s.members) == 0 or len(s.books) == 0:
+    #     LibraryNew.cache_json()
+    s.run()

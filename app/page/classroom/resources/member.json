@@ -1,0 +1,56 @@
+{
+    "N001": {
+        "member_id": "N001",
+        "name": "张三",
+        "password": "668001",
+        "books": []
+    },
+    "N002": {
+        "member_id": "N002",
+        "name": "李四",
+        "password": "668002",
+        "books": [
+            {
+                "book_id": "9787302481447",
+                "title": "《C程序设计》",
+                "author": "谭浩强",
+                "total_num": 1,
+                "stock": 0
+            }
+        ]
+    },
+    "N003": {
+        "member_id": "N003",
+        "name": "王五",
+        "password": "668003",
+        "books": []
+    },
+    "V001": {
+        "member_id": "V001",
+        "name": "赵六",
+        "password": "669001",
+        "books": [],
+        "vip_level": 1
+    },
+    "V002": {
+        "member_id": "V002",
+        "name": "钱七",
+        "password": "669002",
+        "books": [],
+        "vip_level": 2
+    },
+    "V003": {
+        "member_id": "V003",
+        "name": "孙八",
+        "password": "669003",
+        "books": [],
+        "vip_level": 3
+    },
+    "V004": {
+        "member_id": "V004",
+        "name": "周九",
+        "password": "669004",
+        "books": [],
+        "vip_level": 4
+    }
+}
