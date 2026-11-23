@@ -2,6 +2,58 @@
 
 ## 2026-11-23
 
+### 修复：`book_look` 书名误输出为 `total_num`
+
+- `LibraryNew.book_look` 中 `书名: {book.total_num}` 改为 `book.title`。
+- 验证：查看借阅时书名显示正确。
+
+### 重构：`LibraryNew` 资源路径抽为类变量
+
+- 新增类变量 `BOOKS_JSON` / `MEMBERS_JSON`，替换 `__init__` 与 `cache_json` 中重复的 `"resources/*.json"` 字面量。
+- 验证：`cache_json()` 写出/读回正常，系统加载图书与会员正常，PyCharm 零警告。
+
+### 注释：`SerializableMixin.from_dict` 逐行补充中文说明
+
+- 为 `from_dict` 的每一行加中文注释（形参过滤、构造实例、读取注解、还原非构造字段、返回），行为不变。
+- 验证：`BookNew` / `NormalMemberNew` 往返序列化正常，PyCharm 零警告。
+
+### 重构：`SerializableMixin` 统一序列化，移除模型内手写的 `from_dict` / `to_dict`
+
+- 封装：`SerializableMixin` 接管模型 ↔ 字典互转——`to_dict` 遍历实例属性、去掉私有字段的名字修饰（`_BookNew__stock` →
+  `stock`）、嵌套模型与列表递归展开；`from_dict` 按 `__init__` 形参构造，类注解声明的非构造字段（如 `books`）按类型还原后回填。
+- 简化：`BookNew` / `MemberNew` 改为继承 mixin，删除各自手写的方法；`VipMemberNew` 的 `to_dict` 覆盖也删除
+  （`vip_level` 在实例属性中，自动输出）。
+- 标注：`MemberNew` 增加类注解 `books: list[BookNew]`，供 `from_dict` 递归还原图书列表。
+- 验证：图书 / 会员 / VIP 往返序列化正确，嵌套 `books` 还原为 `BookNew`；运行借阅 → 查看 → 退出正常，PyCharm 零警告。
+
+### 修复：`MemberNew.from_dict` 意外实参，补全 `LibraryNew` 会员加载
+
+- 原因：`books` 不是 `__init__` 形参，`cls(..., books=...)` 被 PyCharm 报「意外实参」，运行时会 `TypeError`。
+- 修复：`from_dict` 按 `__init__` 形参过滤后 `cast(type[Any], cls)(**kwargs)` 构造，再回填 `BookNew` 列表；
+  签名补为 `data: dict[str, Any] -> Self`，`VipMemberNew` 的 `vip_level` 由形参过滤自动匹配。
+- 修复：`LibraryNew.__init__` 中未写完的 `if "level" in e: ... else:`（语法错误）补全为按 `vip_level` 分派
+  `VipMemberNew` / `NormalMemberNew`；`cache_json` 加 `@staticmethod` 消除弱警告。
+- 验证：PyCharm 检查零报错；运行借阅（9787115546081）→ 查看 → 退出正常。
+
+### 修复：`SerializableMixin.from_dict` 的「意外实参」警告
+
+- 原因：`cls` 被推断为 `type[Self]`，而 mixin 自身没有 `__init__`，PyCharm 按 `object.__init__` 校验
+  `cls(**kwargs)`，误报「意外实参」。
+- 修复：改为 `cast(type[Any], cls)(**kwargs)` 调用；补全类型注解（`data: dict[str, Any]`、返回 `Self`、
+  `to_dict(exclude: tuple[str, ...] = ()) -> dict[str, Any]`），`from_dict` 顺带保留「多余字段丢弃」的说明。
+- 验证：PyCharm 检查零警告；`Book.from_dict` 正确丢弃 `stock`/`extra` 并使用默认值，`to_dict(exclude=...)` 排除生效。
+
+### 调整：`book_system_new.py` 图书改用真实 ISBN，新增 `resources/book.json` 导出
+
+- 数据：5 本书改为硬编码真实书目（Python编程、C++程序设计、Java编程思想、C程序设计、JavaScript高级程序设计），
+  `book_id` 直接使用 isbn。
+- 新增 `read_json()`：把 5 本图书以列表写入 `resources/book.json`，供后续读取练习；`__main__` 改为调用它。
+- 修复：`write_json` 增加 `default=lambda o: o.to_dict()`，解决 `TypeError: Object of type BookNew is not JSON serializable`；
+  新增 `BookNew.to_dict()`，库存输出为 `stock` 而不是私有字段 `_BookNew__stock`。
+- 新增 `MemberNew.to_dict()`：输出 `member_id` / `name` / `password` / `books`（借阅中的图书展开为列表）；
+  `VipMemberNew` 重写并在基础字段上追加 `vip_level`。
+- 验证：在 `app/page/classroom` 下运行，生成 5 条合法 JSON（book_id / title / author / total_num / stock）。
+
 ### 新增文档：`docs/python可变参数默认值注意点.md`
 
 - 内容：解释 `ModelTest` 中 `data: dict = {}` / `items: list = []` 导致 a、b 实例共享同一对象的原因
