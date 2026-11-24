@@ -2,6 +2,39 @@
 
 ## 2026-11-24
 
+### 精简：`SerializableMixin` 从 180 行压回 86 行（09:51）
+
+- 移除循环引用检测、`__slots__`/父类私有字段支持、`ClassVar` 过滤、注解缓存、日期/`Enum`/`Decimal` 转换。
+- 保留核心：私有字段往返回填、`Optional`/`list`/`dict`/`tuple` 还原、`strict` 未知字段校验。
+- 验证：隔离脚本与真实图书数据往返均通过（借阅列表 `stock=[3, 2]` 不变），PyCharm 零警告。
+- `docs/SerializableMixin代码分析.md` 同步改写为精简版。
+
+### 优化：`SerializableMixin` 双向对称，仅依赖标准库（09:49）
+
+- 修复私有字段往返丢失：`from_dict` 构造后扫描实例字段，建「剥名 → 实际名」映射并直接写底层属性，`BookNew.stock`
+  借阅状态重载后不再回退（实测 4 保持 4）。
+- 扩展 `_decode`：支持 `Optional/Union`、`list/set/frozenset/tuple/dict`、`Enum`、日期、`Decimal`；`_dump` 同步转换，
+  并增加循环引用检测。
+- `from_dict` 新增 `strict` 参数：未知字段默认丢弃、严格模式抛 `ValueError`。
+- 次要修复：`_strip` 遍历 MRO 支持父类私有字段；过滤 `ClassVar`；`@cache` 缓存注解；`__dict__` 与 `__slots__` 合并读取；
+  `exclude` 类型放宽为 `Collection[str]`。
+- 验证：隔离脚本 9 项全部通过；真实图书/会员数据往返一致（借阅列表 `stock=[3, 2]` 保持不变）；两个文件 PyCharm 零警告。
+- 同步更新 `docs/SerializableMixin代码分析.md` 为优化后版本，移除第三方库方案建议。
+
+### 文档：新增《SerializableMixin 代码分析》（09:41）
+
+- 分析 `app/mixins/serializable_mixin.py`：`to_dict` 与 `from_dict` 不对称，导入侧存在静默丢字段。
+- 实测确认三个缺陷：私有字段 `stock` 往返丢失（4 → 5）、`Optional[模型]` 保持 dict、`tuple` 注解回传 list。
+- 另列未知字段被吞、`_dump` 与 JSON 边界不齐（`set/datetime/Enum`）、父类私有字段前缀不剥离等次要问题，并给出轻量声明与换 pydantic/msgspec 两条路线。
+- 文档路径：`docs/SerializableMixin代码分析.md`，附录含可复现的隔离验证脚本与输出。
+
+### 文档：新增《PyCharm 侧边栏 Claude Agent 一直显示正在准备》排查报告（09:15）
+
+- 依据 `idea.log` 梳理时间线：09:04 npm 安装超时 → 09:08 重装 → 09:10 进程启动成功 → 09:10:43 转入终端登录等待。
+- 结论：安装已完成，卡在 `claude auth login --console` 授权；根因是 PyCharm 以 `--hide-claude-auth` 启动，
+  不接受 claude.ai 订阅，只认 API key / Enterprise。
+- 文档路径：`docs/PyCharm侧边栏ClaudeAgent一直显示正在准备.md`，含三种处理方案与日志排查顺序。
+
 ### 修复：`member.json` 为字典格式时加载报 `'str' object has no attribute 'items'`
 
 - 原因：`resources/member.json` 顶层是 `{卡号: 会员}` 字典，`for e in items` 取到的是 key 字符串，`from_dict("N001")`
@@ -408,7 +441,7 @@
 - 原因：Pydantic V2 首次定义模型时扫描 `pydantic` 插件入口，`pydantic-ai` 附带的 `logfire-sdk`
   注册了一个插件，被无条件导入。
 - 修复：`sitecustomize.py` 中 `os.environ.setdefault("PYDANTIC_DISABLE_PLUGINS", "__all__")`。
-- 新增 `docs/pydantic-slow-startup.md`：记录现象、实测数据、源码位置、三个方案与 `-X importtime` 排查方法。
+- 新增 `docs/Pydantic启动变慢.md`：记录现象、实测数据、源码位置、三个方案与 `-X importtime` 排查方法。
 - 验证：脚本耗时 0.67s → 0.32s；`get_plugins()` 返回空；`codable.py` 输出完整；`ruff`、`compileall` 通过。
 
 ## 2026-11-18 21:21
@@ -434,21 +467,21 @@
 
 ### 文档：清理 `docs/` 中残留的 `lib/`、`../app` 旧路径
 
-- `docs/pycharm-streamlit-external-tool.md`：`lib/page/streamlit_demo.py` → `app/page/streamlit_demo.py`，
+- `docs/PyCharm-Streamlit外部工具配置.md`：`lib/page/streamlit_demo.py` → `app/page/streamlit_demo.py`，
   `lib.base_widget` → `app.base_widget`，报错示例 `No module named 'lib'` → `'app'`，
   绝对路径示例 `~/GitHub/...` 改为当前仓库路径。
-- `docs/python-literal-type.md`：两处 `../app` 还原为 `app/base_widget/_layout.py`、`app/base_widget/flex.py`，
+- `docs/Python-Literal类型.md`：两处 `../app` 还原为 `app/base_widget/_layout.py`、`app/base_widget/flex.py`，
   枚举对比处补上 `app/enums/weekday_enum.py`、`app/enums/member_level_enum.py`。
-- `docs/python-callable-code-attr.md`：两处 `../app` 还原为 `app/util/hook.py`、`app/util/dlog.py`。
+- `docs/Python-Callable与code属性.md`：两处 `../app` 还原为 `app/util/hook.py`、`app/util/dlog.py`。
 - 验证：`docs/` 下已无 `lib/`、`lib.`、`../app`、`GitHub/python_templet` 等旧引用。
 
 ## 2026-11-18 20:10
 
 ### 文档：同步模型改造后的类名与该有的说明
 
-- `docs/pydantic-backend-essentials.md`：`StudentModel` → `Student`；补上 `Student` 已全部改用 `Field` 约束
+- `docs/Pydantic后端必备.md`：`StudentModel` → `Student`；补上 `Student` 已全部改用 `Field` 约束
   （`min_length`、`ge/le`、`str_strip_whitespace`）的现状；`total_score` 处一并提到 `average_score`。
-- `docs/python-property-decorator.md`：`StudentModel.total_score` → `Student.total_score`。
+- `docs/Python-property装饰器.md`：`StudentModel.total_score` → `Student.total_score`。
 - 两篇里被误写成 `../app/model/student.py` 的路径改回 `app/model/student.py`。
 
 ## 2026-11-18 20:07
@@ -459,7 +492,7 @@
   `BookLibrary`。
 - 调用方同步：`app/page/data_type_test.py`、`app/page/book_managment_system/book_managment_system.py` 改为
   `from app.model.book_library import BookLibrary`，实例化直接 `BookLibrary()`。
-- `docs/pydantic-backend-essentials.md` 三处路径/类名同步更新；全仓库已无 `book_library_model` 残留。
+- `docs/Pydantic后端必备.md` 三处路径/类名同步更新；全仓库已无 `book_library_model` 残留。
 - 验证：管理页、`data_type_test.py` 实跑正常，`compileall app` 通过；`ruff` 仅剩管理页第 84 行既有的 `print(f"退出系统")`
   告警，非本次引入。
 
@@ -487,7 +520,7 @@
 
 ### 文档：新增《Python 里给方法加 `@property` 是什么意思》
 
-- 新增 `docs/python-property-decorator.md`：普通方法与属性的对比、`@property` 的四个作用、三个限制
+- 新增 `docs/Python-property装饰器.md`：普通方法与属性的对比、`@property` 的四个作用、三个限制
   （只读、Pydantic 中不进 `model_dump`、每次重算），以及选型速查表。
 - 全部示例对应本项目代码：`StudentModel.total_score`、`Settings.vision_model`、`@computed_field` 写法。
 
@@ -495,7 +528,7 @@
 
 ### 文档：按 `pyproject.toml` 的依赖版本校准 Pydantic 说明
 
-- `docs/pydantic-backend-essentials.md` 新增「本项目依赖版本」表：`pydantic==2.14.2`、`pydantic-settings>=2.13.1`、
+- `docs/Pydantic后端必备.md` 新增「本项目依赖版本」表：`pydantic==2.14.2`、`pydantic-settings>=2.13.1`、
   `pydantic-ai==2.65.0`、`fastapi>=0.162.0`、Python 3.13，并标注 `==` 锁定的升级注意事项。
 - 示例全部换成当前代码：`Book.model_validate`、`Book` 的 `Field` 约束与 `Decimal` 价格、`field_serializer`、
   `app/config.py` 的 `SettingsConfigDict` / `extra="ignore"`；补上「Decimal 在 JSON 中是字符串」这一条。
@@ -555,7 +588,7 @@
 
 ### 文档：新增《后端开发中 Pydantic 要掌握到什么程度》
 
-- 新增 `docs/pydantic-backend-essentials.md`：按「必须熟练 / 应该知道 / 先跳过」三层划分掌握范围，
+- 新增 `docs/Pydantic后端必备.md`：按「必须熟练 / 应该知道 / 先跳过」三层划分掌握范围，
   每层都对应到本项目 `app/model/` 下的现有写法，并列出三个高频坑。
 
 ## 2026-11-18 19:25
@@ -787,7 +820,7 @@
 
 ## 2026-11-18 09:35
 
-### 文档：新增 `docs/python-literal-type.md` 说明 `Literal[...]`
+### 文档：新增 `docs/Python-Literal类型.md` 说明 `Literal[...]`
 
 - 概念、语法约束（只能写字面量）、与 `str` 的区别。
 - 以 `app`、`app` 的实际签名为例。
@@ -890,7 +923,7 @@
   `app`）。
 - 资源路径：`model/book_library_model.py` 的 `parent.parent` 自然指向 `app`，`books.json` 路径保持有效；`page/student.py`
   的 `SCORE_PATH` 改为 `project_root / "lib" / "assets" / ...`。
-- 配置与文档同步：`README.md`、`docs/pycharm-streamlit-external-tool.md`、`docs/python-callable-code-attr.md`、
+- 配置与文档同步：`README.md`、`docs/PyCharm-Streamlit外部工具配置.md`、`docs/Python-Callable与code属性.md`、
   `tools/pycharm-streamlit-runner` 的说明与命令改为 `app`；`.gitignore` 的 AI 机器人运行数据路径改为
   `app`。
 - 未改动：`page/ai_robot/app.py` 仍使用同目录扁平导入（Streamlit 会把脚本目录加入 `sys.path`），可正常启动。
@@ -1057,7 +1090,7 @@
 
 ## 2026-11-17 12:07
 
-### 扩充：`docs/python-del-usage.md` 增加第八节「`del` 与各类容器的移除方法对照」
+### 扩充：`docs/Python-del用法.md` 增加第八节「`del` 与各类容器的移除方法对照」
 
 - 总览表覆盖 `list` / `dict` / `set` / `frozenset` / `str` / `tuple` / `deque` / `array.array`
   ：按位置删、按值删、弹栈取回、清空、删名字五种操作各自能否用 `del` 或哪种方法。
@@ -1073,7 +1106,7 @@
 
 ## 2026-11-17 12:05
 
-### 扩充：`docs/python-del-usage.md` 增加「`del` 与 `remove` 的完整对比」
+### 扩充：`docs/Python-del用法.md` 增加「`del` 与 `remove` 的完整对比」
 
 - 新增对比表：定位方式、语句 vs 方法、返回值、找不到时的异常（`IndexError` / `ValueError`）、重复元素只删第一个、切片批量、时间复杂度、负数索引、是否原地修改。
 - 记录三个坑：`remove` 用 `==` 比较导致 `float("nan")` 删不掉（CPython 有身份捷径，同一对象才能命中）；`remove`
@@ -1096,7 +1129,7 @@
 
 ## 2026-11-17 11:02
 
-### 新增：`docs/python-callable-code-attr.md`，整理 `Callable` 上找不到 `__code__` 的来龙去脉
+### 新增：`docs/Python-Callable与code属性.md`，整理 `Callable` 上找不到 `__code__` 的来龙去脉
 
 - 记录报错现象、根因（`Callable` 只承诺 `__call__`，`__code__` 是 `types.FunctionType` 专有属性）。
 - 列出对比表：`def` 函数 / `lambda` / `functools.partial` / 可调用实例 / 类 / 内置函数，各自是否 `Callable`、是否有
@@ -1118,7 +1151,7 @@
 
 ## 2026-11-16 20:18
 
-### 新增：`docs/orm-default-values.md`，整理各 ORM 字段默认值写法
+### 新增：`docs/ORM字段默认值.md`，整理各 ORM 字段默认值写法
 
 - 按框架给出 `default=` 示例：SQLAlchemy 2.0（`mapped_column`）、SQLModel/Pydantic（`Field`）、Django、Peewee，并补充普通类参数默认值与
   dataclass `field(default_factory=...)` 的对照。
@@ -1216,7 +1249,7 @@
 
 ## 2026-11-16 10:19
 
-### 新增：`docs/python-del-usage.md`，整理 Python `del` 的使用场景
+### 新增：`docs/Python-del用法.md`，整理 Python `del` 的使用场景
 
 - 按场景分七节：删除变量绑定、列表元素（索引/切片/清空）、字典键、对象/类属性、导入名、遍历中删除的陷阱、函数内删全局名。
 - 补充 `del lst[i]` / `remove` / `pop` / `clear` / `del lst` 的对比表，以及 `del lst[:]` 保留容器对象、`del lst` 只删名字的区别。
@@ -1486,7 +1519,7 @@
 
 ### 修复
 
-- `docs/pycharm-streamlit-external-tool.md`：修正 External Tool 配置——工作目录改为项目根目录 `$ProjectFileDir$`，并增加环境变量
+- `docs/PyCharm-Streamlit外部工具配置.md`：修正 External Tool 配置——工作目录改为项目根目录 `$ProjectFileDir$`，并增加环境变量
   `PYTHONPATH=$ProjectFileDir$`，解决 `ModuleNotFoundError: No module named 'base_widget'`。
 - 已实测：从项目根目录带 `PYTHONPATH=.` 启动 `page/streamlit_demo.py`，健康检查返回 200。
 
@@ -1494,13 +1527,13 @@
 
 ### 修复
 
-- `docs/pycharm-streamlit-external-tool.md`：补充“工作目录末尾多空格导致无法启动进程”的排错说明。
+- `docs/PyCharm-Streamlit外部工具配置.md`：补充“工作目录末尾多空格导致无法启动进程”的排错说明。
 
 ## 2026-11-02 16:23
 
 ### 文档
 
-- 新增 `docs/pycharm-streamlit-external-tool.md`：PyCharm 右键通过 `uv` 启动 Streamlit 的 External Tools 配置说明与排错指南。
+- 新增 `docs/PyCharm-Streamlit外部工具配置.md`：PyCharm 右键通过 `uv` 启动 Streamlit 的 External Tools 配置说明与排错指南。
 - 无代码改动；由用户在 PyCharm 中按文档手动配置。
 
 ## 2026-11-02 12:52
