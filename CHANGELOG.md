@@ -2,6 +2,94 @@
 
 ## 2026-11-24
 
+### 功能：新增图片 OCR 文字识别工具（16:59）
+
+- 新增 `app/ai_tool/ocr_tool.py`：`OcrTool`（调用名 `ocr_image`），参数 `image_path`（本地图片路径）。
+- 识别引擎优先 `ocrmac`（Apple Vision，`accurate` 级别，中文简体 + 英文），
+  未安装、抛异常或识别结果为空时自动回退 `natocr`；返回 JSON 含 `engine` / `text` / `lines`。
+- 路径不存在、参数缺失返回中文提示；两个引擎都不可用时抛 `ToolError`；
+  图片无文字时返回「图片中没有识别到文字」。
+- 依赖：`pyproject.toml` / `uv.lock` 新增 `ocrmac>=1.0.1`、`natocr>=2.3.0`。
+- `__init__.py` 导出 `OcrTool`；`app/page/ai_chat_test.py` 注册并补充系统提示。
+- `tests/test_ai_tool.py` 新增 8 个离线用例（优先 ocrmac、异常/缺包/空结果回退、双引擎不可用、
+  文件不存在不发调用、缺参数），共 58 个测试全部通过。
+- `README.md` 更新目录结构、快速用法、内置工具表与 OCR 说明。
+- 验证：ruff 零告警；真实识别中英文测试图，`ocrmac` 与强制回退 `natocr` 均返回正确文本。
+
+### 功能：新增中国火车信息查询工具（16:33）
+
+- 新增 `app/ai_tool/train_tool.py`，对接 12306 官方接口，无需密钥。
+- `TrainQueryTool`（`query_train`）：按出发站、到达站和日期查询余票与车次时刻，
+  返回车次、发到时间、历时、是否可订及各席别余票；支持 `train_code` 指定车次、`limit` 限制条数。
+- `TrainStopsTool`（`query_train_stops`）：按区间和车次查询全程经停站、到发时刻与停站时长。
+- 站名解析复用 `station_name.js`：兼容「北京南」「北京南站」两种写法；找不到时返回相近车站候选。
+- 日期缺省为今天；过去日期与非法格式在本地直接拒绝，不发起网络请求。
+- `NetClient` 改用 `build_opener` + `CookieJar`：12306 要求先访问初始化页取得会话，
+  之前无状态请求会被跳到错误页；其余工具行为不变。
+- `__init__.py` 导出两个新工具；`app/page/ai_chat_test.py` 注册并补充系统提示。
+- `tests/test_ai_tool.py` 新增 18 个离线用例（余票解析、区域接口跳转、车次筛选/截断、站名别名与候选、
+  日期校验、接口异常、经停站解析等），共 50 个测试全部通过。
+- `README.md` 更新目录结构、快速用法、内置工具表与火车查询说明。
+- 验证：ruff 零告警；真实查询 2026-11-27「北京南 → 上海虹桥」返回 55 个车次，
+  G547 经停站时刻正常。
+
+### 调整：路径规划工具改用高德地图接口（16:17）
+
+- `route_planner_tool.py`：数据源由 Open-Meteo + OSRM 换成高德 `v3/geocode/geo` 与 `v3/direction/driving`；
+  删除英文转向类型翻译表，直接使用高德返回的中文 `instruction`。
+- `app/config.py` 新增 `amap_key`（读取 `.env` 的 `AMAP_KEY`）。未配置时返回提示文本且不发请求；
+  接口 `status != "1"` 时抛 `ToolError`，地理编码与路径规划分别带中文前缀。
+- 构造函数新增 `key` 参数（缺省读配置），保留 `http` 注入，便于离线测试。
+- `tests/test_ai_tool.py`：路线相关 fixture 与用例改为高德响应结构，新增缺 key、地理编码错误、路径规划错误 3 个用例；
+  共 56 个测试全部通过。
+- `README.md` 更新数据源与「配置」一节（`.env` 中的 `AMAP_KEY`）。
+- 验证：本次改动文件 ruff 零告警；未配置 key 时提示正确。真实调用需先在 `.env` 填入高德 Web 服务 Key。
+
+### 功能：新增路径规划工具 `RoutePlannerTool`（16:15）
+
+- 新增 `app/ai_tool/route_planner_tool.py`：`plan_route(origin, destination)` 先用 Open-Meteo 地理编码解析地名，
+  再调用 OSRM 公共驾车路线接口，两者均无需密钥。
+- 返回 JSON：起终点、`distance_km`、`duration_min` 与最多 12 段中文路段指引，超出部分记入 `steps_truncated`。
+- 地名找不到、无可行路线、参数不全时返回中文说明；网络异常由 `ToolRegistry` 兜底。
+- `__init__.py` 导出 `RoutePlannerTool`；`app/page/ai_chat_test.py` 注册该工具并补充系统提示。
+- `tests/test_ai_tool.py` 新增 7 个用例（成功规划、起点/终点找不到、无路线、缺参数、路段截断、异常透传），
+  并把真实工具注册断言扩展为三个工具；共 53 个测试全部通过。
+- `README.md` 更新目录结构、快速用法与内置工具表。
+- 验证：ruff 零告警；真实查询「杭州 → 上海」返回 171.0 km / 125 分钟，指引文案可读。
+
+### 修复：`app/page/ai_chat_test.py` 导入被误改（16:12）
+
+- `from apregistry.py.config import settings` → `from app.config import settings`，并移回 first-party 导入分组。
+- 该行疑似全局替换误伤（`app.config` 被拼进了 `registry.py`）；全项目已确认无同类残留。
+- 验证：模块可正常导入，`SYSTEM_PROMPT` 输出正确；ruff 零告警。
+
+### 调整：`BaseTool` 契约字段改为小写（16:11）
+
+- `NAME` / `DESCRIPTION` / `PARAMETERS` → `name` / `description` / `parameters`，按"可被子类覆盖的接口字段"语义统一。
+- 涉及：`tool_registry.py`（基类、`definition()`、`register()`）、两个工具类、`tests/test_ai_tool.py`、`README.md`。
+- 验证：46 个单元测试通过；ruff 零告警；真实天气与搜索调用正常。
+
+### 文档：`app/ai_tool/README.md`（16:06）
+
+- 说明模块结构、快速用法、核心类职责、内置工具参数与数据源。
+- 给出新增工具的完整示例与编写约定（唯一名字、参数校验、`ToolError`、`NetClient` 注入）。
+- 附 `ToolRegistry.execute()` 的错误处理对照表与测试运行方式。
+- 验证：ruff 零告警；22 个工具单元测试通过。
+
+### 调整：`registry.py` → `tool_registry.py`（16:05）
+
+- 文件名与核心类 `ToolRegistry` 对齐；合并后的 `BaseTool`、`ToolError`、`NetClient` 仍在同一模块。
+- 包内 3 处导入同步更新：`__init__.py`、`meteo_weather_tool.py`、`web_search_tool.py`。
+- 验证：22 个工具单元测试通过；ruff 零告警。
+
+### 调整：`base_tool.py` 与 `net_client.py` 合并进 `registry.py`（16:05）
+
+- `registry.py` 现同时包含 `ToolError`、`BaseTool`、`NetClient`、`ToolRegistry`，按依赖顺序排列。
+- 删除 `base_tool.py`、`net_client.py`；包内导入统一为 `from app.ai_tool.registry import BaseTool, NetClient`。
+- `__init__.py` 对外导出不变（`BaseTool`、`ToolError`、`ToolRegistry`、两个工具）。
+- 目录从 6 个文件减为 4 个：`__init__.py`、`registry.py`、`meteo_weather_tool.py`、`web_search_tool.py`。
+- 验证：46 个单元测试全部通过；ruff 零告警；真实天气/搜索调用正常。
+
 ### 增强：工具支持注入 `NetClient`，新增离线单元测试（16:02）
 
 - `MeteoWeatherTool` / `WebSearchTool` 的 `__init__` 新增可选参数 `http: NetClient | None = None`，
