@@ -7,6 +7,7 @@
 """
 
 from app.ai_tool.meteo_weather_tool import MeteoWeatherTool
+from app.ai_tool.ocr_tool import OcrTool
 from app.ai_tool.route_planner_tool import RoutePlannerTool
 from app.ai_tool.tool_registry import BaseTool, ToolError, ToolRegistry
 from app.ai_tool.train_tool import TrainQueryTool, TrainStopsTool
@@ -17,6 +18,7 @@ __all__ = [
     "ToolError",
     "ToolRegistry",
     "MeteoWeatherTool",
+    "OcrTool",
     "RoutePlannerTool",
     "TrainQueryTool",
     "TrainStopsTool",
