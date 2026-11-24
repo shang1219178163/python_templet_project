@@ -1,9 +1,9 @@
 import json
 from abc import abstractmethod, ABC
+from typing import TextIO
 
 from mixins.repr_mixin import ReprMixin
 from mixins.serializable_mixin import SerializableMixin
-from storage.file_ext import FileExt
 
 
 class BookNew(SerializableMixin, ReprMixin):
@@ -89,27 +89,37 @@ class LibraryNew(ReprMixin):
     BOOKS_JSON = "resources/book.json"  # 图书数据文件
     MEMBERS_JSON = "resources/member.json"  # 会员数据文件
 
-    # MEMBERS_BORROW_JSON = "resources/member_borrow.json"  # 会员数据文件
-
     def __init__(self):
         self.books: dict[str, BookNew] = {}
         self.members: dict[str, MemberNew] = {}
 
-        with open(self.BOOKS_JSON, "r", encoding="utf-8") as f:
+        with open(self.BOOKS_JSON, "r+", encoding="utf-8") as f:
             items = json.load(f)
-            for e in items:
+            if len(items) == 0:
+                self.create_books_json(f)
+                items = json.load(f)
+
+            # 兼容列表与 {id: 对象} 两种存取格式
+            rows = items.values() if isinstance(items, dict) else items
+            for e in rows:
                 self.books[e["book_id"]] = BookNew.from_dict(e)
 
         with open(self.MEMBERS_JSON, "r", encoding="utf-8") as f:
             items = json.load(f)
-            for e in items:
+            if len(items) == 0:
+                self.create_members_json(f)
+                items = json.load(f)
+
+            # 兼容列表与 {id: 对象} 两种存取格式
+            rows = items.values() if isinstance(items, dict) else items
+            for e in rows:
                 member_cls = VipMemberNew if "vip_level" in e else NormalMemberNew
                 self.members[e["member_id"]] = member_cls.from_dict(e)
 
         self.current_member: MemberNew | None = None  # 当前登录会员
 
     @staticmethod
-    def cache_json() -> None:
+    def create_books_json(f: TextIO) -> None:
         books: list[BookNew] = [
             BookNew(book_id="9787115546081", title="《Python编程》", author="埃里克·马瑟斯", total_num=5),
             BookNew(book_id="9787302587613", title="《C++程序设计》", author="谭浩强", total_num=3),
@@ -118,8 +128,13 @@ class LibraryNew(ReprMixin):
             BookNew(book_id="9787115545381", title="《JavaScript高级程序设计》", author="马特·弗里斯比", total_num=4),
         ]
 
-        # 所有会员：用卡号作为字典 key，方便快速检索对应会员
-        members = [
+        json.dump(books, f, ensure_ascii=False, indent=4, default=lambda o: o.to_dict())
+        # a = json.load(f)
+        # print(f"b: {a}")
+
+    @staticmethod
+    def create_members_json(f: TextIO) -> None:
+        members: list[MemberNew] = [
             NormalMemberNew(member_id="N001", name="张三", password="668001"),
             NormalMemberNew(member_id="N002", name="李四", password="668002"),
             NormalMemberNew(member_id="N003", name="王五", password="668003"),
@@ -129,12 +144,9 @@ class LibraryNew(ReprMixin):
             VipMemberNew(member_id="V004", name="周九", password="669004", vip_level=4),
         ]
 
-        FileExt.write_json(books, LibraryNew.BOOKS_JSON, lambda o: o.to_dict())
-        FileExt.write_json(members, LibraryNew.MEMBERS_JSON, lambda o: o.to_dict())
-        a = FileExt.read_json(LibraryNew.BOOKS_JSON)
-        b = FileExt.read_json(LibraryNew.MEMBERS_JSON)
-        print(f"a: {a}")
-        print(f"b: {b}")
+        json.dump(members, f, ensure_ascii=False, indent=4, default=lambda o: o.to_dict())
+        # a = json.load(f)
+        # print(f"b: {a}")
 
     def login(self, name: str = "", password: str = "") -> MemberNew | None:
         while True:
@@ -231,8 +243,5 @@ class LibraryNew(ReprMixin):
 
 
 if __name__ == "__main__":
-    LibraryNew.cache_json()
     s = LibraryNew()
-    # if len(s.members) == 0 or len(s.books) == 0:
-    #     LibraryNew.cache_json()
     s.run()

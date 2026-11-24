@@ -11,11 +11,11 @@
         "password": "668002",
         "books": [
             {
-                "book_id": "9787302481447",
-                "title": "《C程序设计》",
+                "book_id": "9787302587613",
+                "title": "《C++程序设计》",
                 "author": "谭浩强",
-                "total_num": 1,
-                "stock": 0
+                "total_num": 3,
+                "stock": 3
             }
         ]
     },

@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 2026-11-24
+
+### 修复：`member.json` 为字典格式时加载报 `'str' object has no attribute 'items'`
+
+- 原因：`resources/member.json` 顶层是 `{卡号: 会员}` 字典，`for e in items` 取到的是 key 字符串，`from_dict("N001")`
+  中 `data.items()` 失败。
+- 修复：图书与会员加载都兼容两种顶层格式——`rows = items.values() if isinstance(items, dict) else items`。
+- 验证：加载 5 本图书 / 7 个会员，`V001` 正确还原为 `VipMemberNew`（`vip_level=1`），`N002` 的借阅记录 `《C++程序设计》`
+  一并还原；菜单运行正常，PyCharm 零警告。
+
+### 类型标注：`create_books_json` / `create_members_json` 的 `f` 改为 `TextIO`
+
+- `f: Any` → `f: TextIO`（`from typing import TextIO`），两个同类方法统一，并加 `@staticmethod`。
+- 修复：`__init__` 中 `open(..., "wr")` 为非法模式（运行时 `ValueError`），改为 `"r+"`，PyCharm 由此正确推断
+  `TextIOWrapper`，「应为 TextIO，但实际为 IO[Any]」警告消失。
+- 验证：`LibraryNew()` 正常加载 5 本图书 / 7 个会员，PyCharm 零警告。
+
 ## 2026-11-23
 
 ### 修复：`book_look` 书名误输出为 `total_num`
@@ -9,7 +26,7 @@
 
 ### 重构：`LibraryNew` 资源路径抽为类变量
 
-- 新增类变量 `BOOKS_JSON` / `MEMBERS_JSON`，替换 `__init__` 与 `cache_json` 中重复的 `"resources/*.json"` 字面量。
+- 新增类变量 `BOOKS_JSON` / `MEMBERS_JSON`，替换 `__init__` 与 `load_json` 中重复的 `"resources/*.json"` 字面量。
 - 验证：`cache_json()` 写出/读回正常，系统加载图书与会员正常，PyCharm 零警告。
 
 ### 注释：`SerializableMixin.from_dict` 逐行补充中文说明
@@ -32,7 +49,7 @@
 - 修复：`from_dict` 按 `__init__` 形参过滤后 `cast(type[Any], cls)(**kwargs)` 构造，再回填 `BookNew` 列表；
   签名补为 `data: dict[str, Any] -> Self`，`VipMemberNew` 的 `vip_level` 由形参过滤自动匹配。
 - 修复：`LibraryNew.__init__` 中未写完的 `if "level" in e: ... else:`（语法错误）补全为按 `vip_level` 分派
-  `VipMemberNew` / `NormalMemberNew`；`cache_json` 加 `@staticmethod` 消除弱警告。
+  `VipMemberNew` / `NormalMemberNew`；`load_json` 加 `@staticmethod` 消除弱警告。
 - 验证：PyCharm 检查零报错；运行借阅（9787115546081）→ 查看 → 退出正常。
 
 ### 修复：`SerializableMixin.from_dict` 的「意外实参」警告
@@ -48,7 +65,8 @@
 - 数据：5 本书改为硬编码真实书目（Python编程、C++程序设计、Java编程思想、C程序设计、JavaScript高级程序设计），
   `book_id` 直接使用 isbn。
 - 新增 `read_json()`：把 5 本图书以列表写入 `resources/book.json`，供后续读取练习；`__main__` 改为调用它。
-- 修复：`write_json` 增加 `default=lambda o: o.to_dict()`，解决 `TypeError: Object of type BookNew is not JSON serializable`；
+- 修复：`write_json` 增加 `default=lambda o: o.to_dict()`，解决
+  `TypeError: Object of type BookNew is not JSON serializable`；
   新增 `BookNew.to_dict()`，库存输出为 `stock` 而不是私有字段 `_BookNew__stock`。
 - 新增 `MemberNew.to_dict()`：输出 `member_id` / `name` / `password` / `books`（借阅中的图书展开为列表）；
   `VipMemberNew` 重写并在基础字段上追加 `vip_level`。
@@ -66,7 +84,8 @@
 
 - 原因：`json.dumps(self.__dict__)` 只认 JSON 原生类型，`MemberNew.books` 里是 `BookNew` 实例，序列化时抛
   `TypeError: Object of type BookNew is not JSON serializable`。
-- 修复：`repr_mixin.py` 增加 `_json_default` 兜底函数，自定义对象转 `__dict__`（嵌套输出为字典）、集合/元组转列表、其余转 `str`，并作为
+- 修复：`repr_mixin.py` 增加 `_json_default` 兜底函数，自定义对象转 `__dict__`（嵌套输出为字典）、集合/元组转列表、其余转
+  `str`，并作为
   `json.dumps(..., default=...)` 传入。
 - 验证：模拟登录 → 借书 → 查看借阅 → 退出，会员与图书均正常打印；`Book`（pydantic）自身 `__repr__` 不受影响。
 
