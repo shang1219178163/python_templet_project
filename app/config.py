@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     anthropic_model: str = "deepseek-chat"
     anthropic_vision_model: str = ""
     api_key: str = ""
+    amap_key: str = ""
 
     @property
     def vision_model(self) -> str:

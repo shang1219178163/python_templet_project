@@ -7,7 +7,15 @@
 """
 
 from app.ai_tool.meteo_weather_tool import MeteoWeatherTool
+from app.ai_tool.route_planner_tool import RoutePlannerTool
 from app.ai_tool.tool_registry import BaseTool, ToolError, ToolRegistry
 from app.ai_tool.web_search_tool import WebSearchTool
 
-__all__ = ["BaseTool", "ToolError", "ToolRegistry", "MeteoWeatherTool", "WebSearchTool"]
+__all__ = [
+    "BaseTool",
+    "ToolError",
+    "ToolRegistry",
+    "MeteoWeatherTool",
+    "RoutePlannerTool",
+    "WebSearchTool",
+]
