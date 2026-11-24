@@ -12,7 +12,7 @@ PyCharm 每次运行会把 helpers/pycharm_plotly_backend 等目录前置到 PYT
 已安装包的 pydantic 插件入口，本项目经 pydantic-ai 装进来的 logfire-sdk 注册了一个插件，
 导致每次启动多导入 logfire/opentelemetry/requests（约 0.3~0.5 秒）。本项目不用 logfire，
 设为 __all__ 后跳过多余导入；若以后确实要用 logfire 的 Pydantic 埋点，删掉下面这行即可。
-详见 docs/pydantic-slow-startup.md。
+详见 docs/Pydantic启动变慢.md。
 """
 
 import os
