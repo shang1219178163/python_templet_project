@@ -4,8 +4,7 @@ import json
 from html.parser import HTMLParser
 from typing import Any, ClassVar
 
-from app.ai_tool.base_tool import BaseTool
-from app.ai_tool.net_client import NetClient
+from app.ai_tool.tool_registry import BaseTool, NetClient
 
 
 class _LiteResultParser(HTMLParser):
@@ -55,9 +54,9 @@ class _LiteResultParser(HTMLParser):
 class WebSearchTool(BaseTool):
     """联网查询实时信息，并向对话模型提供函数定义。"""
 
-    NAME = "web_search"
-    DESCRIPTION = "联网搜索实时信息。用户询问新闻、最新事实或当前事件时调用，不要凭记忆编造。"
-    PARAMETERS: ClassVar[dict[str, Any]] = {
+    name = "web_search"
+    description = "联网搜索实时信息。用户询问新闻、最新事实或当前事件时调用，不要凭记忆编造。"
+    parameters: ClassVar[dict[str, Any]] = {
         "type": "object",
         "properties": {
             "query": {
