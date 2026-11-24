@@ -2,6 +2,64 @@
 
 ## 2026-11-24
 
+### 增强：工具支持注入 `NetClient`，新增离线单元测试（16:02）
+
+- `MeteoWeatherTool` / `WebSearchTool` 的 `__init__` 新增可选参数 `http: NetClient | None = None`，
+  默认自建客户端；测试可注入假实现，不再依赖真实网络。
+- 新增 `tests/test_ai_tool.py`（22 个用例，全部离线）：
+  - `ToolRegistry`：函数定义格式、按名分发、空参数、非法 JSON、非对象、未知工具、`ToolError` 透传、
+    意外异常兜底、重名拒绝、真实工具注册。
+  - 天气工具：当天含实况、指定日期不带实况、日期越界提示、城市不存在、空城市不发起请求、网络异常转为 `ToolError`。
+  - 搜索工具：结果解析（标题 / 链接 / 摘要）、条数上限与钳制、无结果提示、空搜索词不发起请求。
+- 验证：`python -m unittest discover -s tests` 共 46 个用例全部通过；ruff 零告警。
+
+### 调整：`base.py` → `base_tool.py`（15:50）
+
+- 文件名与类名对齐（`BaseTool` / `ToolError` 所在模块）。
+- 包内 5 处导入同步更新：`__init__.py`、`registry.py`、`net_client.py`、两个工具文件。
+- 验证：ruff 零告警；注册表用例与真实工具调用全部通过。
+
+### 调整：`net.py` → `net_client.py`，类 `HttpClient` → `NetClient`（15:48）
+
+- 文件名与类名同步：`app/ai_tool/net_client.py` 中定义 `NetClient`。
+- `meteo_weather_tool.py` / `web_search_tool.py` 导入与实例化同步更新。
+- 验证：ruff 零告警；注册表用例与真实天气、搜索调用全部通过。
+
+### 调整：`http_client.py` 更名为 `net.py`（15:47）
+
+- 避免模块名看起来像第三方 HTTP 客户端包；实际无冲突（项目内均为 `app.ai_tool.*` 绝对导入，venv 中无同名包）。
+- `meteo_weather_tool.py` / `web_search_tool.py` 导入改为 `from app.ai_tool.net import HttpClient`。
+- 验证：ruff 零告警；注册表用例与真实天气、搜索调用全部通过。
+
+### 调整：`http_client.py` 改用 `HttpClient` 类封装（15:45）
+
+- 模块级函数 `fetch_json` / `fetch_text` / `_open` 收进 `HttpClient` 类，改为实例方法。
+- 超时由构造参数 `HttpClient(timeout=...)` 决定，不再每个调用点传：天气 10 秒、搜索 15 秒。
+- `meteo_weather_tool.py` / `web_search_tool.py`：各自在 `__init__` 里持有 `self.http = HttpClient(...)`，
+  调用改为 `self.http.fetch_json()` / `self.http.fetch_text()`。
+- 验证：注册表用例与真实天气、联网搜索全部通过；ruff 零告警。
+
+### 重构：`app/ai_tool` 封装为通用工具模块（15:44）
+
+- 新增 `base.py`：`BaseTool` 抽象基类统一定义 `NAME` / `DESCRIPTION` / `PARAMETERS`，`definition()` 生成 OpenAI
+  函数定义；`ToolError` 表示可预期的执行失败。
+- 新增 `registry.py`：`ToolRegistry` 负责 `register()`、`definitions()`、`execute(name, arguments)`；
+  JSON 解析失败、未知工具、网络异常、意外异常全部转成中文文本返回给模型，对话循环不再中断。
+- 新增 `http_client.py`：`fetch_json` / `fetch_text` 统一 User-Agent、超时，并把 `URLError` / `HTTPError` /
+  `TimeoutError` 统一收成 `ToolError`。
+- 新增 `__init__.py`：对外只暴露 `BaseTool`、`ToolError`、`ToolRegistry`、`MeteoWeatherTool`、`WebSearchTool`。
+- `meteo_weather_tool.py` / `web_search_tool.py`：删掉各自的 `tools()` / `execute()` 与重复的异常处理，
+  改为继承 `BaseTool` 只实现 `run()`，实际查询保留为 `get_weather()` / `search()`。
+- `app/page/ai_chat_test.py`：改用 `ToolRegistry`，删除 `_execute_tool()` 与逐工具循环。
+- 验证：注册表 9 项用例（分发 / 空参数 / 非法 JSON / 非对象 / 未知工具 / ToolError / 意外异常 / 多余参数 / 重名）
+  全部符合预期；真实天气与联网搜索均返回数据；ruff 检查新增文件无告警。
+
+### 修复：`app/api/book.py` 监听地址写错导致启动失败（15:38）
+
+- `uvicorn.run(app, host="127.0.0.0", ...)` → `host="127.0.0.1"`。
+- 原因：`127.0.0.0` 不是合法的单机回环地址（回环网段是 `127.0.0.0/8`，可分配给网卡的具体地址从 `127.0.0.1` 起），
+  系统 binder 拒绝绑定，抛 `[Errno 49] can't assign requested address`。
+
 ### 精简：`SerializableMixin` 从 180 行压回 86 行（09:51）
 
 - 移除循环引用检测、`__slots__`/父类私有字段支持、`ClassVar` 过滤、注解缓存、日期/`Enum`/`Decimal` 转换。

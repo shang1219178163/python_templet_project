@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+import uvicorn
 from fastapi import FastAPI
 
 from app.model.book import Book
@@ -42,3 +43,7 @@ def get_books() -> list[Book]:
 def book_count() -> dict[str, int]:
     """图书总数"""
     return {"total": 20}
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000)
