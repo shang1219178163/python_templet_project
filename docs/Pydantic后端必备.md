@@ -32,10 +32,10 @@
 | 可变默认值必须用 `Field(default_factory=list)`                                                                      | `app/model/book_library.py` 的 `books`                                                  |
 | 嵌套模型自动递归校验                                                                                                | `BookLibrary.books: list[Book]`                                                         |
 | `model_validate(dict)` / `model_dump()` 在模型与字典间转换                                                          | `BookLibrary.load_books` 里的 `Book.model_validate(item)`                               |
-| FastAPI 里模型即请求体/响应体：类型不符自动 422，不用手写校验                                                       | `app/api/book.py` 的 `-> list[Book]`，`/docs` 由模型自动生成                            |
+| FastAPI 里模型即请求体/响应体：类型不符自动 422，不用手写校验                                                       | `app/api/routes/book.py` 的 `response_model=ApiResponse[list[BookOut]]`，`/docs` 由模型自动生成 |
 | `Field(...)` 常用参数：`default_factory`、`ge/gt/min_length`、`pattern`、`alias` / `validation_alias`、`repr=False` | `app/model/book.py` 的约束写法；`app/model/student.py` 的 `name`、`library_password` |
 | `Decimal` + `decimal_places` / `max_digits` 管金额精度                                                              | `app/model/book.py` 的 `price`                                                          |
-| `model_config = ConfigDict(from_attributes=True)`：从 ORM/普通对象读取（接 SQLAlchemy 时必用）                      | 项目里还没有，接数据库就会用到                                                          |
+| `model_config = ConfigDict(from_attributes=True)`：从 ORM/普通对象读取（接 SQLAlchemy 时必用）                      | `app/dto/book.py` 的 `BookOut`                                                          |
 | `Literal` / `Enum` / `X \| None` 表达有限取值与可空                                                                 | `member_level: MemberLevelEnum`                                                         |
 
 **`pydantic-settings`** 在本项目已经是现成用法，直接看 `app/config.py`：

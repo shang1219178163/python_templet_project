@@ -1,16 +1,347 @@
 # CHANGELOG
 
+## 2026-11-25
+
+### 清理：删除 PageQuery 的 keyword 空值校验器（13:56）
+
+- `app/dto/pagination.py`：移除 `_blank_keyword_to_none`。`str_strip_whitespace` 已把空格处理为空串，
+  而 `_build_filters` 用 `if keyword` 判断，空串本来就不会加过滤条件，行为不变。
+- 保留 `_empty_cursor_to_none`：`cursor` 是 `int | None`，空字符串若不转 `None` 会在 `int_parsing` 阶段 422，
+  「首次传空」将不可用。
+- 验证：`keyword=` 与 `keyword='   '` 都返回全部 100 条；`keyword=算法` 命中 1 条；
+  `?cursor=` 仍返回游标首页。全量 101 个测试通过，`pagination.py` ruff 零告警。
+
+### 调整：不传 page 时默认走游标分页，cursor 首页可不传或传空（13:54）
+
+- `app/dto/pagination.py`：`page` 说明改为「不传则走游标分页」；`cursor` 说明改为「首次传空或不传」；
+  移除 `use_cursor` 属性，空 `cursor=` 统一转为 `None`。
+- `app/db_service/book_service.py`：分页模式改为——传 `page` 走普通分页；不传 `page` 一律走游标分页
+  （`cursor` 为空按 0 处理）；只有 `page` 与有值的 `cursor` 同时传才抛 422。
+- `app/api/routes/book.py`：移除 `use_cursor` 传参。
+- 行为变化：`GET /books` 不再默认普通分页，默认返回游标首页（`total=null`）；需要 `total` 时显式传 `page=1`。
+- 测试：新增「默认游标首页」用例；搜索/排除断言补充 `page=1`；空 cursor + page 改为合法（走普通分页）；
+  全量 101 个测试通过。
+- 文档：`README.md`、`docs/ORM进模型出模型最佳实践.md` 更新分页默认行为与示例。
+- 验证：默认 / `?cursor=` / `?cursor=0` 均为游标首页；`?page=1` 返回 `total=100`；
+  `?page=1&cursor=0` 返回 422；本次改动文件 ruff 零告警。
+
+### 调整：游标分页首次传空 `cursor=`（13:53）
+
+- `app/dto/pagination.py`：`cursor` 说明改为「上一页最后一条 id；首次传空」；
+  新增 `mode="before"` 校验器把 `?cursor=` 转为 `None`，并用 `model_fields_set` 区分
+  「显式传空」与「完全不传」；新增 `use_cursor` 属性。
+- `app/db_service/book_service.py`：`list_books` 新增 `use_cursor` 参数；显式传 cursor（含空值）走游标分页，
+  空值按 0 处理从第一条开始；仍校验 `cursor` 非负、与 `page` 互斥。
+- `app/api/routes/book.py`：把 `query.use_cursor` 传给 service。
+- 测试：游标分页首次请求改为 `cursor=""`；新增「空 cursor + page → 422」断言；全量 100 个测试通过。
+- 文档：`README.md`、`docs/ORM进模型出模型最佳实践.md` 改为首次传空。
+- 验证：`?cursor=&page_size=2` 返回游标首页（total=null，next_cursor 正常）；`?cursor=0` 仍可用；
+  不传 cursor 仍走普通分页（total=100）；`?cursor=&page=1` 返回 422；本次改动文件 ruff 零告警。
+
+### 调整：模糊搜索仅覆盖书名、作者、ISBN（13:50）
+
+- `app/db_service/book_service.py`：`_build_filters()` 的 OR 条件移除 `publisher`，只保留
+  `title` / `author` / `isbn` 的 `ILIKE` 匹配。
+- `app/dto/pagination.py`：`PageQuery.keyword` 的字段说明与类文档同步改为「书名 / 作者 / ISBN」。
+- `tests/test_book_api.py`：关键词用例改为分别验证书名、作者、ISBN；不再断言出版社可搜索。
+- 文档同步：`README.md`、`docs/ORM进模型出模型最佳实践.md`。
+- 验证：`keyword=算法`、`keyword=Cormen`、`keyword=9787111000013` 均命中《算法导论》；
+  `keyword=机械工业` 返回 0；全量 100 个测试通过，本次改动文件 ruff 零告警。
+- 说明：`publisher` 仍保留在数据、ORM 和接口响应中，只是不参与模糊搜索。
+
+### 功能：图书列表支持模糊搜索与 exclude 排除（13:44）
+
+- `app/dto/pagination.py`：新增 `PageQuery` 查询模型，包含：
+  - `keyword: str | None`（最长 100，空串转 None）
+  - `exclude: list[str]`（默认空列表，支持重复参数或逗号分隔）
+  - `page` / `cursor` / `page_size`；`Page[T]` 仍只作为响应模型。
+- `app/api/deps.py`：新增 `PageQueryDep = Annotated[PageQuery, Query()]`，路由以查询参数模型接收。
+- `app/api/routes/book.py`：`GET /books` 改为接收 `PageQuery`，把 keyword/exclude 传给 service。
+- `app/db_service/book_service.py`：
+  - 模糊搜索覆盖 `title` / `author` / `publisher` / `isbn`，使用 `ILIKE`，并转义 `%`、`_`；
+  - `exclude` 解析为 id 列表，非数字抛 `BookRuleError`（422）；
+  - offset 分页的 `total` 为过滤后的数量，游标分页同样应用过滤条件。
+- 测试：新增关键词搜索、exclude（单个/重复/逗号）、搜索+排除+分页/游标、非法 exclude 4 组用例；
+  全量 100 个测试通过。
+- 验证：真实接口 `keyword=算法` 命中 1 本，`keyword=机械工业&exclude=204` 正常，`exclude=abc` 返回 422，
+  `/openapi.json` 200；本次改动文件 ruff 零告警。
+- 文档同步：`README.md`、`docs/ORM进模型出模型最佳实践.md`、`docs/DTO模块说明.md`。
+
+### 修复：代码审核发现的 7 个问题（13:39）
+
+- **PATCH 显式 null**：`BookService.update_book` 在 `exclude_unset` 后检查值为 `None` 的字段，
+  抛 `BookRuleError` 返回 422；避免 `stock=null` 触发 `TypeError` 变 500、`title=null` 写入 NOT NULL 列变 409。
+- **旧库补列**：`app/db/init.py` 新增 `_ensure_schema()`，启动时检查 `books` 是否缺少 `publisher` 列，
+  缺失则执行幂等 `ALTER TABLE`；并发启动时若其他进程已加列则忽略异常。
+- **兜底异常**：`app/api/errors.py` 注册 `Exception` 处理器，未预期异常统一返回
+  `ApiResponse(code=500, message="服务器内部错误")`，并记录 `logger.exception` 堆栈。
+- **播种并发**：`_seed()` 捕获 `IntegrityError` 后回滚，避免多 worker 冷启动时后提交者因 ISBN 唯一约束启动失败。
+- **惰性加载**：移除模块级 `SEED_BOOKS = load_seed_books()`，改为 `_seed()` 内按需读取 JSON；
+  导入 `app.main` 不再触发文件 IO，JSON 缺失也不会导致测试收集失败。
+- **入口端口**：`app/main.py` 直接运行时改为 `uvicorn.run("app.main:app", port=8001, reload=True)`，
+  与 README/docstring 一致并恢复热重载。
+- **调试文档**：`docs/后端调试指南.md` 两处 `app.api.book:app` 改为 `app.main:app`。
+- 测试：新增 `test_update_rejects_null_fields`、`test_unhandled_exception_returns_unified_500`、
+  `tests/test_db_init.py`（补列幂等）；全量 96 个测试通过。
+- 验证：真实接口三组 `PATCH null` 均返回 422；`python -m app.main` 监听 8001 且 reloader 正常；
+  本次改动文件 ruff 零告警。审核中的 `/slow` 演示端点与 `db.refresh` 优化（第 8、9 项）按要求暂未处理。
+
+### 功能：出版社字段接入 ORM/DTO，并同步 SQLite 与 MySQL（13:25）
+
+- `app/db/book_table.py`：`BookTable` 新增 `publisher` 列（`String(100)`，默认空字符串）。
+- `app/dto/book.py`：`BookBase` 新增 `publisher`（创建/响应共用），`BookUpdate` 新增可选的 `publisher`。
+- `app/db/init.py`：`load_seed_books()` 从 JSON 读取 `publisher`，种子数据写入时一并落库。
+- 两个数据库均执行 `ALTER TABLE books ADD COLUMN publisher VARCHAR(100) NOT NULL DEFAULT ''`，
+  再按 ISBN 同步 `books.json` 的 100 条数据：
+  - SQLite `data/app.db`：新增 97 本、更新 3 本，共 100 本，ISBN 100 个不重复；
+  - MySQL `app.books`：新增 97 本、更新 3 本，共 100 本；`app.user` 101 行不变。
+- 接口 `BookOut` 现在会返回 `publisher`，已验证 `/books?page_size=3` 返回出版社与价格。
+- `tests/test_book_api.py`：创建用例补充 `publisher` 字段并断言返回。
+- 验证：接口测试 11 个、全量 93 个测试通过；本次改动文件 ruff 零告警。
+
+### 数据：books.json 增加出版社字段（13:24）
+
+- `app/assets/json/books.json`：100 条书目全部新增 `publisher` 字段，共涉及 24 家出版社；
+  字段顺序调整为 `title` / `author` / `publisher` / `isbn` / `price` / `total_num` / `stock` / `industry`。
+- 出版社信息与定价对应的常见版次一致，例如算法导论/深入理解计算机系统为机械工业出版社，
+  机器学习/人工智能为清华大学出版社，医学类为人民卫生出版社。
+- `app/db/init.py` 的 `load_seed_books()` 仍只提取 ORM 需要的字段，`publisher` 暂不写入数据库
+  （`BookTable` 当前没有该列）。
+- `README.md` 数据源字段说明补充 `publisher`。
+- 验证：JSON 100 条全部匹配、无缺失；种子加载 100 条正常；全量 93 个测试通过；`init.py` ruff 零告警。
+
+### 数据：books.json 的价格替换为真实定价（13:23）
+
+- `app/assets/json/books.json`：100 条书目的 `price` 全部替换为公开渠道查到的官方定价（常见版次），
+  价格范围 13.60 ~ 208.00 元。原按序号生成的 10.90 ~ 99.90 演示价格已全部移除。
+- 来源类型：高等教育出版社、人民卫生出版社、清华大学出版社、北京大学出版社、机械工业出版社等出版社页面，
+  以及全国大中专教材网络采选系统、当当/文轩等商品页的“定价”字段。
+- 同步 MySQL `app.books` 现有 3 本的 `price`：算法导论 128.00、计算机程序设计艺术 98.00、深入理解计算机系统 139.00；
+  `user` 表 101 行不变。
+- 重要说明：`books.json` 中的 ISBN 仍是原文件按规律生成的值，并非真实版次；本次价格对应的是“书名 + 常见版次”，
+  不是该 ISBN 指向的版本。若要求 ISBN 与价格严格对应，需要同时替换 ISBN。
+- 验证：`load_seed_books()` 读取 100 条，`price` 均为 `Decimal` 且大于 0；内存 SQLite 写入 100 行成功；
+  全量 93 个测试通过；`app/db/init.py` ruff 零告警。
+- `README.md` 补充说明：价格为常见版次官方定价，版次/印次不同会有差异。
+
+### 数据：books.json 增补价格与库存字段并作为种子数据源（13:18）
+
+- `app/assets/json/books.json`：100 条书目全部补充 `price` / `total_num` / `stock` 字段；
+  前 3 条沿用原 `SEED_BOOKS` 的值（66.00/5/5、77.00/3/3、88.00/4/4），其余按序号生成演示值；
+  保留原有 `industry` 字段。
+- `app/db/init.py`：新增 `load_seed_books()`，从 `app/assets/json/books.json` 读取种子数据；
+  `SEED_BOOKS` 由该函数生成，价格转 `Decimal`、库存与总数为 `int`；空库时播种 100 本。
+- 验证：内存 SQLite 写入 100 行成功，ISBN 全部唯一；全量 93 个测试通过；`init.py` ruff 零告警。
+- 数据库未变：MySQL `app.books` 仍为 3 本（`init_db()` 只在空库时播种）。
+  如需按新数据源重播，清空 `books` 后执行 `uv run python -m app.db.init`。
+
+### 数据：MySQL books 表恢复为最初的 3 本示例书（13:16）
+
+- 清空 MySQL `app.books` 的 100 行真实书目，执行 `uv run python -m app.db.init` 重新播种最初的 3 本示例书。
+- `app.user` 101 行未受影响。
+- 接口验证：`/books/count` 返回 3，`/books` 返回算法导论、计算机程序设计艺术、深入理解计算机系统。
+- 说明：自增 id 因历史插入从 204 开始，不影响功能。
+
+### 回退：init.py 恢复为最初的 3 本示例书版本（13:15）
+
+- 使用 git 暂存区版本恢复 `app/db/init.py`：只保留最初的 3 本示例书，`init_db()` 不再包含 `--sync` / `--reset`。
+- 删除不再被引用的 `app/db/seed_books.py` 和 `tests/test_seed_books.py`。
+- `README.md`、`docs/ORM进模型出模型最佳实践.md` 中的相关说明同步回退。
+- 数据库未回退：MySQL `app.books` 仍是 100 本真实图书，`app.user` 仍为 101 行。
+  如需让库回到 3 本示例书，可清空 `books` 后重新初始化（会删除现有 100 条书目）：
+  `DELETE FROM books;`，再执行 `uv run python -m app.db.init`。
+- 验证：全量 93 个测试通过，`app/db/init.py` ruff 零告警，仓库内无 `seed_books` / `--sync` / `--reset` 残留引用。
+
+### 数据：种子图书替换为 100 本真实书目（13:12）
+
+- 新增 `app/db/seed_books.py`：保存 100 本真实图书的（标题, 作者, ISBN-13）。
+  书目信息通过公开图书目录与榜单检索获得（Goodreads / goodbooks-10k、出版社在售版本、图书馆书目、
+  Scribd Top 50 经典书单等）；ISBN 对应具体版本，同一本书不同出版社可能不同。
+- `app/db/init.py`：改为从 `SEED_BOOK_DATA` 生成 `SEED_BOOKS`；价格与库存为演示值；
+  新增 `--reset` 清空 `books` 表后重新播种（只影响 `books`，不影响 `user` 等其他表），保留 `--sync`。
+- `tests/test_seed_books.py`：4 个用例，校验 100 本、ISBN 唯一且校验位正确、无占位标题、库存不超过总数。
+- 已对 MySQL `app` 库执行 `--reset`：删除 100 行旧种子数据，写入 100 本真实图书；
+  `user` 表 101 行未受影响，库中无「示例图书」残留。
+- 验证：全量 97 个测试通过；`/books/count` 返回 100，分页接口返回真实书名、作者与 ISBN。
+- 备注：`app/assets/json/books.json`（旧演示页数据）本次未改动。
+
+### 功能：SEED_BOOKS 扩充到 100 并同步数据库（13:06）
+
+- `app/db/init.py`：新增 `SEED_BOOK_COUNT = 100`，保留 3 本手写示例，其余 97 本由 `_build_seed_books()` 生成
+  （标题/作者按序号、ISBN 为 `978` + 10 位数字、价格与库存循环取值），共 100 本且 ISBN 唯一。
+- `init_db(sync=False)`：默认仍只在空库时播种；新增 `--sync` 参数，按 ISBN 补齐缺失的示例图书，
+  不修改、不删除已有数据，可重复执行。
+- 新增 `tests/test_seed_books.py`：校验数量为 100、ISBN 唯一且为 13 位数字、库存不超过总数，3 个用例通过。
+- 已对 MySQL `app` 库执行 `--sync`：补充 97 本，`books` 共 100 行、ISBN 100 个不重复，`user` 仍为 101 行；
+  再次执行补充 0 本，幂等正常。
+- 接口验证：`/books/count` 返回 100；默认分页 20 条、total=100、has_more=true；第 5 页 20 条；
+  游标分页连续翻页正常。
+- `README.md` 补充 `--sync` 用法；全量 96 个测试通过，本次改动文件 ruff 零告警。
+
+### 调整：MySQL 数据库 bookdb 合并进 app（13:03）
+
+- 现状：`app` 库已有 `user` 表 101 行，`bookdb` 库有 `books` 表 3 行，直接改名会冲突。
+- 采用合并方案：`RENAME TABLE bookdb.books TO app.books`，`app.user` 101 行保持不变；确认 `bookdb` 为空后删除该库。
+- `.env` 的 `DATABASE_URL` 库名由 `bookdb` 改为 `app`（`.env` 已在 `.gitignore` 中，凭据未写入文档）。
+- 验证：`init_db()` 幂等；`/books/count` 返回 3；普通分页与游标分页正常；新增、删除接口可用；
+  直连 MySQL 确认最终 `app.books` 3 行、`app.user` 101 行。现有数据库为 `app`、`information_schema`、`mysql`、`performance_schema`、`sys`。
+
+### 验证：MySQL 完整链路（13:00）
+
+- 本机 MySQL 26.7.0，`root@localhost` 认证成功；新建数据库 `bookdb`（utf8mb4），未触碰已有 `app` 库。
+- 通过 `DATABASE_URL` 切换到 MySQL，`init_db()` 建表并播种 3 条示例数据；重复执行保持 3 条，幂等正常。
+- 接口验证全部通过：默认列表、普通分页（page/page_size）、游标分页（cursor/page_size）、新增、局部更新、
+  单条查询、删除、count，以及 404 / 422 / 409 统一错误响应。
+- 通过 pymysql 直接回查确认新增、更新、删除均真实落库，最终行数回到 3。
+- 表结构：InnoDB / utf8mb4，`isbn` 唯一索引，`stock >= 0` 与 `stock <= total_num` 两条 CHECK 约束生效。
+- 凭据未写入代码、文档或 `.env`；临时启动脚本与进程已清理。`bookdb` 暂时保留，可用 `DROP DATABASE bookdb;` 删除。
+
+### 文档：MySQL 支持文档收敛为「按环境切换」范围（12:56）
+
+- `docs/SQLite与MySQL双支持.md` 更名为 `docs/SQLite与MySQL切换.md`。
+- 删除「同一进程同时连接两个库」的章节与方案对比；文档明确一个进程只连一个库，由 `DATABASE_URL` 决定。
+- `README.md`、`docs/SQLAlchemy创建数据库.md` 的链接与表述同步更新。
+- 代码、依赖与测试无变化。
+
+### 功能：支持 SQLite / MySQL 切换，安装 pymysql 并启用 pool_pre_ping（12:55）
+
+- 依赖：`pyproject.toml` / `uv.lock` 新增 `pymysql`，可通过 `DATABASE_URL` 切换到 MySQL。
+- `app/db/__init__.py`：新增 `IS_SQLITE` 判断；`connect_args` 仅 SQLite 传 `check_same_thread`；
+  非 SQLite 启用 `pool_pre_ping=True`，避免 MySQL 长连接被服务端断开后报错。
+- 新增 `docs/SQLite与MySQL双支持.md`：说明「按环境切换」与「同时连两个库」的区别、切换步骤、兼容性检查
+  （CHECK 约束需 MySQL 8.0.16+ 等）、多数据源方案对比与常见问题。
+- `README.md` 增加 MySQL 切换配置示例；`docs/SQLAlchemy创建数据库.md` 第七节改为通过 `.env` / `DATABASE_URL`
+  配置，并补充 utf8mb4、驱动与 `pool_pre_ping` 说明。
+- 验证：SQLite 默认 `pre_ping=False`；模拟 `DATABASE_URL=mysql+pymysql://...` 时 dialect 为 `mysql`、驱动 `pymysql`、
+  `pre_ping=True`；93 个单元测试通过；本次改动文件 ruff 零告警；真实 uvicorn 启动 `/books/count` 正常。
+  未实际连接 MySQL 服务端（本机无实例）。「同一进程同时连两个库」未实现，方案见新文档第五节。
+
+### 功能：图书列表支持普通分页与游标分页（12:48）
+
+- 新增 `app/dto/pagination.py`：通用分页结果 `Page[T]`（`items` / `page_size` / `has_more`，
+  普通分页带 `total` / `page`，游标分页带 `next_cursor`），以及 `DEFAULT_PAGE_SIZE=20`、`MAX_PAGE_SIZE=100`。
+- `BookService.list_books` 改为关键字参数 `cursor` / `page` / `page_size`，同时支持两种模式：
+  - `page`：OFFSET / LIMIT 普通分页，返回 `total` / `page` / `has_more`；
+  - `cursor`：`id > cursor` 游标分页，多取一条判断 `has_more` 并返回 `next_cursor`，首次传 `cursor=0`；
+  - 两者同时传抛 `BookRuleError`（422）；`page_size` 超出 1~100 也抛 `BookRuleError`。
+- `GET /books` 新增查询参数 `page` / `cursor` / `page_size`，响应改为 `ApiResponse[Page[BookOut]]`。
+- 测试：新增普通分页、游标分页、两种模式互斥、`page_size` 越界 4 个用例；`test_crud` 适配 `data.items`；
+  接口测试共 11 个，全量 93 个测试通过。
+- 文档同步：`README.md` 补充分页示例；`docs/ORM进模型出模型最佳实践.md` 更新接口表、目录树与分页说明；
+  `docs/DTO模块说明.md` 补充 `pagination.py`。
+- 验证：本次改动文件 ruff 零告警；真实请求 `?page=1&page_size=2` 返回 `total=3`，`?cursor=0&page_size=2`
+  返回 `next_cursor=2`，两种模式同传返回 422。
+
+### 重构：BookService 方法收进类，路由改用依赖注入（12:37）
+
+- `app/db_service/book_service.py`：模块级函数改为 `BookService` 类，`db` 由 `__init__` 注入；
+  `list_books` / `count_books` / `get_book` / `create_book` / `update_book` / `delete_book` 变为实例方法，
+  `_check_stock` / `_to_out` 变为静态方法。异常类（`BookNotFoundError` / `BookConflictError` / `BookRuleError`）保持模块级，
+  `app/api/errors.py` 无需改动。
+- 新增 `app/api/deps.py`：`get_book_service` 用请求级 `Session` 构造 `BookService`，并导出类型别名 `BookServiceDep`。
+- `app/api/routes/book.py`：移除 `Session` / `get_db` / `book_service` 导入，端点统一用 `service: BookServiceDep` 调用实例方法。
+- 文档同步：`docs/ORM进模型出模型最佳实践.md` 的服务层示例、目录树与接口示例改为类式写法；
+  `docs/DTO模块说明.md` 的链路路径更新为 `app/db_service/book_service.py`。
+- 验证：89 个单元测试通过；本次改动文件 ruff 零告警；真实 uvicorn 启动 `/books/count` 正常，`/books/999` 返回统一 404。
+
+### 重构：应用入口与路由分离、数据文件移出包、统一错误响应（12:31）
+
+- **P0 应用与路由分离**：新增 `app/api/routes/book.py`（`APIRouter`），删除 `app/api/book.py`；
+  `app/main.py` 改为创建 `FastAPI`、注册 lifespan、`include_router` 与异常处理器。启动命令改为 `uvicorn app.main:app`。
+- **P1 数据文件移出代码包**：`app/db/app.db` → `data/app.db`；`app/db/__init__.py` 的 `DB_DIR` 改为项目根目录 `data/`，
+  默认 SQLite 模式下自动创建目录。`.gitignore` 的 `app.db` 规则仍可跨目录匹配。
+- **统一错误响应**：新增 `app/api/errors.py`，把 `HTTPException`、`RequestValidationError` 与业务异常
+  （`BookNotFoundError` / `BookConflictError` / `BookRuleError`）统一包装成 `ApiResponse`（`code` / `message` / `data`）。
+  路由层移除 `try/except` 与 `_http_error`，业务异常只负责语义，不再关心 HTTP 状态码。
+- 修正 `/slow` 的响应类型为 `dict[str, float | int]`（耗时是浮点数，原声明为 `int`）；函数名 `asyncTest` 改为 `async_test`。
+- `tests/test_book_api.py`：导入改为 `app.main`；新增未知路由统一 404 用例；补充 404/409/422 响应结构断言，共 7 个用例。
+- 文档同步：`README.md`、`docs/SQLAlchemy创建数据库.md`、`docs/ORM进模型出模型最佳实践.md`、
+  `docs/DTO模块说明.md`、`docs/后端调试指南.md`、`docs/Pydantic后端必备.md` 更新启动命令、目录结构与数据文件路径。
+- 验证：89 个单元测试通过；本次改动文件 ruff 零告警；真实 uvicorn 启动后 `/books/count` 正常，
+  `/books/999` 与未知路由均返回 `{"code":404,"message":...,"data":null}`。
+
+### 文档：新增 DTO 模块说明（12:26）
+
+- 新增 `docs/DTO模块说明.md`：解释 `app/dto/` 的定位（接口契约层）、4 个模型的职责、在请求链路中的位置、
+  与 `app/model`、`app/db` 的区别、命名由来及后续扩展约定；注明该目录原名 `app/schema`。
+
+### 调整：接口进出模型目录 app/schema 改名为 app/dto（12:25）
+
+- 目录 `app/schema/` → `app/dto/`，模块名改为 `app.dto.book`；类名与职责不变（`BookBase` / `BookCreate` / `BookUpdate` /
+  `BookOut`）。
+- 同步更新导入：`app/api/book.py`、`app/db_service`。
+- `docs/ORM进模型出模型最佳实践.md` 中的路径、目录树与「接口层只碰 DTO」表述同步更新。
+- 清理旧包残留的 `app/dto/__pycache__`。
+- 验证：`import app.api.book` 正常；88 个单元测试通过；本次改动文件 ruff 零告警；
+  真实 uvicorn 启动 `GET /books/1` 返回图书详情正常。
+
+### 调整：数据库相关文件统一收进 app/db 目录（12:20）
+
+- `app/db.py` → `app/db/__init__.py`（改为包，engine / SessionLocal / Base / get_db 位置不变，`from app.db import ...`
+  仍可用）；
+  `DB_DIR` 改为包所在目录，不再需要 `mkdir`。
+- `app/db_init.py` → `app/db/init.py`，手动初始化命令改为 `uv run python -m app.db.init`。
+- `app/model/book_table.py` → `app/db/book_table.py`。
+- `app/storage/app.db` → `app/db/app.db`，3 条示例数据保留。
+- `app/storage/file_ext.py` → `app/util/file_ext.py`（通用 JSON 文件工具，与数据库无关，无代码引用），随后删除空的
+  `app/storage`。
+- 同步更新导入：`app/api/book.py`（`from app.db.init import init_db`）、`app/db_service`、`tests/test_book_api.py`。
+- `README.md`、`app/config.py` 注释、`docs/SQLAlchemy创建数据库.md`、`docs/ORM进模型出模型最佳实践.md` 中的路径与命令同步更新。
+- `.gitignore` 移除已失效的 `app/storage/identifier.sqlite` 规则；`app.db` 规则仍可跨目录匹配 `app/db/app.db`。
+- 验证：`DATABASE_URL` 指向 `app/db/app.db`；`python -m app.db.init` 幂等（仍为 3 条）；88 个单元测试通过；
+  真实 uvicorn 启动 `/books/count` 返回 3、`/docs` 200；本次改动文件 ruff 零告警。
+
+### 调整：SQLite 库文件迁移到 app/storage（12:14）
+
+- `app/db.py`：`DB_FILE` 由「项目根目录 / app.db」改为「`app/storage/app.db`」，默认路径下首次导入自动创建 `storage` 目录（
+  `DB_DIR.mkdir`）。
+- 现有 `app.db` 已移动到 `app/storage/app.db`，原有 3 条示例图书数据保留。
+- `.gitignore` 的 `app.db` 规则可跨目录匹配，`app/storage/app.db` 已被忽略，无需新增规则。
+- `README.md`、`app/config.py` 注释、`docs/SQLAlchemy创建数据库.md` 中的路径引用同步更新。
+- 验证：`DATABASE_URL` 输出新路径；`python -m app.db_init` 幂等（仍为 3 条）；88 个单元测试通过；本次改动文件 ruff 零告警。
+
+### 清理：移除 PyCharm 生成的 identifier.sqlite（12:09）
+
+- 删除未跟踪文件 `app/storage/identifier.sqlite`：这是 PyCharm Database 面板生成的 SQLite 数据源缓存（内含 `student`
+  表），无代码引用。
+- `.gitignore` 新增 `app/storage/identifier.sqlite`，避免以后误提交。
+- 注意：PyCharm 的 Database 数据源仍在的话，该文件可能被重新生成；如需彻底避免，请在 Database 面板删除对应数据源。
+
+### 功能：图书接口接入 SQLite 数据库，落地 ORM 进出模型分层（12:08）
+
+- 依赖：`pyproject.toml` / `uv.lock` 新增 `sqlalchemy>=2.1.9`。
+- 新增 `app/db.py`：engine（SQLite 默认落项目根目录 `app.db`）、`SessionLocal`、`Base`、`get_db` 依赖；
+  连接串可用 `DATABASE_URL` 覆盖，SQL 回显用 `SQL_ECHO`。
+- 新增 `app/model/book_table.py`：ORM 表模型 `BookTable`，带库存非负、库存不超总数的 `CheckConstraint`，ISBN 唯一索引。
+- 新增 `app/schema/book.py`：`BookBase` / `BookCreate` / `BookUpdate` / `BookOut` 分层模型。
+  `BookCreate` 不接收 `id` 且 `extra="forbid"`；`BookUpdate` 全可选，配合 `exclude_unset`；
+  `BookOut` 加 `from_attributes=True`，价格按两位小数字符串输出。
+- 新增 `app/db_service`：列表 / 计数 / 详情 / 新增 / 更新 / 删除，集中做 ORM 与进出模型转换与业务规则校验；
+  ISBN 冲突抛 `BookConflictError`，库存大于总数抛 `BookRuleError`。
+- 新增 `app/db_init.py`：建表并在空库时写入 3 本示例书，可重复执行；`uv run python -m app.db_init` 手动初始化。
+- `app/api/book.py`：新增 `GET /books/{id}`、`POST /books`、`PATCH /books/{id}`、`DELETE /books/{id}`；
+  `GET /books` 与 `GET /books/count` 改为真实读库；lifespan 启动时自动建表并播种。
+  修正导入 `from api.api_response` → `from app.api.api_response`，从项目根目录启动不再报 `No module named 'api'`。
+- 新增 `tests/test_book_api.py`：使用内存 SQLite 覆盖 CRUD、客户端传 id 被拒、ISBN 冲突 409、
+  库存超总数 422、ISBN 格式 422、图书不存在 404，共 6 个用例全部通过。
+- 新增 `docs/ORM进模型出模型最佳实践.md`：说明 ORM / 进模型 / 出模型的分层、转换位置、校验归属与常见坑。
+- `README.md` 更新接口列表、数据库初始化方式与文档入口；`.gitignore` 忽略 `app.db`。
+- 验证：`uv run python -m unittest tests.test_book_api -v` 6 个用例通过；
+  真实启动 lifespan 后 `/books` 返回 3 本示例书，新增 / 更新 / 删除接口冒烟通过；ruff 零告警。
+
 ## 2026-11-24
 
 ### 文档：新增数据库创建指南（21:06）
 
-- 新增 `docs/SQLAlchemy创建数据库.md`：说明 SQLite + SQLAlchemy 2.0 的建库建表流程——安装依赖、`app/db.py`（engine/session/Base）、ORM 表模型、初始化脚本、FastAPI 依赖注入，以及 PyCharm 连接与命令行查看方式。
+- 新增 `docs/SQLAlchemy创建数据库.md`：说明 SQLite + SQLAlchemy 2.0 的建库建表流程——安装依赖、`app/db.py`
+  （engine/session/Base）、ORM 表模型、初始化脚本、FastAPI 依赖注入，以及 PyCharm 连接与命令行查看方式。
 - 附 MySQL / PostgreSQL 切换方式与连接串示例；说明 pydantic 模型需 `from_attributes=True` 才能从 ORM 对象转换。
 - 内容基于当前项目现状编写：尚无数据库层，`/books` 仍为内存假数据。
 
 ### 文档：校对 AI 工具模块 README 表述（19:39）
 
-- `app/ai_tool/README.md`：火车日期说明改为「支持 ISO 8601 日期（含 `20261127` 等变体），无法解析时报格式错误」，与 `date.fromisoformat()` 的实际行为一致。
+- `app/ai_tool/README.md`：火车日期说明改为「支持 ISO 8601 日期（含 `20261127` 等变体），无法解析时报格式错误」，与
+  `date.fromisoformat()` 的实际行为一致。
 - `app/ai_tool/README.md`：明确 `total` 是应用 `train_code` 过滤后、`limit` 截断前的车次数；补充 `duration_min` 为四舍五入取整。
 - `app/ai_tool/README.md`：`name` 唯一性限定为「同一个 `ToolRegistry` 内」；测试命令前补充「先激活项目虚拟环境」。
 
@@ -107,10 +438,10 @@
 - `MeteoWeatherTool` / `WebSearchTool` 的 `__init__` 新增可选参数 `http: NetClient | None = None`，
   默认自建客户端；测试可注入假实现，不再依赖真实网络。
 - 新增 `tests/test_ai_tool.py`（22 个用例，全部离线）：
-  - `ToolRegistry`：函数定义格式、按名分发、空参数、非法 JSON、非对象、未知工具、`ToolError` 透传、
-    意外异常兜底、重名拒绝、真实工具注册。
-  - 天气工具：当天含实况、指定日期不带实况、日期越界提示、城市不存在、空城市不发起请求、网络异常转为 `ToolError`。
-  - 搜索工具：结果解析（标题 / 链接 / 摘要）、条数上限与钳制、无结果提示、空搜索词不发起请求。
+    - `ToolRegistry`：函数定义格式、按名分发、空参数、非法 JSON、非对象、未知工具、`ToolError` 透传、
+      意外异常兜底、重名拒绝、真实工具注册。
+    - 天气工具：当天含实况、指定日期不带实况、日期越界提示、城市不存在、空城市不发起请求、网络异常转为 `ToolError`。
+    - 搜索工具：结果解析（标题 / 链接 / 摘要）、条数上限与钳制、无结果提示、空搜索词不发起请求。
 - 验证：`python -m unittest discover -s tests` 共 46 个用例全部通过；ruff 零告警。
 
 ### 调整：`base.py` → `base_tool.py`（15:50）
@@ -183,7 +514,8 @@
 
 - 分析 `app/mixins/serializable_mixin.py`：`to_dict` 与 `from_dict` 不对称，导入侧存在静默丢字段。
 - 实测确认三个缺陷：私有字段 `stock` 往返丢失（4 → 5）、`Optional[模型]` 保持 dict、`tuple` 注解回传 list。
-- 另列未知字段被吞、`_dump` 与 JSON 边界不齐（`set/datetime/Enum`）、父类私有字段前缀不剥离等次要问题，并给出轻量声明与换 pydantic/msgspec 两条路线。
+- 另列未知字段被吞、`_dump` 与 JSON 边界不齐（`set/datetime/Enum`）、父类私有字段前缀不剥离等次要问题，并给出轻量声明与换
+  pydantic/msgspec 两条路线。
 - 文档路径：`docs/SerializableMixin代码分析.md`，附录含可复现的隔离验证脚本与输出。
 
 ### 文档：新增《PyCharm 侧边栏 Claude Agent 一直显示正在准备》排查报告（09:15）
