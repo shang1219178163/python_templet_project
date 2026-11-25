@@ -6,6 +6,7 @@
     # 收到 tool_calls 后逐个执行 registry.execute(name, arguments)
 """
 
+from app.ai_tool.mcp_tool import MCPConnection, MCPServerConfig, MCPTool, MCPToolManager
 from app.ai_tool.meteo_weather_tool import MeteoWeatherTool
 from app.ai_tool.ocr_tool import OcrTool
 from app.ai_tool.route_planner_tool import RoutePlannerTool
@@ -17,6 +18,10 @@ __all__ = [
     "BaseTool",
     "ToolError",
     "ToolRegistry",
+    "MCPConnection",
+    "MCPServerConfig",
+    "MCPTool",
+    "MCPToolManager",
     "MeteoWeatherTool",
     "OcrTool",
     "RoutePlannerTool",
