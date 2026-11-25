@@ -6,6 +6,7 @@ from openai.types.chat import ChatCompletionMessageParam, ChatCompletionSystemMe
 from openai.types.chat.chat_completion_message_function_tool_call import ChatCompletionMessageFunctionToolCall
 
 from app.ai_tool import (
+    MCPToolManager,
     MeteoWeatherTool,
     OcrTool,
     RoutePlannerTool,
@@ -32,6 +33,8 @@ class AIChatTest:
             api_key=settings.api_key,
             base_url="https://api.deepseek.com",
         )
+        # 连不上的 MCP server 只告警，不影响本地工具；配置见 app/assets/mcp_servers.json
+        self.mcp = MCPToolManager.from_file().start()
         self.tool_registry = ToolRegistry([
             MeteoWeatherTool(),
             WebSearchTool(),
@@ -39,18 +42,24 @@ class AIChatTest:
             TrainQueryTool(),
             TrainStopsTool(),
             OcrTool(),
+            *self.mcp.tools(),
         ])
         self.messages: list[ChatCompletionMessageParam] = [
             ChatCompletionSystemMessageParam(role="system", content=self.SYSTEM_PROMPT),
         ]
 
     def run(self) -> None:
-        while True:
-            question = input(">> 问题: ").strip()
-            if not question:
-                continue
-            self.messages.append({"role": "user", "content": question})
-            self.reply()
+        try:
+            while True:
+                question = input(">> 问题: ").strip()
+                if not question:
+                    continue
+                self.messages.append({"role": "user", "content": question})
+                self.reply()
+        except (EOFError, KeyboardInterrupt):
+            print()
+        finally:
+            self.mcp.close()
 
     def reply(self) -> None:
         """思考模式下带回完整助手消息，否则带 tools 的后续请求会 400"""
