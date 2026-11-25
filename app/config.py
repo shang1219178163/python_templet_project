@@ -32,6 +32,11 @@ class Settings(BaseSettings):
     api_key: str = ""
     amap_key: str = ""
 
+    # 数据库连接串；留空时由 app/db/__init__.py 使用 data/app.db
+    database_url: str = ""
+    # 是否打印 SQL，排查问题时可设 SQL_ECHO=true
+    sql_echo: bool = False
+
     @property
     def vision_model(self) -> str:
         """带图片的请求用视觉模型，未单独配置时退回默认模型"""

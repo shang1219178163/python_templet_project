@@ -1,602 +1,1002 @@
 [
-  {
-    "title": "算法导论",
-    "author": "Thomas H. Cormen",
-    "isbn": "9787111000013",
-    "industry": "信息技术"
-  },
-  {
-    "title": "计算机程序设计艺术",
-    "author": "Donald E. Knuth",
-    "isbn": "9787302000020",
-    "industry": "信息技术"
-  },
-  {
-    "title": "深入理解计算机系统",
-    "author": "Randal E. Bryant",
-    "isbn": "9787040000030",
-    "industry": "信息技术"
-  },
-  {
-    "title": "计算机网络：自顶向下方法",
-    "author": "James F. Kurose",
-    "isbn": "9787121000041",
-    "industry": "信息技术"
-  },
-  {
-    "title": "数据库系统概念",
-    "author": "Abraham Silberschatz",
-    "isbn": "9787115000057",
-    "industry": "信息技术"
-  },
-  {
-    "title": "操作系统概念",
-    "author": "Abraham Silberschatz",
-    "isbn": "9787117000062",
-    "industry": "信息技术"
-  },
-  {
-    "title": "编译原理",
-    "author": "Alfred V. Aho",
-    "isbn": "9787301000076",
-    "industry": "信息技术"
-  },
-  {
-    "title": "人工智能：一种现代的方法",
-    "author": "Stuart Russell",
-    "isbn": "9787030000088",
-    "industry": "信息技术"
-  },
-  {
-    "title": "机器学习",
-    "author": "周志华",
-    "isbn": "9787303000098",
-    "industry": "信息技术"
-  },
-  {
-    "title": "数据结构（C语言版）",
-    "author": "严蔚敏",
-    "isbn": "9787100000109",
-    "industry": "信息技术"
-  },
-  {
-    "title": "机械原理",
-    "author": "孙桓",
-    "isbn": "9787111000112",
-    "industry": "机械制造"
-  },
-  {
-    "title": "机械设计",
-    "author": "濮良贵",
-    "isbn": "9787302000129",
-    "industry": "机械制造"
-  },
-  {
-    "title": "机械制造技术基础",
-    "author": "卢秉恒",
-    "isbn": "9787040000139",
-    "industry": "机械制造"
-  },
-  {
-    "title": "理论力学",
-    "author": "哈尔滨工业大学理论力学教研室",
-    "isbn": "9787121000140",
-    "industry": "机械制造"
-  },
-  {
-    "title": "材料力学",
-    "author": "刘鸿文",
-    "isbn": "9787115000156",
-    "industry": "机械制造"
-  },
-  {
-    "title": "工程热力学",
-    "author": "沈维道",
-    "isbn": "9787117000161",
-    "industry": "机械制造"
-  },
-  {
-    "title": "流体力学",
-    "author": "张也影",
-    "isbn": "9787301000175",
-    "industry": "机械制造"
-  },
-  {
-    "title": "机械工程控制基础",
-    "author": "杨叔子",
-    "isbn": "9787030000187",
-    "industry": "机械制造"
-  },
-  {
-    "title": "数控技术",
-    "author": "廖效果",
-    "isbn": "9787303000197",
-    "industry": "机械制造"
-  },
-  {
-    "title": "先进制造技术",
-    "author": "王润孝",
-    "isbn": "9787100000208",
-    "industry": "机械制造"
-  },
-  {
-    "title": "电路",
-    "author": "邱关源",
-    "isbn": "9787111000211",
-    "industry": "电子信息"
-  },
-  {
-    "title": "模拟电子技术基础",
-    "author": "童诗白",
-    "isbn": "9787302000228",
-    "industry": "电子信息"
-  },
-  {
-    "title": "数字电子技术基础",
-    "author": "阎石",
-    "isbn": "9787040000238",
-    "industry": "电子信息"
-  },
-  {
-    "title": "信号与系统",
-    "author": "Alan V. Oppenheim",
-    "isbn": "9787121000249",
-    "industry": "电子信息"
-  },
-  {
-    "title": "数字信号处理",
-    "author": "程佩青",
-    "isbn": "9787115000255",
-    "industry": "电子信息"
-  },
-  {
-    "title": "通信原理",
-    "author": "樊昌信",
-    "isbn": "9787117000260",
-    "industry": "电子信息"
-  },
-  {
-    "title": "电磁场与电磁波",
-    "author": "谢处方",
-    "isbn": "9787301000274",
-    "industry": "电子信息"
-  },
-  {
-    "title": "高频电子线路",
-    "author": "张肃文",
-    "isbn": "9787030000286",
-    "industry": "电子信息"
-  },
-  {
-    "title": "单片机原理及应用",
-    "author": "张毅刚",
-    "isbn": "9787303000296",
-    "industry": "电子信息"
-  },
-  {
-    "title": "射频电路设计：理论与应用",
-    "author": "Reinhold Ludwig",
-    "isbn": "9787100000307",
-    "industry": "电子信息"
-  },
-  {
-    "title": "结构力学",
-    "author": "龙驭球",
-    "isbn": "9787111000310",
-    "industry": "土木建筑"
-  },
-  {
-    "title": "土力学",
-    "author": "陈希哲",
-    "isbn": "9787302000327",
-    "industry": "土木建筑"
-  },
-  {
-    "title": "混凝土结构设计原理",
-    "author": "东南大学",
-    "isbn": "9787040000337",
-    "industry": "土木建筑"
-  },
-  {
-    "title": "钢结构设计原理",
-    "author": "陈绍蕃",
-    "isbn": "9787121000348",
-    "industry": "土木建筑"
-  },
-  {
-    "title": "工程测量学",
-    "author": "李青岳",
-    "isbn": "9787115000354",
-    "industry": "土木建筑"
-  },
-  {
-    "title": "房屋建筑学",
-    "author": "同济大学",
-    "isbn": "9787117000369",
-    "industry": "土木建筑"
-  },
-  {
-    "title": "建筑材料",
-    "author": "湖南大学",
-    "isbn": "9787301000373",
-    "industry": "土木建筑"
-  },
-  {
-    "title": "土木工程概论",
-    "author": "叶志明",
-    "isbn": "9787030000385",
-    "industry": "土木建筑"
-  },
-  {
-    "title": "桥梁工程",
-    "author": "范立础",
-    "isbn": "9787303000395",
-    "industry": "土木建筑"
-  },
-  {
-    "title": "基础工程",
-    "author": "周景星",
-    "isbn": "9787100000406",
-    "industry": "土木建筑"
-  },
-  {
-    "title": "系统解剖学",
-    "author": "柏树令",
-    "isbn": "9787111000419",
-    "industry": "医学健康"
-  },
-  {
-    "title": "生理学",
-    "author": "王庭槐",
-    "isbn": "9787302000426",
-    "industry": "医学健康"
-  },
-  {
-    "title": "生物化学",
-    "author": "查锡良",
-    "isbn": "9787040000436",
-    "industry": "医学健康"
-  },
-  {
-    "title": "病理学",
-    "author": "李玉林",
-    "isbn": "9787121000447",
-    "industry": "医学健康"
-  },
-  {
-    "title": "药理学",
-    "author": "杨宝峰",
-    "isbn": "9787115000453",
-    "industry": "医学健康"
-  },
-  {
-    "title": "内科学",
-    "author": "葛均波",
-    "isbn": "9787117000468",
-    "industry": "医学健康"
-  },
-  {
-    "title": "外科学",
-    "author": "陈孝平",
-    "isbn": "9787301000472",
-    "industry": "医学健康"
-  },
-  {
-    "title": "妇产科学",
-    "author": "谢幸",
-    "isbn": "9787030000484",
-    "industry": "医学健康"
-  },
-  {
-    "title": "儿科学",
-    "author": "王卫平",
-    "isbn": "9787303000494",
-    "industry": "医学健康"
-  },
-  {
-    "title": "医学统计学",
-    "author": "孙振球",
-    "isbn": "9787100000505",
-    "industry": "医学健康"
-  },
-  {
-    "title": "经济学原理",
-    "author": "N. Gregory Mankiw",
-    "isbn": "9787111000518",
-    "industry": "经济管理"
-  },
-  {
-    "title": "微观经济学：现代观点",
-    "author": "Hal R. Varian",
-    "isbn": "9787302000525",
-    "industry": "经济管理"
-  },
-  {
-    "title": "宏观经济学",
-    "author": "Olivier Blanchard",
-    "isbn": "9787040000535",
-    "industry": "经济管理"
-  },
-  {
-    "title": "管理学",
-    "author": "Stephen P. Robbins",
-    "isbn": "9787121000546",
-    "industry": "经济管理"
-  },
-  {
-    "title": "会计学原理",
-    "author": "Jerry J. Weygandt",
-    "isbn": "9787115000552",
-    "industry": "经济管理"
-  },
-  {
-    "title": "公司理财",
-    "author": "Stephen A. Ross",
-    "isbn": "9787117000567",
-    "industry": "经济管理"
-  },
-  {
-    "title": "金融学",
-    "author": "黄达",
-    "isbn": "9787301000571",
-    "industry": "经济管理"
-  },
-  {
-    "title": "市场营销原理",
-    "author": "Philip Kotler",
-    "isbn": "9787030000583",
-    "industry": "经济管理"
-  },
-  {
-    "title": "统计学",
-    "author": "贾俊平",
-    "isbn": "9787303000593",
-    "industry": "经济管理"
-  },
-  {
-    "title": "运筹学",
-    "author": "《运筹学》教材编写组",
-    "isbn": "9787100000604",
-    "industry": "经济管理"
-  },
-  {
-    "title": "法理学",
-    "author": "张文显",
-    "isbn": "9787111000617",
-    "industry": "法学"
-  },
-  {
-    "title": "宪法",
-    "author": "周叶中",
-    "isbn": "9787302000624",
-    "industry": "法学"
-  },
-  {
-    "title": "民法学",
-    "author": "王利明",
-    "isbn": "9787040000634",
-    "industry": "法学"
-  },
-  {
-    "title": "刑法学",
-    "author": "张明楷",
-    "isbn": "9787121000645",
-    "industry": "法学"
-  },
-  {
-    "title": "行政法与行政诉讼法",
-    "author": "姜明安",
-    "isbn": "9787115000651",
-    "industry": "法学"
-  },
-  {
-    "title": "商法学",
-    "author": "范健",
-    "isbn": "9787117000666",
-    "industry": "法学"
-  },
-  {
-    "title": "经济法学",
-    "author": "杨紫烜",
-    "isbn": "9787301000670",
-    "industry": "法学"
-  },
-  {
-    "title": "民事诉讼法学",
-    "author": "江伟",
-    "isbn": "9787030000682",
-    "industry": "法学"
-  },
-  {
-    "title": "刑事诉讼法学",
-    "author": "陈光中",
-    "isbn": "9787303000692",
-    "industry": "法学"
-  },
-  {
-    "title": "国际法",
-    "author": "邵津",
-    "isbn": "9787100000703",
-    "industry": "法学"
-  },
-  {
-    "title": "教育学",
-    "author": "王道俊",
-    "isbn": "9787111000716",
-    "industry": "教育学"
-  },
-  {
-    "title": "教育心理学",
-    "author": "陈琦",
-    "isbn": "9787302000723",
-    "industry": "教育学"
-  },
-  {
-    "title": "中国教育史",
-    "author": "孙培青",
-    "isbn": "9787040000733",
-    "industry": "教育学"
-  },
-  {
-    "title": "外国教育史教程",
-    "author": "吴式颖",
-    "isbn": "9787121000744",
-    "industry": "教育学"
-  },
-  {
-    "title": "课程与教学论",
-    "author": "王本陆",
-    "isbn": "9787115000750",
-    "industry": "教育学"
-  },
-  {
-    "title": "教育研究方法导论",
-    "author": "裴娣娜",
-    "isbn": "9787117000765",
-    "industry": "教育学"
-  },
-  {
-    "title": "教育哲学",
-    "author": "石中英",
-    "isbn": "9787301000779",
-    "industry": "教育学"
-  },
-  {
-    "title": "高等教育学",
-    "author": "潘懋元",
-    "isbn": "9787030000781",
-    "industry": "教育学"
-  },
-  {
-    "title": "比较教育学",
-    "author": "冯增俊",
-    "isbn": "9787303000791",
-    "industry": "教育学"
-  },
-  {
-    "title": "学会教学",
-    "author": "Richard I. Arends",
-    "isbn": "9787100000802",
-    "industry": "教育学"
-  },
-  {
-    "title": "文学理论教程",
-    "author": "童庆炳",
-    "isbn": "9787111000815",
-    "industry": "文学人文"
-  },
-  {
-    "title": "中国现代文学三十年",
-    "author": "钱理群",
-    "isbn": "9787302000822",
-    "industry": "文学人文"
-  },
-  {
-    "title": "中国文学史",
-    "author": "袁行霈",
-    "isbn": "9787040000832",
-    "industry": "文学人文"
-  },
-  {
-    "title": "外国文学史",
-    "author": "郑克鲁",
-    "isbn": "9787121000843",
-    "industry": "文学人文"
-  },
-  {
-    "title": "语言学纲要",
-    "author": "叶蜚声",
-    "isbn": "9787115000859",
-    "industry": "文学人文"
-  },
-  {
-    "title": "古代汉语",
-    "author": "王力",
-    "isbn": "9787117000864",
-    "industry": "文学人文"
-  },
-  {
-    "title": "现代汉语",
-    "author": "黄伯荣",
-    "isbn": "9787301000878",
-    "industry": "文学人文"
-  },
-  {
-    "title": "中国哲学史",
-    "author": "冯友兰",
-    "isbn": "9787030000880",
-    "industry": "文学人文"
-  },
-  {
-    "title": "西方哲学史",
-    "author": "伯特兰·罗素",
-    "isbn": "9787303000890",
-    "industry": "文学人文"
-  },
-  {
-    "title": "美学原理",
-    "author": "叶朗",
-    "isbn": "9787100000901",
-    "industry": "文学人文"
-  },
-  {
-    "title": "环境工程学",
-    "author": "蒋展鹏",
-    "isbn": "9787111000914",
-    "industry": "环境能源"
-  },
-  {
-    "title": "环境化学",
-    "author": "戴树桂",
-    "isbn": "9787302000921",
-    "industry": "环境能源"
-  },
-  {
-    "title": "环境监测",
-    "author": "奚旦立",
-    "isbn": "9787040000931",
-    "industry": "环境能源"
-  },
-  {
-    "title": "水污染控制工程",
-    "author": "高廷耀",
-    "isbn": "9787121000942",
-    "industry": "环境能源"
-  },
-  {
-    "title": "大气污染控制工程",
-    "author": "郝吉明",
-    "isbn": "9787115000958",
-    "industry": "环境能源"
-  },
-  {
-    "title": "固体废物处理与处置",
-    "author": "宁平",
-    "isbn": "9787117000963",
-    "industry": "环境能源"
-  },
-  {
-    "title": "传热学",
-    "author": "杨世铭",
-    "isbn": "9787301000977",
-    "industry": "环境能源"
-  },
-  {
-    "title": "燃烧学",
-    "author": "汪军",
-    "isbn": "9787030000989",
-    "industry": "环境能源"
-  },
-  {
-    "title": "新能源技术",
-    "author": "黄素逸",
-    "isbn": "9787303000999",
-    "industry": "环境能源"
-  },
-  {
-    "title": "太阳能光伏发电技术",
-    "author": "赵争鸣",
-    "isbn": "9787100001007",
-    "industry": "环境能源"
-  }
+    {
+        "title": "算法导论",
+        "author": "Thomas H. Cormen",
+        "publisher": "机械工业出版社",
+        "isbn": "9787111000013",
+        "price": "128.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "信息技术"
+    },
+    {
+        "title": "计算机程序设计艺术",
+        "author": "Donald E. Knuth",
+        "publisher": "国防工业出版社",
+        "isbn": "9787302000020",
+        "price": "98.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "信息技术"
+    },
+    {
+        "title": "深入理解计算机系统",
+        "author": "Randal E. Bryant",
+        "publisher": "机械工业出版社",
+        "isbn": "9787040000030",
+        "price": "139.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "信息技术"
+    },
+    {
+        "title": "计算机网络：自顶向下方法",
+        "author": "James F. Kurose",
+        "publisher": "机械工业出版社",
+        "isbn": "9787121000041",
+        "price": "129.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "信息技术"
+    },
+    {
+        "title": "数据库系统概念",
+        "author": "Abraham Silberschatz",
+        "publisher": "机械工业出版社",
+        "isbn": "9787115000057",
+        "price": "149.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "信息技术"
+    },
+    {
+        "title": "操作系统概念",
+        "author": "Abraham Silberschatz",
+        "publisher": "机械工业出版社",
+        "isbn": "9787117000062",
+        "price": "99.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "信息技术"
+    },
+    {
+        "title": "编译原理",
+        "author": "Alfred V. Aho",
+        "publisher": "机械工业出版社",
+        "isbn": "9787301000076",
+        "price": "89.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "信息技术"
+    },
+    {
+        "title": "人工智能：一种现代的方法",
+        "author": "Stuart Russell",
+        "publisher": "清华大学出版社",
+        "isbn": "9787030000088",
+        "price": "128.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "信息技术"
+    },
+    {
+        "title": "机器学习",
+        "author": "周志华",
+        "publisher": "清华大学出版社",
+        "isbn": "9787303000098",
+        "price": "108.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "信息技术"
+    },
+    {
+        "title": "数据结构（C语言版）",
+        "author": "严蔚敏",
+        "publisher": "清华大学出版社",
+        "isbn": "9787100000109",
+        "price": "49.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "信息技术"
+    },
+    {
+        "title": "机械原理",
+        "author": "孙桓",
+        "publisher": "高等教育出版社",
+        "isbn": "9787111000112",
+        "price": "53.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "机械制造"
+    },
+    {
+        "title": "机械设计",
+        "author": "濮良贵",
+        "publisher": "高等教育出版社",
+        "isbn": "9787302000129",
+        "price": "52.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "机械制造"
+    },
+    {
+        "title": "机械制造技术基础",
+        "author": "卢秉恒",
+        "publisher": "机械工业出版社",
+        "isbn": "9787040000139",
+        "price": "59.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "机械制造"
+    },
+    {
+        "title": "理论力学",
+        "author": "哈尔滨工业大学理论力学教研室",
+        "publisher": "高等教育出版社",
+        "isbn": "9787121000140",
+        "price": "52.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "机械制造"
+    },
+    {
+        "title": "材料力学",
+        "author": "刘鸿文",
+        "publisher": "高等教育出版社",
+        "isbn": "9787115000156",
+        "price": "52.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "机械制造"
+    },
+    {
+        "title": "工程热力学",
+        "author": "沈维道",
+        "publisher": "高等教育出版社",
+        "isbn": "9787117000161",
+        "price": "54.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "机械制造"
+    },
+    {
+        "title": "流体力学",
+        "author": "张也影",
+        "publisher": "高等教育出版社",
+        "isbn": "9787301000175",
+        "price": "13.60",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "机械制造"
+    },
+    {
+        "title": "机械工程控制基础",
+        "author": "杨叔子",
+        "publisher": "华中科技大学出版社",
+        "isbn": "9787030000187",
+        "price": "39.80",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "机械制造"
+    },
+    {
+        "title": "数控技术",
+        "author": "廖效果",
+        "publisher": "华中科技大学出版社",
+        "isbn": "9787303000197",
+        "price": "34.80",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "机械制造"
+    },
+    {
+        "title": "先进制造技术",
+        "author": "王润孝",
+        "publisher": "科学出版社",
+        "isbn": "9787100000208",
+        "price": "69.80",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "机械制造"
+    },
+    {
+        "title": "电路",
+        "author": "邱关源",
+        "publisher": "高等教育出版社",
+        "isbn": "9787111000211",
+        "price": "59.90",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "电子信息"
+    },
+    {
+        "title": "模拟电子技术基础",
+        "author": "童诗白",
+        "publisher": "高等教育出版社",
+        "isbn": "9787302000228",
+        "price": "59.90",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "电子信息"
+    },
+    {
+        "title": "数字电子技术基础",
+        "author": "阎石",
+        "publisher": "高等教育出版社",
+        "isbn": "9787040000238",
+        "price": "54.40",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "电子信息"
+    },
+    {
+        "title": "信号与系统",
+        "author": "Alan V. Oppenheim",
+        "publisher": "电子工业出版社",
+        "isbn": "9787121000249",
+        "price": "69.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "电子信息"
+    },
+    {
+        "title": "数字信号处理",
+        "author": "程佩青",
+        "publisher": "清华大学出版社",
+        "isbn": "9787115000255",
+        "price": "69.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "电子信息"
+    },
+    {
+        "title": "通信原理",
+        "author": "樊昌信",
+        "publisher": "国防工业出版社",
+        "isbn": "9787117000260",
+        "price": "58.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "电子信息"
+    },
+    {
+        "title": "电磁场与电磁波",
+        "author": "谢处方",
+        "publisher": "高等教育出版社",
+        "isbn": "9787301000274",
+        "price": "51.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "电子信息"
+    },
+    {
+        "title": "高频电子线路",
+        "author": "张肃文",
+        "publisher": "高等教育出版社",
+        "isbn": "9787030000286",
+        "price": "52.30",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "电子信息"
+    },
+    {
+        "title": "单片机原理及应用",
+        "author": "张毅刚",
+        "publisher": "高等教育出版社",
+        "isbn": "9787303000296",
+        "price": "52.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "电子信息"
+    },
+    {
+        "title": "射频电路设计：理论与应用",
+        "author": "Reinhold Ludwig",
+        "publisher": "电子工业出版社",
+        "isbn": "9787100000307",
+        "price": "79.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "电子信息"
+    },
+    {
+        "title": "结构力学",
+        "author": "龙驭球",
+        "publisher": "高等教育出版社",
+        "isbn": "9787111000310",
+        "price": "72.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "土木建筑"
+    },
+    {
+        "title": "土力学",
+        "author": "陈希哲",
+        "publisher": "清华大学出版社",
+        "isbn": "9787302000327",
+        "price": "98.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "土木建筑"
+    },
+    {
+        "title": "混凝土结构设计原理",
+        "author": "东南大学",
+        "publisher": "中国建筑工业出版社",
+        "isbn": "9787040000337",
+        "price": "58.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "土木建筑"
+    },
+    {
+        "title": "钢结构设计原理",
+        "author": "陈绍蕃",
+        "publisher": "科学出版社",
+        "isbn": "9787121000348",
+        "price": "90.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "土木建筑"
+    },
+    {
+        "title": "工程测量学",
+        "author": "李青岳",
+        "publisher": "测绘出版社",
+        "isbn": "9787115000354",
+        "price": "39.80",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "土木建筑"
+    },
+    {
+        "title": "房屋建筑学",
+        "author": "同济大学",
+        "publisher": "中国建筑工业出版社",
+        "isbn": "9787117000369",
+        "price": "59.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "土木建筑"
+    },
+    {
+        "title": "建筑材料",
+        "author": "湖南大学",
+        "publisher": "中国建筑工业出版社",
+        "isbn": "9787301000373",
+        "price": "19.20",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "土木建筑"
+    },
+    {
+        "title": "土木工程概论",
+        "author": "叶志明",
+        "publisher": "高等教育出版社",
+        "isbn": "9787030000385",
+        "price": "45.80",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "土木建筑"
+    },
+    {
+        "title": "桥梁工程",
+        "author": "范立础",
+        "publisher": "人民交通出版社",
+        "isbn": "9787303000395",
+        "price": "54.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "土木建筑"
+    },
+    {
+        "title": "基础工程",
+        "author": "周景星",
+        "publisher": "清华大学出版社",
+        "isbn": "9787100000406",
+        "price": "79.80",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "土木建筑"
+    },
+    {
+        "title": "系统解剖学",
+        "author": "柏树令",
+        "publisher": "人民卫生出版社",
+        "isbn": "9787111000419",
+        "price": "99.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "医学健康"
+    },
+    {
+        "title": "生理学",
+        "author": "王庭槐",
+        "publisher": "人民卫生出版社",
+        "isbn": "9787302000426",
+        "price": "75.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "医学健康"
+    },
+    {
+        "title": "生物化学",
+        "author": "查锡良",
+        "publisher": "人民卫生出版社",
+        "isbn": "9787040000436",
+        "price": "79.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "医学健康"
+    },
+    {
+        "title": "病理学",
+        "author": "李玉林",
+        "publisher": "人民卫生出版社",
+        "isbn": "9787121000447",
+        "price": "88.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "医学健康"
+    },
+    {
+        "title": "药理学",
+        "author": "杨宝峰",
+        "publisher": "人民卫生出版社",
+        "isbn": "9787115000453",
+        "price": "79.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "医学健康"
+    },
+    {
+        "title": "内科学",
+        "author": "葛均波",
+        "publisher": "人民卫生出版社",
+        "isbn": "9787117000468",
+        "price": "118.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "医学健康"
+    },
+    {
+        "title": "外科学",
+        "author": "陈孝平",
+        "publisher": "人民卫生出版社",
+        "isbn": "9787301000472",
+        "price": "116.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "医学健康"
+    },
+    {
+        "title": "妇产科学",
+        "author": "谢幸",
+        "publisher": "人民卫生出版社",
+        "isbn": "9787030000484",
+        "price": "82.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "医学健康"
+    },
+    {
+        "title": "儿科学",
+        "author": "王卫平",
+        "publisher": "人民卫生出版社",
+        "isbn": "9787303000494",
+        "price": "78.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "医学健康"
+    },
+    {
+        "title": "医学统计学",
+        "author": "孙振球",
+        "publisher": "人民卫生出版社",
+        "isbn": "9787100000505",
+        "price": "119.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "医学健康"
+    },
+    {
+        "title": "经济学原理",
+        "author": "N. Gregory Mankiw",
+        "publisher": "北京大学出版社",
+        "isbn": "9787111000518",
+        "price": "109.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "经济管理"
+    },
+    {
+        "title": "微观经济学：现代观点",
+        "author": "Hal R. Varian",
+        "publisher": "格致出版社",
+        "isbn": "9787302000525",
+        "price": "65.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "经济管理"
+    },
+    {
+        "title": "宏观经济学",
+        "author": "Olivier Blanchard",
+        "publisher": "清华大学出版社",
+        "isbn": "9787040000535",
+        "price": "89.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "经济管理"
+    },
+    {
+        "title": "管理学",
+        "author": "Stephen P. Robbins",
+        "publisher": "中国人民大学出版社",
+        "isbn": "9787121000546",
+        "price": "75.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "经济管理"
+    },
+    {
+        "title": "会计学原理",
+        "author": "Jerry J. Weygandt",
+        "publisher": "中国人民大学出版社",
+        "isbn": "9787115000552",
+        "price": "89.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "经济管理"
+    },
+    {
+        "title": "公司理财",
+        "author": "Stephen A. Ross",
+        "publisher": "机械工业出版社",
+        "isbn": "9787117000567",
+        "price": "119.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "经济管理"
+    },
+    {
+        "title": "金融学",
+        "author": "黄达",
+        "publisher": "中国人民大学出版社",
+        "isbn": "9787301000571",
+        "price": "82.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "经济管理"
+    },
+    {
+        "title": "市场营销原理",
+        "author": "Philip Kotler",
+        "publisher": "清华大学出版社",
+        "isbn": "9787030000583",
+        "price": "75.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "经济管理"
+    },
+    {
+        "title": "统计学",
+        "author": "贾俊平",
+        "publisher": "中国人民大学出版社",
+        "isbn": "9787303000593",
+        "price": "42.80",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "经济管理"
+    },
+    {
+        "title": "运筹学",
+        "author": "《运筹学》教材编写组",
+        "publisher": "清华大学出版社",
+        "isbn": "9787100000604",
+        "price": "39.80",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "经济管理"
+    },
+    {
+        "title": "法理学",
+        "author": "张文显",
+        "publisher": "高等教育出版社",
+        "isbn": "9787111000617",
+        "price": "56.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "法学"
+    },
+    {
+        "title": "宪法",
+        "author": "周叶中",
+        "publisher": "高等教育出版社",
+        "isbn": "9787302000624",
+        "price": "56.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "法学"
+    },
+    {
+        "title": "民法学",
+        "author": "王利明",
+        "publisher": "中国人民大学出版社",
+        "isbn": "9787040000634",
+        "price": "128.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "法学"
+    },
+    {
+        "title": "刑法学",
+        "author": "张明楷",
+        "publisher": "法律出版社",
+        "isbn": "9787121000645",
+        "price": "208.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "法学"
+    },
+    {
+        "title": "行政法与行政诉讼法",
+        "author": "姜明安",
+        "publisher": "北京大学出版社",
+        "isbn": "9787115000651",
+        "price": "85.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "法学"
+    },
+    {
+        "title": "商法学",
+        "author": "范健",
+        "publisher": "高等教育出版社",
+        "isbn": "9787117000666",
+        "price": "49.50",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "法学"
+    },
+    {
+        "title": "经济法学",
+        "author": "杨紫烜",
+        "publisher": "北京大学出版社",
+        "isbn": "9787301000670",
+        "price": "55.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "法学"
+    },
+    {
+        "title": "民事诉讼法学",
+        "author": "江伟",
+        "publisher": "高等教育出版社",
+        "isbn": "9787030000682",
+        "price": "76.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "法学"
+    },
+    {
+        "title": "刑事诉讼法学",
+        "author": "陈光中",
+        "publisher": "北京大学出版社",
+        "isbn": "9787303000692",
+        "price": "56.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "法学"
+    },
+    {
+        "title": "国际法",
+        "author": "邵津",
+        "publisher": "北京大学出版社",
+        "isbn": "9787100000703",
+        "price": "79.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "法学"
+    },
+    {
+        "title": "教育学",
+        "author": "王道俊",
+        "publisher": "人民教育出版社",
+        "isbn": "9787111000716",
+        "price": "39.80",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "教育学"
+    },
+    {
+        "title": "教育心理学",
+        "author": "陈琦",
+        "publisher": "高等教育出版社",
+        "isbn": "9787302000723",
+        "price": "58.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "教育学"
+    },
+    {
+        "title": "中国教育史",
+        "author": "孙培青",
+        "publisher": "华东师范大学出版社",
+        "isbn": "9787040000733",
+        "price": "68.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "教育学"
+    },
+    {
+        "title": "外国教育史教程",
+        "author": "吴式颖",
+        "publisher": "人民教育出版社",
+        "isbn": "9787121000744",
+        "price": "49.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "教育学"
+    },
+    {
+        "title": "课程与教学论",
+        "author": "王本陆",
+        "publisher": "高等教育出版社",
+        "isbn": "9787115000750",
+        "price": "36.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "教育学"
+    },
+    {
+        "title": "教育研究方法导论",
+        "author": "裴娣娜",
+        "publisher": "安徽教育出版社",
+        "isbn": "9787117000765",
+        "price": "28.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "教育学"
+    },
+    {
+        "title": "教育哲学",
+        "author": "石中英",
+        "publisher": "北京师范大学出版社",
+        "isbn": "9787301000779",
+        "price": "30.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "教育学"
+    },
+    {
+        "title": "高等教育学",
+        "author": "潘懋元",
+        "publisher": "福建教育出版社",
+        "isbn": "9787030000781",
+        "price": "38.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "教育学"
+    },
+    {
+        "title": "比较教育学",
+        "author": "冯增俊",
+        "publisher": "人民教育出版社",
+        "isbn": "9787303000791",
+        "price": "37.30",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "教育学"
+    },
+    {
+        "title": "学会教学",
+        "author": "Richard I. Arends",
+        "publisher": "华东师范大学出版社",
+        "isbn": "9787100000802",
+        "price": "68.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "教育学"
+    },
+    {
+        "title": "文学理论教程",
+        "author": "童庆炳",
+        "publisher": "高等教育出版社",
+        "isbn": "9787111000815",
+        "price": "51.80",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "文学人文"
+    },
+    {
+        "title": "中国现代文学三十年",
+        "author": "钱理群",
+        "publisher": "北京大学出版社",
+        "isbn": "9787302000822",
+        "price": "99.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "文学人文"
+    },
+    {
+        "title": "中国文学史",
+        "author": "袁行霈",
+        "publisher": "高等教育出版社",
+        "isbn": "9787040000832",
+        "price": "187.70",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "文学人文"
+    },
+    {
+        "title": "外国文学史",
+        "author": "郑克鲁",
+        "publisher": "高等教育出版社",
+        "isbn": "9787121000843",
+        "price": "39.80",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "文学人文"
+    },
+    {
+        "title": "语言学纲要",
+        "author": "叶蜚声",
+        "publisher": "北京大学出版社",
+        "isbn": "9787115000859",
+        "price": "79.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "文学人文"
+    },
+    {
+        "title": "古代汉语",
+        "author": "王力",
+        "publisher": "中华书局",
+        "isbn": "9787117000864",
+        "price": "110.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "文学人文"
+    },
+    {
+        "title": "现代汉语",
+        "author": "黄伯荣",
+        "publisher": "高等教育出版社",
+        "isbn": "9787301000878",
+        "price": "68.60",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "文学人文"
+    },
+    {
+        "title": "中国哲学史",
+        "author": "冯友兰",
+        "publisher": "中华书局",
+        "isbn": "9787030000880",
+        "price": "75.00",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "文学人文"
+    },
+    {
+        "title": "西方哲学史",
+        "author": "伯特兰·罗素",
+        "publisher": "商务印书馆",
+        "isbn": "9787303000890",
+        "price": "68.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "文学人文"
+    },
+    {
+        "title": "美学原理",
+        "author": "叶朗",
+        "publisher": "北京大学出版社",
+        "isbn": "9787100000901",
+        "price": "38.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "文学人文"
+    },
+    {
+        "title": "环境工程学",
+        "author": "蒋展鹏",
+        "publisher": "高等教育出版社",
+        "isbn": "9787111000914",
+        "price": "52.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "环境能源"
+    },
+    {
+        "title": "环境化学",
+        "author": "戴树桂",
+        "publisher": "高等教育出版社",
+        "isbn": "9787302000921",
+        "price": "53.90",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "环境能源"
+    },
+    {
+        "title": "环境监测",
+        "author": "奚旦立",
+        "publisher": "高等教育出版社",
+        "isbn": "9787040000931",
+        "price": "59.40",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "环境能源"
+    },
+    {
+        "title": "水污染控制工程",
+        "author": "高廷耀",
+        "publisher": "高等教育出版社",
+        "isbn": "9787121000942",
+        "price": "55.30",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "环境能源"
+    },
+    {
+        "title": "大气污染控制工程",
+        "author": "郝吉明",
+        "publisher": "高等教育出版社",
+        "isbn": "9787115000958",
+        "price": "53.80",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "环境能源"
+    },
+    {
+        "title": "固体废物处理与处置",
+        "author": "宁平",
+        "publisher": "高等教育出版社",
+        "isbn": "9787117000963",
+        "price": "47.00",
+        "total_num": 2,
+        "stock": 2,
+        "industry": "环境能源"
+    },
+    {
+        "title": "传热学",
+        "author": "杨世铭",
+        "publisher": "高等教育出版社",
+        "isbn": "9787301000977",
+        "price": "52.00",
+        "total_num": 3,
+        "stock": 3,
+        "industry": "环境能源"
+    },
+    {
+        "title": "燃烧学",
+        "author": "汪军",
+        "publisher": "中国电力出版社",
+        "isbn": "9787030000989",
+        "price": "39.80",
+        "total_num": 4,
+        "stock": 4,
+        "industry": "环境能源"
+    },
+    {
+        "title": "新能源技术",
+        "author": "黄素逸",
+        "publisher": "中国电力出版社",
+        "isbn": "9787303000999",
+        "price": "38.00",
+        "total_num": 5,
+        "stock": 5,
+        "industry": "环境能源"
+    },
+    {
+        "title": "太阳能光伏发电技术",
+        "author": "赵争鸣",
+        "publisher": "化学工业出版社",
+        "isbn": "9787100001007",
+        "price": "28.00",
+        "total_num": 1,
+        "stock": 1,
+        "industry": "环境能源"
+    }
 ]
