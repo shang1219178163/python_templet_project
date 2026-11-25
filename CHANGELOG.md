@@ -2,6 +2,17 @@
 
 ## 2026-11-25
 
+### 简化：AI 对话合并提示词与入口（21:55）
+
+- `app/page/ai_chat/prompt.py` 并入 `chat.py`：系统提示词改为模块内的 `_system_prompt()`，
+  仍每次构造对话时生成；减少一个只被单处使用的文件。
+- `app/page/ai_chat/main.py` 改为 `__main__.py`：入口变为 `python -m app.page.ai_chat`，
+  文件数不变但符合 Python 包入口惯例。
+- 包结构从 6 个 Python 文件减为 5 个：`__init__.py`、`__main__.py`、`chat.py`、
+  `stream.py`、`config.py`；功能与测试行为不变。
+- 文档同步：README 的结构图、运行命令与职责表，`__init__.py` 的 docstring。
+- 验证：全量 129 个测试通过；`python -m app.page.ai_chat` 可正常启动与退出。
+
 ### 调整：AI 对话增加配置，流式消费改为类方法（21:51）
 
 - 新增 `app/page/ai_chat/config.py`：`AIChatConfig`（pydantic-settings，前缀 `AI_CHAT_`），

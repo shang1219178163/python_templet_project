@@ -7,11 +7,10 @@
 ```
 app/page/ai_chat/
 ├── __init__.py   # 包入口，导出 AIChat
-├── chat.py       # AIChat：模型客户端、工具注册表、消息历史与问答循环
+├── __main__.py   # 命令行入口：python -m app.page.ai_chat
+├── chat.py       # 系统提示词 + AIChat：客户端、工具注册表、消息历史与问答循环
 ├── stream.py     # StreamConsumer：流式分片累积、思考/正文打印
-├── config.py     # AIChatConfig：模型、接口地址与循环参数
-├── prompt.py     # build_system_prompt：系统提示词（含当前时间）
-└── main.py       # 命令行入口
+└── config.py     # AIChatConfig：模型、接口地址与循环参数
 ```
 
 ## 运行
@@ -19,7 +18,7 @@ app/page/ai_chat/
 在项目根目录执行：
 
 ```bash
-python -m app.page.ai_chat.main
+python -m app.page.ai_chat
 ```
 
 需要 `.env` 里的 `API_KEY`（DeepSeek）。MCP server 配在 `app/assets/mcp_servers.json`，留空则只用本地工具。
@@ -28,11 +27,10 @@ python -m app.page.ai_chat.main
 
 | 文件 | 职责 |
 | --- | --- |
-| `chat.py` | `AIChat.reply()` 循环：流式请求 → 有 `tool_calls` 就执行并回传 → 直到最终回答；轮次上限来自配置 |
+| `chat.py` | `AIChat.reply()` 循环：流式请求 → 有 `tool_calls` 就执行并回传 → 直到最终回答；轮次上限来自配置。系统提示词 `_system_prompt()` 也在这里，每次构造对话时生成 |
 | `stream.py` | `StreamConsumer.consume()`：把分片拼成完整助手消息——`reasoning_content`、`content` 分别拼接，`tool_calls` 按 index 合并；同时打印到指定输出流 |
 | `config.py` | `AIChatConfig`：模型、接口地址、推理强度、轮次上限、是否打印思考；支持环境变量覆盖 |
-| `prompt.py` | 系统提示词，每次构造对话时生成，时间不会过期 |
-| `main.py` | `input()` 循环，Ctrl-D / Ctrl-C 退出，退出前关闭 MCP 连接 |
+| `__main__.py` | `input()` 循环，Ctrl-D / Ctrl-C 退出，退出前关闭 MCP 连接 |
 
 ## 配置
 

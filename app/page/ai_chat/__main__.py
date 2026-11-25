@@ -1,6 +1,6 @@
-"""命令行入口：python -m app.page.ai_chat.main"""
+"""包入口：python -m app.page.ai_chat"""
 
-from app.page.ai_chat.chat import AIChat
+from app.page.ai_chat import AIChat
 
 
 def main() -> None:
