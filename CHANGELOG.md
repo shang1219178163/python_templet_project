@@ -2,6 +2,12 @@
 
 ## 2026-11-25
 
+### 清理：删除未使用的 app/util/file_ext.py（14:02）
+
+- 全仓库无引用（`file_ext` / `FileExt` 均无导入），删除后 `app.util` 导入正常。
+- 全量 101 个测试通过。
+- 删除已暂存，尚未提交。
+
 ### 清理：删除 PageQuery 的 keyword 空值校验器（13:56）
 
 - `app/dto/pagination.py`：移除 `_blank_keyword_to_none`。`str_strip_whitespace` 已把空格处理为空串，
