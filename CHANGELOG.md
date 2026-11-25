@@ -2,6 +2,19 @@
 
 ## 2026-11-25
 
+### 调整：AI 对话增加配置，流式消费改为类方法（21:51）
+
+- 新增 `app/page/ai_chat/config.py`：`AIChatConfig`（pydantic-settings，前缀 `AI_CHAT_`），
+  统一管理 `base_url`、`model`、`reasoning_effort`、`max_tool_rounds`、`print_thinking`；
+  默认值不变，`.env` 可覆盖；API Key 仍用 `settings.api_key`，不重复定义。
+- `stream.py`：模块函数 `consume_stream()` 改为 `StreamConsumer` 的实例方法 `consume()`，
+  支持注入输出流与关闭思考打印；`print_thinking=False` 时只累积回传、不打印。
+- `chat.py`：模型名、轮次上限等改读配置；对话的所有打印统一走 `self.consumer.out`，
+  便于重定向到界面或测试输出。
+- 测试：`tests/test_ai_chat_stream.py` 改用 `StreamConsumer` 并新增关闭思考打印的用例；
+  `tests/test_ai_chat.py` 注入独立输出流，不再污染测试终端。
+- 验证：配置默认值与 `AI_CHAT_*` 环境变量覆盖均正确；全量 129 个测试通过；真实请求正常。
+
 ### 重构：AI 对话拆分为 app/page/ai_chat 包（21:48）
 
 - `app/page/ai_chat_test.py` 移入 `app/page/ai_chat/`，按职责拆分：

@@ -6,7 +6,6 @@
 
 import io
 import unittest
-from contextlib import redirect_stdout
 
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
@@ -16,7 +15,7 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCallFunction,
 )
 
-from app.page.ai_chat.stream import consume_stream
+from app.page.ai_chat.stream import StreamConsumer
 
 
 def chunk(delta: ChoiceDelta) -> ChatCompletionChunk:
@@ -39,10 +38,10 @@ def tool_part(index: int, *, id: str | None = None, name: str | None = None, arg
 
 
 class ConsumeTest(unittest.TestCase):
-    def consume(self, *chunks: ChatCompletionChunk) -> tuple[dict, str]:
+    def consume(self, *chunks: ChatCompletionChunk, print_thinking: bool = True) -> tuple[dict, str]:
         output = io.StringIO()
-        with redirect_stdout(output):
-            message = consume_stream(chunks)
+        consumer = StreamConsumer(print_thinking=print_thinking, out=output)
+        message = consumer.consume(chunks)
         return message, output.getvalue()
 
     def test_text_stream_assembled(self) -> None:
@@ -66,6 +65,16 @@ class ConsumeTest(unittest.TestCase):
         )
         self.assertNotIn("reasoning_content", message)
         self.assertEqual(message["content"], "ok")
+
+    def test_print_thinking_off_keeps_reasoning(self) -> None:
+        message, output = self.consume(
+            chunk(ChoiceDelta(reasoning_content="内部推理")),
+            chunk(ChoiceDelta(content="答案")),
+            print_thinking=False,
+        )
+        self.assertEqual(message["reasoning_content"], "内部推理")
+        self.assertNotIn("内部推理", output)
+        self.assertEqual(output, "回答: 答案")
 
     def test_tool_call_fragments_merged(self) -> None:
         message, _ = self.consume(

@@ -6,7 +6,6 @@
 
 import io
 import unittest
-from contextlib import redirect_stdout
 from types import SimpleNamespace
 from typing import Any
 
@@ -20,6 +19,7 @@ from openai.types.chat.chat_completion_chunk import (
 
 from app.ai_tool import BaseTool, MCPToolManager, ToolRegistry
 from app.page.ai_chat.chat import AIChat
+from app.page.ai_chat.stream import StreamConsumer
 
 
 def chunk(delta: ChoiceDelta) -> ChatCompletionChunk:
@@ -44,7 +44,7 @@ def tool_call_chunk(name: str, arguments: str, call_id: str = "call_1") -> ChatC
                     function=ChoiceDeltaToolCallFunction(name=name, arguments=arguments),
                 )
             ],
-        )
+        ),
     )
 
 
@@ -71,21 +71,26 @@ class EchoTool(BaseTool):
 
 
 class ReplyLoopTest(unittest.TestCase):
-    def make_chat(self, *streams: list[ChatCompletionChunk]) -> tuple[AIChat, FakeCompletions]:
+    def make_chat(
+        self, *streams: list[ChatCompletionChunk]
+    ) -> tuple[AIChat, FakeCompletions, io.StringIO]:
         completions = FakeCompletions(*streams)
-        chat = AIChat(client=SimpleNamespace(chat=SimpleNamespace(completions=completions)), mcp=MCPToolManager())
+        output = io.StringIO()
+        chat = AIChat(
+            client=SimpleNamespace(chat=SimpleNamespace(completions=completions)),
+            mcp=MCPToolManager(),
+            consumer=StreamConsumer(out=output),
+        )
         chat.tool_registry = ToolRegistry([EchoTool()])
         chat.messages.append({"role": "user", "content": "试试"})
-        return chat, completions
+        return chat, completions, output
 
     def test_tool_round_then_answer(self) -> None:
-        chat, completions = self.make_chat(
+        chat, _, output = self.make_chat(
             [tool_call_chunk("echo", '{"text": "hi"}')],
             [chunk(ChoiceDelta(content="好的")), chunk(ChoiceDelta(content="，收到"))],
         )
-        output = io.StringIO()
-        with redirect_stdout(output):
-            chat.reply()
+        chat.reply()
 
         self.assertEqual([m["role"] for m in chat.messages], ["system", "user", "assistant", "tool", "assistant"])
         self.assertEqual(chat.messages[3]["content"], "echo:hi")
@@ -93,31 +98,27 @@ class ReplyLoopTest(unittest.TestCase):
         self.assertIn("工具 echo", output.getvalue())
 
     def test_second_request_contains_tool_result(self) -> None:
-        chat, completions = self.make_chat(
+        chat, completions, _ = self.make_chat(
             [tool_call_chunk("echo", '{"text": "hi"}')],
             [chunk(ChoiceDelta(content="完成"))],
         )
-        with redirect_stdout(io.StringIO()):
-            chat.reply()
+        chat.reply()
 
         self.assertEqual(len(completions.calls), 2)
         request_messages = completions.calls[1]["messages"]
         self.assertEqual([m["role"] for m in request_messages], ["system", "user", "assistant", "tool"])
 
     def test_direct_answer_stops_after_one_request(self) -> None:
-        chat, completions = self.make_chat([chunk(ChoiceDelta(content="直接回答"))])
-        with redirect_stdout(io.StringIO()):
-            chat.reply()
+        chat, completions, _ = self.make_chat([chunk(ChoiceDelta(content="直接回答"))])
+        chat.reply()
 
         self.assertEqual(len(completions.calls), 1)
         self.assertEqual(chat.messages[-1]["content"], "直接回答")
 
     def test_tool_round_limit(self) -> None:
         streams = [[tool_call_chunk("echo", "{}")] for _ in range(6)]
-        chat, completions = self.make_chat(*streams)
-        output = io.StringIO()
-        with redirect_stdout(output):
-            chat.reply()
+        chat, completions, output = self.make_chat(*streams)
+        chat.reply()
 
         self.assertEqual(len(completions.calls), 5)
         self.assertIn("工具调用次数过多", output.getvalue())
