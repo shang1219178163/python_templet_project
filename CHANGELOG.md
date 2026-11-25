@@ -2,6 +2,12 @@
 
 ## 2026-11-24
 
+### 文档：校对 AI 工具模块 README 表述（19:39）
+
+- `app/ai_tool/README.md`：火车日期说明改为「支持 ISO 8601 日期（含 `20261127` 等变体），无法解析时报格式错误」，与 `date.fromisoformat()` 的实际行为一致。
+- `app/ai_tool/README.md`：明确 `total` 是应用 `train_code` 过滤后、`limit` 截断前的车次数；补充 `duration_min` 为四舍五入取整。
+- `app/ai_tool/README.md`：`name` 唯一性限定为「同一个 `ToolRegistry` 内」；测试命令前补充「先激活项目虚拟环境」。
+
 ### 功能：新增图片 OCR 文字识别工具（16:59）
 
 - 新增 `app/ai_tool/ocr_tool.py`：`OcrTool`（调用名 `ocr_image`），参数 `image_path`（本地图片路径）。
