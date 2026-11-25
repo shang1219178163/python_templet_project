@@ -2,6 +2,21 @@
 
 ## 2026-11-25
 
+### 重构：AI 对话拆分为 app/page/ai_chat 包（21:48）
+
+- `app/page/ai_chat_test.py` 移入 `app/page/ai_chat/`，按职责拆分：
+  - `chat.py`：`AIChat`，模型客户端、工具注册表、消息历史与问答循环；
+  - `stream.py`：`consume_stream()`，流式分片累积与终端输出；
+  - `prompt.py`：`build_system_prompt()`，构造对话时生成，时间不会过期；
+  - `main.py`：命令行入口，`python -m app.page.ai_chat.main`；
+  - `__init__.py`：导出 `AIChat`。
+- `AIChat` 构造函数支持注入 `client` / `mcp`，便于离线测试；新增 `ask()` / `close()`。
+- 新增 `tests/test_ai_chat.py`（4 个用例）：工具轮次后回答、第二轮请求包含工具结果、
+  直接回答不请求第二轮、工具轮次上限。
+- `tests/test_ai_chat_stream.py` 改从 `app.page.ai_chat.stream` 导入。
+- 文档：新增 `app/page/ai_chat/README.md`；`app/ai_tool/README.md` 的引用路径同步。
+- 验证：全量 128 个测试通过；`python -m app.page.ai_chat.main` 可启动；真实流式请求正常。
+
 ### 修复：reasoning_content 先收窄为 str 再拼接（21:43）
 
 - `app/page/ai_chat_test.py`：`reasoning_content` 是 OpenAI SDK 透传的 extra 字段，

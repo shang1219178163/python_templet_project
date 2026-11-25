@@ -16,7 +16,7 @@ from openai.types.chat.chat_completion_chunk import (
     ChoiceDeltaToolCallFunction,
 )
 
-from app.page.ai_chat_test import AIChatTest
+from app.page.ai_chat.stream import consume_stream
 
 
 def chunk(delta: ChoiceDelta) -> ChatCompletionChunk:
@@ -42,7 +42,7 @@ class ConsumeTest(unittest.TestCase):
     def consume(self, *chunks: ChatCompletionChunk) -> tuple[dict, str]:
         output = io.StringIO()
         with redirect_stdout(output):
-            message = AIChatTest._consume(chunks)
+            message = consume_stream(chunks)
         return message, output.getvalue()
 
     def test_text_stream_assembled(self) -> None:

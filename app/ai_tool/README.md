@@ -60,7 +60,7 @@ result = registry.execute(
 result = registry.execute("ocr_image", '{"image_path": "./data/screenshot.png"}')
 ```
 
-完整对话循环见 `app/page/ai_chat_test.py`。
+完整对话循环见 `app/page/ai_chat/`。
 
 ## 核心组成
 
