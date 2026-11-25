@@ -108,12 +108,14 @@ class AIChatTest:
             if not chunk.choices:
                 continue
             delta = chunk.choices[0].delta
-            if text := getattr(delta, "reasoning_content", None):
+            # reasoning_content 是 SDK 透传的 extra 字段，先确认是字符串再拼接
+            reasoning_text = getattr(delta, "reasoning_content", None)
+            if isinstance(reasoning_text, str) and reasoning_text:
                 if not thinking_shown:
                     print("思考: ", end="", flush=True)
                     thinking_shown = True
-                print(text, end="", flush=True)
-                reasoning.append(text)
+                print(reasoning_text, end="", flush=True)
+                reasoning.append(reasoning_text)
             if delta.content:
                 if not answer_shown:
                     print("\n回答: " if thinking_shown else "回答: ", end="", flush=True)

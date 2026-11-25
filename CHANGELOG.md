@@ -2,6 +2,13 @@
 
 ## 2026-11-25
 
+### 修复：reasoning_content 先收窄为 str 再拼接（21:43）
+
+- `app/page/ai_chat_test.py`：`reasoning_content` 是 OpenAI SDK 透传的 extra 字段，
+  `getattr` 拿到的是任意类型，直接 `append` 到 `list[str]` 会触发类型告警。
+  改为 `isinstance(reasoning_text, str)` 收窄后再打印与拼接，非字符串分片直接忽略。
+- `tests/test_ai_chat_stream.py` 增加非字符串分片用例，6 个用例全过；全量 124 个测试通过。
+
 ### 调整：AI 对话改为流式输出（21:41）
 
 - `app/page/ai_chat_test.py`：`reply()` 的请求改为 `stream=True`，边收边打印。

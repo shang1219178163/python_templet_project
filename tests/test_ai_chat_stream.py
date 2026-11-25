@@ -59,6 +59,14 @@ class ConsumeTest(unittest.TestCase):
         self.assertEqual(message["content"], "答案")
         self.assertIn("思考: 先判断", output)
 
+    def test_non_string_reasoning_ignored(self) -> None:
+        message, _ = self.consume(
+            chunk(ChoiceDelta(reasoning_content=123)),
+            chunk(ChoiceDelta(content="ok")),
+        )
+        self.assertNotIn("reasoning_content", message)
+        self.assertEqual(message["content"], "ok")
+
     def test_tool_call_fragments_merged(self) -> None:
         message, _ = self.consume(
             chunk(
