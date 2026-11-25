@@ -10,6 +10,7 @@ dependencies = [
     "fastapi[standard]>=0.162.0",
     "ipykernel>=7.4.0",
     "matplotlib>=3.11.2",
+    "mcp>=2.3.0",
     "natocr>=2.3.0",
     "ocrmac>=1.0.1",
     "openai==3.44.0",
