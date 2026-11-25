@@ -6,8 +6,9 @@
 
 ```
 app/ai_tool/
-├── __init__.py               # 对外入口，导出 BaseTool / ToolError / ToolRegistry 与内置工具
+├── __init__.py               # 对外入口，导出 BaseTool / ToolError / ToolRegistry、内置工具与 MCP 适配层
 ├── tool_registry.py          # ToolError + BaseTool + NetClient + ToolRegistry
+├── mcp_tool.py               # MCP 适配层：连接 MCP server，把远程工具注册进 ToolRegistry
 ├── meteo_weather_tool.py     # 天气工具：Open-Meteo
 ├── web_search_tool.py        # 搜索工具：DuckDuckGo Lite
 ├── route_planner_tool.py     # 路径规划工具：高德地图（需 AMAP_KEY）
@@ -20,6 +21,7 @@ app/ai_tool/
 
 ```python
 from app.ai_tool import (
+    MCPToolManager,
     MeteoWeatherTool,
     OcrTool,
     RoutePlannerTool,
@@ -29,6 +31,9 @@ from app.ai_tool import (
     WebSearchTool,
 )
 
+# MCP 可选：配置见 app/assets/mcp_servers.json，文件不存在时 manager.tools() 为空
+manager = MCPToolManager.from_file().start()
+
 registry = ToolRegistry([
     MeteoWeatherTool(),
     WebSearchTool(),
@@ -36,6 +41,7 @@ registry = ToolRegistry([
     TrainQueryTool(),
     TrainStopsTool(),
     OcrTool(),
+    *manager.tools(),
 ])
 
 # 请求模型时带上函数定义
@@ -64,6 +70,9 @@ result = registry.execute("ocr_image", '{"image_path": "./data/screenshot.png"}'
 | `ToolError` | 可预期的执行失败（网络异常、响应格式不对等），消息会原样交给模型 |
 | `NetClient` | 共用 HTTP 客户端：统一 User-Agent 与超时（构造参数），每个实例维护 Cookie 会话，把网络异常收成 `ToolError`。定义在 `tool_registry.py`，不从包入口导出 |
 | `ToolRegistry` | 注册工具、汇总函数定义、按名字分发，并兜住所有异常 |
+| `MCPConnection` | 一个 MCP server 的连接：后台线程跑事件循环，对外是同步的 `start()` / `call_tool()` / `close()` |
+| `MCPTool` | 远程 MCP 工具的本地代理，名字为 `mcp__{server}__{tool}`，注册后与本地工具同构 |
+| `MCPToolManager` | 读配置、启动多个连接、汇总工具；单个 server 失败只记进 `errors` |
 
 ## 内置工具
 
@@ -103,6 +112,46 @@ result = registry.execute("ocr_image", '{"image_path": "./data/screenshot.png"}'
 - 至少有一个引擎正常返回，但都没有文字时，返回「图片中没有识别到文字」。两个引擎都不可用时抛 `ToolError`，消息形如「OCR 识别失败: ...」。
 - 依赖已写入 `pyproject.toml`：`ocrmac`、`natocr`，均为 macOS 原生 OCR 封装。
 
+## MCP 工具
+
+MCP（Model Context Protocol）server 上的工具会被自动登记为本地函数工具。适配层只做三件事：保持连接、把远程工具转成 OpenAI 函数定义、把调用结果转成文本。
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"]
+    },
+    "remote_demo": {
+      "url": "https://example.com/mcp"
+    }
+  }
+}
+```
+
+- 配置文件：`app/assets/mcp_servers.json`，结构同 Claude Desktop 的 `mcpServers`。文件不存在或 `mcpServers` 为空时，MCP 不参与对话。
+- `command` 与 `url` 必须且只能填一个：前者用 stdio 启动子进程，后者走 Streamable HTTP。
+- `args`、`env`、`cwd` 只对 `command` 生效；`env` 在默认环境变量之上叠加。
+- `connect_timeout`（默认 30 秒）约束启动握手；`call_timeout`（默认 60 秒）约束单次工具调用。
+- 工具名统一加 `mcp__<server 名>__<远程工具名>` 前缀，避免与本地工具重名。
+- 启动失败的 server 不影响其他 server，也不影响本地工具；错误记录在 `MCPToolManager.errors`，同时打到 stderr。
+- 结果渲染：`content` 里的文本块按行拼接；图片、音频、资源链接只给说明；结构化数据仅在文本为空时使用，避免同一份结果重复塞给模型。`is_error` 的结果抛 `ToolError`，消息原样交给模型。
+
+`MCPConnection` 的后台线程里跑 asyncio，所以同步的 CLI 代码不用改成 async。用完必须调用 `manager.close()`：它会通知线程退出，并等待 stdio 子进程收尾。
+
+进程内用法（不启动子进程，测试或嵌入其他程序时用）：
+
+```python
+from mcp import Client
+
+from app.ai_tool import MCPServerConfig
+from app.ai_tool.mcp_tool import MCPConnection
+
+connection = MCPConnection("demo", MCPServerConfig(command="unused"), client_factory=lambda: Client(server))
+connection.start()
+```
+
 ## 配置
 
 路径规划工具需要高德「Web 服务」类型的 Key，在项目根目录 `.env` 中设置：
@@ -112,6 +161,8 @@ AMAP_KEY=你的高德Key
 ```
 
 未配置时 `plan_route` 会返回提示文本，不影响其他工具。申请地址：<https://console.amap.com/dev/key/app>。
+
+MCP server 的地址或启动命令写在 `app/assets/mcp_servers.json`，不放在 `.env` 里。
 
 ## 新增工具
 
@@ -175,6 +226,7 @@ registry.register(IpLookupTool())
 
 ```bash
 python -m unittest tests.test_ai_tool -v
+python -m unittest tests.test_mcp_tool -v
 ```
 
-测试全部离线：`FakeClient` 按顺序返回预置响应，不访问真实网络。
+测试全部离线：`FakeClient` 按顺序返回预置响应，不访问真实网络；MCP 测试用进程内 server，不启动子进程。

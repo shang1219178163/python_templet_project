@@ -2,6 +2,21 @@
 
 ## 2026-11-25
 
+### 新增：AI 工具支持 MCP（21:33）
+
+- 新增 `app/ai_tool/mcp_tool.py`：MCP 适配层，把 MCP server 上的工具注册进现有 `ToolRegistry`。
+  - `MCPServerConfig`：`command`（stdio 子进程）与 `url`（Streamable HTTP）二选一，带 `connect_timeout` / `call_timeout`。
+  - `MCPConnection`：每个 server 一个后台线程跑 asyncio 事件循环，同步代码可直接 `call_tool()`；不把对话循环改成 async。
+  - `MCPTool`：远程工具代理，名字加 `mcp__{server}__{tool}` 前缀，避免与本地工具重名。
+  - `MCPToolManager`：读配置、批量启动、汇总工具；单个 server 失败只记进 `errors`，不影响本地工具。
+  - 结果渲染：文本块按行拼接，图片/音频/资源链接给说明，结构化数据仅在文本为空时兜底；`is_error` 抛 `ToolError`。
+- 新增 `app/assets/mcp_servers.json`（默认 `{"mcpServers": {}}`，可留空不启用 MCP）。
+- `app/page/ai_chat_test.py`：构造时启动 MCP manager，工具注册表追加远程工具；退出时 `close()` 释放连接与子进程。
+- `app/ai_tool/__init__.py`：导出 `MCPConnection` / `MCPServerConfig` / `MCPTool` / `MCPToolManager`。
+- `pyproject.toml`：新增依赖 `mcp>=2.3.0`（此前只是其他包的传递依赖），`uv.lock` 同步更新。
+- 新增 `tests/test_mcp_tool.py`（16 个用例，全部离线）：配置校验、结果渲染、工具路由、配置加载，以及进程内 server 的线程桥接；另用真实 stdio 子进程手工验证连接、调用与退出。
+- 文档：`app/ai_tool/README.md` 增加「MCP 工具」章节与配置说明。
+
 ### 调整：种子文件改名 book.json，表名 books → book（14:08）
 
 - `app/assets/json/books.json` 重命名为 `app/assets/json/book.json`；
