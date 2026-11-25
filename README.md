@@ -68,7 +68,7 @@ curl "http://127.0.0.1:8001/books?exclude=1,2&page=1"
 curl "http://127.0.0.1:8001/books?exclude=1&exclude=2&page=1"
 ```
 
-数据存放在 `data/app.db`（SQLite，与代码包分离）。种子数据源为 `app/assets/json/books.json`
+数据存放在 `data/app.db`（SQLite，与代码包分离）。种子数据源为 `app/assets/json/book.json`
 （100 条，含 `title` / `author` / `publisher` / `isbn` / `price` / `total_num` / `stock`）。
 `price` 为各书常见版次的官方定价，版次或印次不同时价格会有差异。也可手动初始化：
 

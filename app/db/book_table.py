@@ -9,7 +9,7 @@ from app.db import Base
 
 
 class BookTable(Base):
-    __tablename__ = "books"
+    __tablename__ = "book"
     __table_args__ = (
         CheckConstraint("stock >= 0", name="ck_books_stock_non_negative"),
         CheckConstraint("stock <= total_num", name="ck_books_stock_le_total"),

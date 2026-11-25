@@ -104,7 +104,7 @@ from app.db import Base
 
 
 class BookTable(Base):
-    __tablename__ = "books"
+    __tablename__ = "book"
     __table_args__ = (
         CheckConstraint("stock >= 0", name="ck_books_stock_non_negative"),
         CheckConstraint("stock <= total_num", name="ck_books_stock_le_total"),
@@ -212,7 +212,7 @@ app/
   main.py                  # 创建 FastAPI、注册路由、lifespan 与异常处理
   db/                      # 数据库代码（数据文件不放包内）
     __init__.py            # engine / SessionLocal / Base / get_db
-    init.py                # 建表 + 从 app/assets/json/books.json 播种
+    init.py                # 建表 + 从 app/assets/json/book.json 播种
     book_table.py          # ORM：BookTable
   model/
     book.py                # 旧的纯 pydantic 示例（其他演示页仍在使用）

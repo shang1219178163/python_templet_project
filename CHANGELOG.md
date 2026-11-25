@@ -2,6 +2,20 @@
 
 ## 2026-11-25
 
+### 调整：种子文件改名 book.json，表名 books → book（14:08）
+
+- `app/assets/json/books.json` 重命名为 `app/assets/json/book.json`；
+  `app/db/init.py` 的 `BOOKS_JSON` 与 `app/model/book_library.py` 的默认路径同步更新。
+- `app/db/book_table.py`：`__tablename__` 由 `books` 改为 `book`。
+- `app/db/init.py`：新增 `_migrate_table_name()`，启动时把旧库的 `books` 表幂等改名为 `book`；
+  `_ensure_schema()` 的补列逻辑改用 `book`。
+- 两个数据库已实际迁移并保留数据：
+  - SQLite `data/app.db`：`books` → `book`，100 行；
+  - MySQL `app`：`books` → `book`，100 行；`user` 101 行不变。
+- 测试：`tests/test_db_init.py` 增加旧表改名用例，全量 102 个测试通过。
+- 文档同步：README、ORM/DTO 文档、SQLAlchemy 建库文档、SQLite/MySQL 切换文档中的文件名与表名。
+- 说明：接口路径仍为 `/books`，本次只改数据文件与数据库表名。
+
 ### 清理：删除未使用的 app/util/file_ext.py（14:02）
 
 - 全仓库无引用（`file_ext` / `FileExt` 均无导入），删除后 `app.util` 导入正常。

@@ -1,6 +1,6 @@
-"""数据库初始化：建表、补列，并在空库时从 JSON 数据源写入示例图书。
+"""数据库初始化：表名/补列迁移、建表，并在空库时从 JSON 数据源写入示例图书。
 
-数据源：`app/assets/json/books.json`
+数据源：`app/assets/json/book.json`
 执行：uv run python -m app.db.init
 """
 
@@ -15,8 +15,12 @@ from sqlalchemy.orm import Session
 from app.db import Base, SessionLocal, engine
 from app.db.book_table import BookTable
 
-BOOKS_JSON = Path(__file__).resolve().parents[1] / "assets" / "json" / "books.json"
-PUBLISHER_COLUMN_SQL = "ALTER TABLE books ADD COLUMN publisher VARCHAR(100) NOT NULL DEFAULT ''"
+BOOKS_JSON = Path(__file__).resolve().parents[1] / "assets" / "json" / "book.json"
+TABLE_NAME = "book"
+LEGACY_TABLE_NAME = "books"
+PUBLISHER_COLUMN_SQL = (
+    f"ALTER TABLE {TABLE_NAME} ADD COLUMN publisher VARCHAR(100) NOT NULL DEFAULT ''"
+)
 
 
 def load_seed_books(path: Path = BOOKS_JSON) -> list[dict]:
@@ -37,23 +41,38 @@ def load_seed_books(path: Path = BOOKS_JSON) -> list[dict]:
 
 
 def init_db() -> None:
-    """建表、补列，空库时写入示例数据，可重复执行"""
+    """迁移表名、补列、建表，空库时写入示例数据，可重复执行"""
+    _migrate_table_name()
     Base.metadata.create_all(engine)
     _ensure_schema()
     with SessionLocal() as db:
         _seed(db)
 
 
+def _migrate_table_name(target_engine=engine) -> None:
+    """旧库的 books 表重命名为 book，可重复执行"""
+    tables = set(inspect(target_engine).get_table_names())
+    if LEGACY_TABLE_NAME not in tables or TABLE_NAME in tables:
+        return
+    try:
+        with target_engine.begin() as conn:
+            conn.execute(text(f"ALTER TABLE {LEGACY_TABLE_NAME} RENAME TO {TABLE_NAME}"))
+    except SQLAlchemyError:
+        # 并发启动时另一个进程可能已经完成改名
+        if TABLE_NAME not in set(inspect(target_engine).get_table_names()):
+            raise
+
+
 def _ensure_schema(target_engine=engine) -> None:
     """create_all 不会修改已有表，这里给旧库补 publisher 列"""
-    if "publisher" in {col["name"] for col in inspect(target_engine).get_columns("books")}:
+    if "publisher" in {col["name"] for col in inspect(target_engine).get_columns(TABLE_NAME)}:
         return
     try:
         with target_engine.begin() as conn:
             conn.execute(text(PUBLISHER_COLUMN_SQL))
     except SQLAlchemyError:
         # 多 worker 同时启动时，另一个进程可能已经加过列
-        if "publisher" not in {col["name"] for col in inspect(target_engine).get_columns("books")}:
+        if "publisher" not in {col["name"] for col in inspect(target_engine).get_columns(TABLE_NAME)}:
             raise
 
 

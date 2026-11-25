@@ -77,7 +77,7 @@ from app.db import Base
 
 
 class BookTable(Base):
-    __tablename__ = "books"
+    __tablename__ = "book"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(100))
@@ -110,7 +110,7 @@ print("数据库与数据表已就绪")
 uv run python -m app.db.init
 ```
 
-执行后 `data/app.db` 会出现，里面就有 `books` 表。
+执行后 `data/app.db` 会出现，里面就有 `book` 表。
 
 ### 方式 2：FastAPI 启动时自动建表
 
@@ -168,7 +168,7 @@ model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True)
 ## 六、查看和管理数据
 
 - **PyCharm 图形化**：右侧 `Database` 面板 → `+` → `Data Source` → `SQLite` → File 选择 `.../python_templet_project/data/app.db` → Test Connection → OK。之后可双击表看数据、写 SQL。
-- **命令行**：`sqlite3 data/app.db`，然后 `.tables`、`select * from books;`。
+- **命令行**：`sqlite3 data/app.db`，然后 `.tables`、`select * from book;`。
 
 ---
 
@@ -207,7 +207,7 @@ model_config = ConfigDict(str_strip_whitespace=True, from_attributes=True)
 | 1 | `uv add sqlalchemy` | 依赖 |
 | 2 | `app/db/__init__.py`：engine / session / Base | 连接与基类 |
 | 3 | `app/db/book_table.py`：ORM 模型 | 表定义 |
-| 4 | `uv run python -m app.db.init` | `data/app.db` + `books` 表 |
+| 4 | `uv run python -m app.db.init` | `data/app.db` + `book` 表 |
 | 5 | 接口里 `Depends(get_db)` | 真正读写数据库 |
 
 后续可选：接入 Alembic 管理表结构变更；把数据访问收进 `app/repository/` 层，接口只依赖仓储接口。

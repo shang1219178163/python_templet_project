@@ -75,7 +75,7 @@ PYTHONPATH=. .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8001 --reloa
 | 异步 | 当前是同步 SQLAlchemy（`pymysql`）；要用异步需换 `asyncmy` + `AsyncSession` |
 | 默认值 / 自增 | 两边行为一致，`mapped_column(primary_key=True, autoincrement=True)` 可直接用 |
 
-旧库升级：`init_db()` 启动时会检查 `books` 表，缺少 `publisher` 列会自动执行一次
+旧库升级：`init_db()` 启动时会先把旧表 `books` 自动改名为 `book`，再检查缺少的 `publisher` 列并执行一次
 `ALTER TABLE ... ADD COLUMN publisher ...`（幂等，SQLite 与 MySQL 都支持），无需手工迁移。
 
 ## 四、常见问题
