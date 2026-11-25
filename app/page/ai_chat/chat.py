@@ -30,7 +30,7 @@ def _system_prompt(registry: ToolRegistry) -> str:
     lines = ["你是超级助手，可按需调用以下工具："]
     lines.extend(f"- {name}：{description}" for name, description in registry.summary())
     lines.append(f"当前时间是 {datetime.now():%Y-%m-%d %H:%M}。")
-    lines.append("不要编造天气或实时信息。")
+    lines.append("禁止编造信息。")
     return "\n".join(lines)
 
 
@@ -38,12 +38,12 @@ class AIChat:
     """一轮问答 = 流式请求 + 执行工具，直到模型给出最终回答。"""
 
     def __init__(
-        self,
-        *,
-        client: OpenAI | None = None,
-        mcp: MCPToolManager | None = None,
-        config: AIChatConfig | None = None,
-        consumer: StreamConsumer | None = None,
+            self,
+            *,
+            client: OpenAI | None = None,
+            mcp: MCPToolManager | None = None,
+            config: AIChatConfig | None = None,
+            consumer: StreamConsumer | None = None,
     ) -> None:
         """client / mcp / config / consumer 可注入，方便离线测试"""
         self.config = config or AIChatConfig()
