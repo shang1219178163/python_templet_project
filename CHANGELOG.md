@@ -2,6 +2,19 @@
 
 ## 2026-11-25
 
+### 调整：AI 对话改为流式输出（21:41）
+
+- `app/page/ai_chat_test.py`：`reply()` 的请求改为 `stream=True`，边收边打印。
+- 新增 `_consume()`：把分片累积成完整助手消息——`reasoning_content` 与 `content`
+  分别拼接，`tool_calls` 按 index 合并 id / name / arguments。思考模式下必须原样
+  回传这些字段，否则下一轮带 tools 的请求会 400。
+- 终端输出：思考内容以「思考: 」前缀流式打印，正文以「回答: 」前缀流式打印，
+  工具调用结果仍单行打印。
+- 新增 `tests/test_ai_chat_stream.py`（5 个离线用例）：文本拼接、思考内容保留、
+  工具调用分片合并与排序、空 choices 跳过。
+- 真实请求验证：普通问答与「查天气 → 工具 → 再回答」两轮均正常，
+  思考内容和工具分片都能完整回传。全量 123 个测试通过。
+
 ### 修复：工具元数据不再声明为 ClassVar（21:39）
 
 - `app/ai_tool/tool_registry.py`：`BaseTool` 的 `name` / `description` / `parameters`

@@ -1,9 +1,10 @@
+from collections.abc import Iterable
 from datetime import datetime
-from typing import cast
+from typing import Any, cast
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionSystemMessageParam
-from openai.types.chat.chat_completion_message_function_tool_call import ChatCompletionMessageFunctionToolCall
+from openai.types.chat.chat_completion_chunk import ChatCompletionChunk
 
 from app.ai_tool import (
     MCPToolManager,
@@ -62,32 +63,80 @@ class AIChatTest:
             self.mcp.close()
 
     def reply(self) -> None:
-        """思考模式下带回完整助手消息，否则带 tools 的后续请求会 400"""
+        """流式输出；工具调用分片拼成完整助手消息再回传，思考模式下缺字段会 400"""
         for _ in range(5):
-            response = self.clent.chat.completions.create(
+            stream = self.clent.chat.completions.create(
                 model="deepseek-flash",
                 messages=self.messages,
                 tools=self.tool_registry.definitions(),
-                stream=False,
+                stream=True,
                 reasoning_effort="high",
                 extra_body={"thinking": {"type": "enabled"}},
             )
-            message = response.choices[0].message
-            # model_dump 保留 reasoning_content，思考模式带 tools 时必须原样回传
-            self.messages.append(cast(ChatCompletionMessageParam, cast(object, message.model_dump(exclude_none=True))))
-            if not message.tool_calls:
-                print(f"回答:{message.content}")
+            message = self._consume(stream)
+            self.messages.append(cast(ChatCompletionMessageParam, message))
+            print()
+
+            tool_calls = message.get("tool_calls") or []
+            if not tool_calls:
                 return
 
-            for tool in message.tool_calls:
-                if isinstance(tool, ChatCompletionMessageFunctionToolCall):
-                    result = self.tool_registry.execute(tool.function.name, tool.function.arguments)
-                    print(f"工具 {tool.function.name}({tool.function.arguments}) -> {result}")
-                else:
+            for tool in tool_calls:
+                if tool.get("type") != "function":
                     result = "不支持的工具类型"
-                self.messages.append({"role": "tool", "tool_call_id": tool.id, "content": result})
+                else:
+                    function = tool["function"]
+                    result = self.tool_registry.execute(function["name"], function["arguments"])
+                    print(f"工具 {function['name']}({function['arguments']}) -> {result}")
+                self.messages.append({"role": "tool", "tool_call_id": tool["id"], "content": result})
 
         print("<<<回答:工具调用次数过多，已停止")
+
+    @staticmethod
+    def _consume(stream: Iterable[ChatCompletionChunk]) -> dict[str, Any]:
+        """边打印边累积分片：思考与正文分别拼接，工具调用按 index 合并。
+
+        思考模式下 reasoning_content 和 tool_calls 必须完整回传给下一轮请求，
+        所以这里还原出与 stream=False 时同等结构的助手消息。
+        """
+        content: list[str] = []
+        reasoning: list[str] = []
+        calls: dict[int, dict[str, Any]] = {}
+        thinking_shown = False
+        answer_shown = False
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta
+            if text := getattr(delta, "reasoning_content", None):
+                if not thinking_shown:
+                    print("思考: ", end="", flush=True)
+                    thinking_shown = True
+                print(text, end="", flush=True)
+                reasoning.append(text)
+            if delta.content:
+                if not answer_shown:
+                    print("\n回答: " if thinking_shown else "回答: ", end="", flush=True)
+                    answer_shown = True
+                print(delta.content, end="", flush=True)
+                content.append(delta.content)
+            for part in delta.tool_calls or []:
+                slot = calls.setdefault(
+                    part.index or 0,
+                    {"id": "", "type": "function", "function": {"name": "", "arguments": ""}},
+                )
+                if part.id:
+                    slot["id"] = part.id
+                if part.function is not None:
+                    slot["function"]["name"] += part.function.name or ""
+                    slot["function"]["arguments"] += part.function.arguments or ""
+
+        message: dict[str, Any] = {"role": "assistant", "content": "".join(content) or None}
+        if reasoning:
+            message["reasoning_content"] = "".join(reasoning)
+        if calls:
+            message["tool_calls"] = [calls[index] for index in sorted(calls)]
+        return message
 
 
 if __name__ == "__main__":
