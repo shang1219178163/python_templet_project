@@ -112,6 +112,10 @@ class ToolRegistry:
         """给模型声明全部可用工具"""
         return [tool.definition() for tool in self._tools.values()]
 
+    def summary(self) -> list[tuple[str, str]]:
+        """工具名与描述，用于拼系统提示词"""
+        return [(tool.name, tool.description) for tool in self._tools.values()]
+
     def execute(self, name: str, arguments: str) -> str:
         """执行一次工具调用；任何问题都以文本返回，保证对话循环不中断"""
         tool = self._tools.get(name)

@@ -27,7 +27,7 @@ python -m app.page.ai_chat
 
 | 文件 | 职责 |
 | --- | --- |
-| `chat.py` | `AIChat.reply()` 循环：流式请求 → 有 `tool_calls` 就执行并回传 → 直到最终回答；轮次上限来自配置。系统提示词 `_system_prompt()` 也在这里，每次构造对话时生成 |
+| `chat.py` | `AIChat.reply()` 循环：流式请求 → 有 `tool_calls` 就执行并回传 → 直到最终回答；轮次上限来自配置。系统提示词 `_system_prompt(registry)` 也在这里，每次构造对话时按 `ToolRegistry` 生成工具清单 |
 | `stream.py` | `StreamConsumer.consume()`：把分片拼成完整助手消息——`reasoning_content`、`content` 分别拼接，`tool_calls` 按 index 合并；同时打印到指定输出流 |
 | `config.py` | `AIChatConfig`：模型、接口地址、推理强度、轮次上限、是否打印思考；支持环境变量覆盖 |
 | `__main__.py` | `input()` 循环，Ctrl-D / Ctrl-C 退出，退出前关闭 MCP 连接 |
@@ -48,8 +48,8 @@ API Key 仍用 `app.config.settings.api_key`（即 `.env` 里的 `API_KEY`），
 
 ## 扩展
 
-- 新增本地工具：在 `app/ai_tool` 里实现 `BaseTool` 子类，然后加进 `chat.py` 的工具列表。
-- 新增 MCP server：改 `app/assets/mcp_servers.json`，无需改代码。
+- 新增本地工具：在 `app/ai_tool` 里实现 `BaseTool` 子类，然后加进 `chat.py` 的工具列表。系统提示词会按注册表自动列出工具名和描述，不用再改提示词。
+- 新增 MCP server：改 `app/assets/mcp_servers.json`，无需改代码；MCP 工具同样会自动出现在提示词里。
 - 换模型：改 `.env` 的 `AI_CHAT_MODEL` / `AI_CHAT_BASE_URL`；流式累积逻辑与模型无关。
 - 接入其他界面：构造 `AIChat(consumer=StreamConsumer(out=你的输出流))`，所有对话输出都会写到该流。
 

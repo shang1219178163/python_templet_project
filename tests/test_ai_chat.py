@@ -18,7 +18,7 @@ from openai.types.chat.chat_completion_chunk import (
 )
 
 from app.ai_tool import BaseTool, MCPToolManager, ToolRegistry
-from app.page.ai_chat.chat import AIChat
+from app.page.ai_chat.chat import AIChat, _system_prompt
 from app.page.ai_chat.stream import StreamConsumer
 
 
@@ -122,6 +122,17 @@ class ReplyLoopTest(unittest.TestCase):
 
         self.assertEqual(len(completions.calls), 5)
         self.assertIn("工具调用次数过多", output.getvalue())
+
+
+class SystemPromptTest(unittest.TestCase):
+    def test_lists_registered_tools(self) -> None:
+        prompt = _system_prompt(ToolRegistry([EchoTool()]))
+        self.assertIn("- echo：回显参数", prompt)
+        self.assertIn("当前时间是", prompt)
+
+    def test_empty_registry(self) -> None:
+        prompt = _system_prompt(ToolRegistry())
+        self.assertIn("可按需调用以下工具", prompt)
 
 
 if __name__ == "__main__":

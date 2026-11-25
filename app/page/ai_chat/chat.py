@@ -25,18 +25,13 @@ from app.page.ai_chat.config import AIChatConfig
 from app.page.ai_chat.stream import StreamConsumer
 
 
-def _system_prompt() -> str:
-    """每次构造对话时生成，带上当前时间，长会话里也不会用旧时间误导模型"""
-    return (
-        f"你是超级助手。询问天气时调用 get_weather；"
-        f"需要新闻、最新事实或当前事件时调用 web_search; "
-        f"询问两地路线、距离、开车多久时调用 plan_route；"
-        f"查询火车车次、余票、发到时刻时调用 query_train，"
-        f"查询某趟车经停站时调用 query_train_stops；"
-        f"用户给出图片路径并要求识别图片文字时调用 ocr_image；"
-        f"当前时间是 {datetime.now():%Y-%m-%d %H:%M}。"
-        f"不要编造天气或实时信息。"
-    )
+def _system_prompt(registry: ToolRegistry) -> str:
+    """每次构造对话时生成：工具清单来自注册表，新增工具无需再改提示词"""
+    lines = ["你是超级助手，可按需调用以下工具："]
+    lines.extend(f"- {name}：{description}" for name, description in registry.summary())
+    lines.append(f"当前时间是 {datetime.now():%Y-%m-%d %H:%M}。")
+    lines.append("不要编造天气或实时信息。")
+    return "\n".join(lines)
 
 
 class AIChat:
@@ -69,7 +64,7 @@ class AIChat:
             *self.mcp.tools(),
         ])
         self.messages: list[ChatCompletionMessageParam] = [
-            ChatCompletionSystemMessageParam(role="system", content=_system_prompt()),
+            ChatCompletionSystemMessageParam(role="system", content=_system_prompt(self.tool_registry)),
         ]
 
     def ask(self, question: str) -> None:

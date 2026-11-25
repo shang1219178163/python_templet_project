@@ -2,6 +2,15 @@
 
 ## 2026-11-25
 
+### 调整：系统提示词的工具清单改为自动生成（22:11）
+
+- `app/ai_tool/tool_registry.py`：新增 `summary()`，返回工具名与描述。
+- `app/page/ai_chat/chat.py`：`_system_prompt(registry)` 按注册表生成「工具名：描述」清单，
+  不再手写工具调用说明；新增本地工具或 MCP 工具时提示词自动同步。
+- 调用时机信息仍来自各工具的 `description`（本来就约定要写清「什么时候调用」）。
+- 测试：新增系统提示词包含注册工具、空注册表两个用例；全量 131 个测试通过。
+- 真实请求验证：模型仍能根据生成的清单正确选择 `get_weather`。
+
 ### 调整：AIChatConfig 改为使用时创建（22:06）
 
 - `app/page/ai_chat/config.py`：删除模块级单例 `ai_chat_config`，只保留配置类。
