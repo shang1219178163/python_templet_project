@@ -2,7 +2,7 @@
 
 import json
 from datetime import date
-from typing import Any, ClassVar, NamedTuple
+from typing import Any, NamedTuple
 
 from app.ai_tool.tool_registry import BaseTool, NetClient, ToolError
 
@@ -180,7 +180,7 @@ class TrainQueryTool(_TrainToolBase):
         "查询中国铁路某天两个车站之间的车次、发到时刻、历时和余票。"
         "用户询问火车票、车次、几点发车、有没有票时调用，不要凭记忆编造。"
     )
-    parameters: ClassVar[dict[str, Any]] = {
+    parameters: dict[str, Any] = {
         "type": "object",
         "properties": {
             "from_station": {
@@ -279,7 +279,7 @@ class TrainStopsTool(_TrainToolBase):
         "查询某趟中国铁路列车沿途经停哪些站、各站几点到几点开。"
         "用户询问车次时刻表、经停站时调用，需要同时给出区间车站和车次。"
     )
-    parameters: ClassVar[dict[str, Any]] = {
+    parameters: dict[str, Any] = {
         "type": "object",
         "properties": {
             "from_station": {

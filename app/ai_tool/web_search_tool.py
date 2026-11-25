@@ -2,7 +2,7 @@
 
 import json
 from html.parser import HTMLParser
-from typing import Any, ClassVar
+from typing import Any
 
 from app.ai_tool.tool_registry import BaseTool, NetClient
 
@@ -56,7 +56,7 @@ class WebSearchTool(BaseTool):
 
     name = "web_search"
     description = "联网搜索实时信息。用户询问新闻、最新事实或当前事件时调用，不要凭记忆编造。"
-    parameters: ClassVar[dict[str, Any]] = {
+    parameters: dict[str, Any] = {
         "type": "object",
         "properties": {
             "query": {

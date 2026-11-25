@@ -2,6 +2,17 @@
 
 ## 2026-11-25
 
+### 修复：工具元数据不再声明为 ClassVar（21:39）
+
+- `app/ai_tool/tool_registry.py`：`BaseTool` 的 `name` / `description` / `parameters`
+  由 `ClassVar` 改为普通注解，类属性与实例属性都合法。
+- 原因：`MCPTool` 的名字和 schema 由远端 `tools/list` 在运行期决定，只能在 `__init__`
+  里赋值；原 `ClassVar` 声明会触发「无法通过实例赋值给类变量」的类型告警。
+- 5 个内置工具（天气、搜索、路径规划、火车、OCR）同步去掉 `ClassVar`；
+  `MeteoWeatherTool._WEATHER_TEXT` 是真正的类常量，保留 `ClassVar`。
+- `app/ai_tool/README.md` 的「新增工具」示例同步调整。
+- 全量 118 个测试通过，`app/ai_tool` ruff 零告警。
+
 ### 新增：AI 工具支持 MCP（21:33）
 
 - 新增 `app/ai_tool/mcp_tool.py`：MCP 适配层，把 MCP server 上的工具注册进现有 `ToolRegistry`。

@@ -1,7 +1,7 @@
 """路径规划工具：高德地图地理编码 + 驾车路线。"""
 
 import json
-from typing import Any, ClassVar
+from typing import Any
 
 from app.ai_tool.tool_registry import BaseTool, NetClient, ToolError
 from app.config import settings
@@ -15,7 +15,7 @@ class RoutePlannerTool(BaseTool):
 
     name = "plan_route"
     description = "规划两地之间的驾车路线，返回距离、预计耗时和主要路段指引。用户询问怎么走、多远、开车多久时调用。"
-    parameters: ClassVar[dict[str, Any]] = {
+    parameters: dict[str, Any] = {
         "type": "object",
         "properties": {
             "origin": {

@@ -11,7 +11,7 @@ class MeteoWeatherTool(BaseTool):
 
     name = "get_weather"
     description = "查询指定城市某一天的天气。用户询问气温、降雨、天气时调用，不要凭记忆编造。"
-    parameters: ClassVar[dict[str, Any]] = {
+    parameters: dict[str, Any] = {
         "type": "object",
         "properties": {
             "location": {

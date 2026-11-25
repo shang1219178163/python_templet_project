@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any
 
 from app.ai_tool.tool_registry import BaseTool, ToolError
 
@@ -15,7 +15,7 @@ class OcrTool(BaseTool):
         "识别本地图片中的文字，支持中英文混排。"
         "用户给出图片路径、要求提取或识别图片文字时调用，不要凭想象编造图片内容。"
     )
-    parameters: ClassVar[dict[str, Any]] = {
+    parameters: dict[str, Any] = {
         "type": "object",
         "properties": {
             "image_path": {

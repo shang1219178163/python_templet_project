@@ -167,7 +167,7 @@ MCP server 的地址或启动命令写在 `app/assets/mcp_servers.json`，不放
 ## 新增工具
 
 ```python
-from typing import Any, ClassVar
+from typing import Any
 
 from app.ai_tool import BaseTool
 from app.ai_tool.tool_registry import NetClient
@@ -176,7 +176,7 @@ from app.ai_tool.tool_registry import NetClient
 class IpLookupTool(BaseTool):
     name = "ip_lookup"
     description = "查询 IP 归属地。用户询问 IP 位置时调用。"
-    parameters: ClassVar[dict[str, Any]] = {
+    parameters: dict[str, Any] = {
         "type": "object",
         "properties": {"ip": {"type": "string", "description": "要查询的 IP"}},
         "required": ["ip"],

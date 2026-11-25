@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping
 from http.cookiejar import CookieJar
 from json import JSONDecodeError
-from typing import IO, Any, ClassVar, Self
+from typing import IO, Any, Self
 from urllib.parse import urlencode
 from urllib.request import HTTPCookieProcessor, Request, build_opener
 
@@ -19,13 +19,14 @@ class ToolError(RuntimeError):
 class BaseTool(ABC):
     """一个可被模型调用的函数工具。
 
-    子类填好 name / description / parameters 并实现 run；
+    子类填好 name / description / parameters 并实现 run；三项可以在类里赋值，
+    也可以在 __init__ 里按实例赋值（工具名运行期才确定的场景，如 MCP 远程工具）。
     name 必须与模型发起的函数调用名一致，ToolRegistry 按它分发。
     """
 
-    name: ClassVar[str]
-    description: ClassVar[str]
-    parameters: ClassVar[dict[str, Any]]
+    name: str
+    description: str
+    parameters: dict[str, Any]
 
     def definition(self) -> ChatCompletionToolParam:
         """OpenAI 格式的函数定义，直接放进请求的 tools 参数"""

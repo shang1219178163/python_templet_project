@@ -198,8 +198,8 @@ def _render_block(block: mcp_types.ContentBlock) -> str:
 class MCPTool(BaseTool):
     """远程 MCP 工具在本地的代理。
 
-    名字加 ``mcp__{server}__`` 前缀，避免与本地工具重名；三项元数据来自运行期的
-    ``tools/list``，所以按实例赋值（BaseTool 里声明为类属性）。
+    名字加 ``mcp__{server}__`` 前缀，避免与本地工具重名；三项元数据由运行期的
+    ``tools/list`` 决定，所以不写成类属性，而是在 ``__init__`` 里按实例赋值。
     """
 
     def __init__(self, connection: MCPConnection, remote: mcp_types.Tool) -> None:
