@@ -2,6 +2,12 @@
 
 ## 2026-11-24
 
+### 文档：新增数据库创建指南（21:06）
+
+- 新增 `docs/SQLAlchemy创建数据库.md`：说明 SQLite + SQLAlchemy 2.0 的建库建表流程——安装依赖、`app/db.py`（engine/session/Base）、ORM 表模型、初始化脚本、FastAPI 依赖注入，以及 PyCharm 连接与命令行查看方式。
+- 附 MySQL / PostgreSQL 切换方式与连接串示例；说明 pydantic 模型需 `from_attributes=True` 才能从 ORM 对象转换。
+- 内容基于当前项目现状编写：尚无数据库层，`/books` 仍为内存假数据。
+
 ### 文档：校对 AI 工具模块 README 表述（19:39）
 
 - `app/ai_tool/README.md`：火车日期说明改为「支持 ISO 8601 日期（含 `20261127` 等变体），无法解析时报格式错误」，与 `date.fromisoformat()` 的实际行为一致。
