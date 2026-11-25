@@ -21,7 +21,7 @@ from app.ai_tool import (
     WebSearchTool,
 )
 from app.config import settings
-from app.page.ai_chat.config import AIChatConfig, ai_chat_config
+from app.page.ai_chat.config import AIChatConfig
 from app.page.ai_chat.stream import StreamConsumer
 
 
@@ -51,7 +51,7 @@ class AIChat:
         consumer: StreamConsumer | None = None,
     ) -> None:
         """client / mcp / config / consumer 可注入，方便离线测试"""
-        self.config = config or ai_chat_config
+        self.config = config or AIChatConfig()
         self.client = client or OpenAI(
             api_key=settings.api_key,
             base_url=self.config.base_url,

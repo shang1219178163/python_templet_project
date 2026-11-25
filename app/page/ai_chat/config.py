@@ -30,6 +30,3 @@ class AIChatConfig(BaseSettings):
     reasoning_effort: ReasoningEffort = "high"
     max_tool_rounds: int = 5
     print_thinking: bool = True
-
-
-ai_chat_config = AIChatConfig()

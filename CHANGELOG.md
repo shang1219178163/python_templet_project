@@ -2,6 +2,13 @@
 
 ## 2026-11-25
 
+### 调整：AIChatConfig 改为使用时创建（22:06）
+
+- `app/page/ai_chat/config.py`：删除模块级单例 `ai_chat_config`，只保留配置类。
+- `app/page/ai_chat/chat.py`：在 `AIChat.__init__` 里按需创建 `AIChatConfig()`，
+  导入配置模块时不再读取 `.env`，环境变量在构造对话时生效。
+- 验证：`AI_CHAT_MODEL=test-model` 覆盖正常；全量 129 个测试通过。
+
 ### 简化：AI 对话合并提示词与入口（21:55）
 
 - `app/page/ai_chat/prompt.py` 并入 `chat.py`：系统提示词改为模块内的 `_system_prompt()`，
